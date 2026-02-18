@@ -130,11 +130,21 @@ async function captureSelection() {
 
     console.log('🎯 Starting area selection on:', tab.url);
 
-    // Inject content script (idempotent)
+    // Inject content CSS first (styles for overlay)
+    await chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
+      files: ['content.css']
+    });
+
+    // Inject content script
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ['content.js']
     });
+
+    // Small wait to ensure content script message listener is registered
+    // before we send QS_START_SELECTION (fixes race condition)
+    await new Promise(resolve => setTimeout(resolve, 80));
 
     // Ask content script to start selection
     await chrome.tabs.sendMessage(tab.id, {

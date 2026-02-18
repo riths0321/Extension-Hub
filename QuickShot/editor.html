@@ -124,13 +124,6 @@
         </aside>
 
         <main class="canvas-area">
-            <div class="canvas-controls">
-                <button id="btn-zoom-in" class="control-btn">➕</button>
-                <button id="btn-zoom-out" class="control-btn">➖</button>
-                <button id="btn-zoom-reset" class="control-btn">↺</button>
-                <button id="btn-fit-to-screen" class="control-btn">⛶</button>
-                <div class="zoom-display" id="zoom-level">100%</div>
-            </div>
 
             <div class="canvas-wrapper">
                 <canvas id="editor-canvas"></canvas>
@@ -141,18 +134,20 @@
                 <!-- Selection Rectangle (for select tool) -->
                 <div class="selection-rectangle hidden" id="selection-rectangle"></div>
 
-                <div class="status-bar">
-                    <div class="status-info">
-                        <span id="cursor-position">X: 0, Y: 0</span>
-                        <span id="canvas-size">0 × 0</span>
-                        <span id="tool-status">Select Tool</span>
-                    </div>
-                    <div class="status-actions">
-                        <button id="btn-grid-toggle" class="status-btn">#</button>
-                        <button id="btn-ruler-toggle" class="status-btn">📏</button>
-                        <div class="save-status" id="save-status">Auto-saved</div>
-                    </div>
+            </div><!-- /.canvas-wrapper -->
+
+            <div class="status-bar">
+                <div class="status-info">
+                    <span id="cursor-position">X: 0, Y: 0</span>
+                    <span id="canvas-size">0 × 0</span>
+                    <span id="tool-status">Select Tool</span>
                 </div>
+                <div class="status-actions">
+                    <button id="btn-grid-toggle" class="status-btn">#</button>
+                    <button id="btn-ruler-toggle" class="status-btn">📏</button>
+                    <div class="save-status" id="save-status">Auto-saved</div>
+                </div>
+            </div>
         </main>
     </div>
 

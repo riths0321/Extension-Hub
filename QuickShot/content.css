@@ -1,208 +1,6 @@
-/* ==========================================
-   CSP-COMPLIANT STYLES (Replaces style.cssText)
-   ========================================== */
-
-/* QuickShot selection overlay */
-#qs-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 2147483647;
-  cursor: crosshair;
-  background-color: rgba(0, 0, 0, 0.3);
-  box-sizing: border-box;
-  user-select: none;
-}
-
-/* Selection box rectangle */
-.qs-selection-box {
-  position: absolute;
-  border: 2px dashed #fff;
-  background-color: rgba(100, 181, 246, 0.2);
-  pointer-events: none;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
-}
-
-/* Selection instructions text */
-.qs-instructions {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  pointer-events: none;
-}
-
-/* Cancel button */
-.qs-cancel-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: Arial, sans-serif;
-  font-size: 13px;
-  z-index: 2147483648;
-}
-
-/* ==========================================
-   ORIGINAL CONTENT STYLES
-   ========================================== */
-
-/* QuickShot Selection Overlay - Ocean Theme */
-
-/* Selection overlay styles */
-#qs-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 2147483647 !important;
-  cursor: crosshair !important;
-  background: radial-gradient(circle at center,
-      rgba(10, 77, 191, 0.1) 0%,
-      rgba(10, 77, 191, 0.2) 100%) !important;
-  backdrop-filter: blur(2px) !important;
-  pointer-events: all !important;
-  box-sizing: border-box !important;
-}
-
-/* Selection box */
-#qs-overlay .selection-box {
-  position: absolute !important;
-  border: 3px solid #64B5F6 !important;
-  background: rgba(100, 181, 246, 0.15) !important;
-  pointer-events: none !important;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.3),
-    0 0 20px rgba(100, 181, 246, 0.5),
-    inset 0 0 20px rgba(100, 181, 246, 0.2) !important;
-  transition: all 0.1s ease !important;
-}
-
-/* Selection box corners */
-#qs-overlay .selection-box::before,
-#qs-overlay .selection-box::after {
-  content: '' !important;
-  position: absolute !important;
-  width: 20px !important;
-  height: 20px !important;
-  border: 3px solid #64B5F6 !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* Top-left corner */
-#qs-overlay .selection-box::before {
-  top: -10px !important;
-  left: -10px !important;
-  border-right: none !important;
-  border-bottom: none !important;
-}
-
-/* Bottom-right corner */
-#qs-overlay .selection-box::after {
-  bottom: -10px !important;
-  right: -10px !important;
-  border-left: none !important;
-  border-top: none !important;
-}
-
-/* Size indicator */
-#qs-overlay .size-indicator {
-  position: absolute !important;
-  bottom: -30px !important;
-  right: 0 !important;
-  background: rgba(10, 61, 145, 0.9) !important;
-  color: white !important;
-  padding: 4px 8px !important;
-  border-radius: 4px !important;
-  font-family: 'Inter', sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  pointer-events: none !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Instructions */
-#qs-overlay .instructions {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  background: rgba(10, 61, 145, 0.9) !important;
-  color: white !important;
-  padding: 16px 24px !important;
-  border-radius: 12px !important;
-  font-family: 'Inter', sans-serif !important;
-  font-size: 14px !important;
-  text-align: center !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(100, 181, 246, 0.3) !important;
-}
-
-#qs-overlay .instructions h3 {
-  margin: 0 0 8px 0 !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #64B5F6 !important;
-}
-
-#qs-overlay .instructions p {
-  margin: 4px 0 !important;
-  opacity: 0.9 !important;
-}
-
-/* Cancel button */
-#qs-overlay .cancel-btn {
-  position: absolute !important;
-  top: 20px !important;
-  right: 20px !important;
-  background: rgba(10, 61, 145, 0.9) !important;
-  color: white !important;
-  border: 1px solid rgba(100, 181, 246, 0.3) !important;
-  padding: 8px 16px !important;
-  border-radius: 6px !important;
-  font-family: 'Inter', sans-serif !important;
-  font-size: 13px !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
-#qs-overlay .cancel-btn:hover {
-  background: rgba(10, 61, 145, 1) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
-}
-
-/* Animation for selection */
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-}
-
 /* ===============================
    QuickShot Selection Overlay
+   Single clean definition (no duplicates)
    =============================== */
 
 #qs-overlay {
@@ -210,44 +8,92 @@
   inset: 0;
   z-index: 2147483647;
   cursor: crosshair;
-  background-color: rgba(0, 0, 0, 0.3);
+  background: radial-gradient(
+    circle at center,
+    rgba(10, 77, 191, 0.10) 0%,
+    rgba(10, 77, 191, 0.22) 100%
+  );
+  backdrop-filter: blur(2px);
   box-sizing: border-box;
   user-select: none;
+  pointer-events: all;
 }
 
-#qs-selection-box {
+/* Selection box */
+.qs-selection-box {
   position: absolute;
-  border: 2px dashed #ffffff;
-  background-color: rgba(100, 181, 246, 0.2);
+  border: 2px dashed #64B5F6;
+  background-color: rgba(100, 181, 246, 0.18);
   pointer-events: none;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 0 16px rgba(100, 181, 246, 0.4);
 }
 
-#qs-instructions {
+/* Corner handles via pseudo-elements */
+.qs-selection-box::before,
+.qs-selection-box::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 3px solid #64B5F6;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.qs-selection-box::before {
+  top: -7px;
+  left: -7px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.qs-selection-box::after {
+  bottom: -7px;
+  right: -7px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Instructions banner */
+.qs-instructions {
   position: absolute;
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background: rgba(10, 61, 145, 0.92);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: 10px;
   font-family: Arial, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(100, 181, 246, 0.3);
+  white-space: nowrap;
 }
 
-#qs-cancel-btn {
+/* Cancel button */
+.qs-cancel-btn {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 16px;
-  border-radius: 6px;
+  background: rgba(10, 61, 145, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(100, 181, 246, 0.3);
+  padding: 8px 18px;
+  border-radius: 8px;
   cursor: pointer;
   font-family: Arial, sans-serif;
   font-size: 13px;
+  font-weight: 500;
   z-index: 2147483648;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.qs-cancel-btn:hover {
+  background: rgba(10, 61, 145, 1);
+  transform: translateY(-2px);
 }
