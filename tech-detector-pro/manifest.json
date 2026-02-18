@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Tech Detector Pro",
+  "description": "Detect technologies used by any website instantly",
+  "version": "1.1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Tech Detector Pro",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "notifications"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "technologies.json"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

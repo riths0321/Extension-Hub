@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 900" role="img" aria-label="Decorative geometric background">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1f2b63"/>
+      <stop offset="55%" stop-color="#3d2d6d"/>
+      <stop offset="100%" stop-color="#1c2456"/>
+    </linearGradient>
+    <radialGradient id="spotA" cx="20%" cy="16%" r="40%">
+      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="spotB" cx="76%" cy="80%" r="42%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1280" height="900" fill="url(#bg)"/>
+  <rect width="1280" height="900" fill="url(#spotA)"/>
+  <rect width="1280" height="900" fill="url(#spotB)"/>
+
+  <g stroke="rgba(255,255,255,0.15)" stroke-width="1" fill="none">
+    <path d="M-120 220 C 180 50, 420 350, 760 210 S 1220 70, 1400 190"/>
+    <path d="M-80 560 C 260 380, 530 690, 860 520 S 1260 390, 1460 520"/>
+    <path d="M-140 780 C 240 610, 530 930, 940 760 S 1310 650, 1520 770"/>
+  </g>
+
+  <g fill="rgba(255,255,255,0.22)">
+    <circle cx="120" cy="110" r="2"/>
+    <circle cx="210" cy="140" r="1.6"/>
+    <circle cx="980" cy="110" r="1.8"/>
+    <circle cx="1080" cy="160" r="1.6"/>
+    <circle cx="260" cy="790" r="1.8"/>
+    <circle cx="1080" cy="760" r="2"/>
+  </g>
+</svg>

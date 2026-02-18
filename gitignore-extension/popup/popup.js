@@ -1,0 +1,611 @@
+// ============================================
+// THEME MANAGEMENT
+// ============================================
+
+// Initialize theme from storage
+function initTheme() {
+  chrome.storage.local.get(['selectedTheme'], function (result) {
+    const theme = result.selectedTheme || 'ocean-blue';
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Update active state on theme buttons
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.getAttribute('data-theme') === theme) {
+        btn.classList.add('active');
+      }
+    });
+  });
+}
+
+// Theme selector event listeners
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const theme = this.getAttribute('data-theme');
+
+    // Update theme via data attribute (CSS handles all visual changes)
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Update active state
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+
+    // Save to storage
+    chrome.storage.local.set({ 'selectedTheme': theme });
+
+    showNotification(`Theme changed to ${this.getAttribute('title')}`, 'success');
+  });
+});
+
+// ============================================
+// GITIGNORE TEMPLATES
+// ============================================
+
+const templates = {
+  node: `# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.local
+.DS_Store
+.coverage
+.nyc_output
+dist/
+build/
+package-lock.json
+yarn.lock`,
+
+  python: `# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+.env
+.idea/
+.vscode/
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+*.pyc`,
+
+  react: `# React
+node_modules/
+build/
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+.parcel-cache/
+.cache/`,
+
+  next: `# Next.js
+.next/
+out/
+node_modules/
+*.log
+.env.local
+.env.development.local
+.env.production.local
+.vercel/
+.next/cache/
+.next/standalone/`,
+
+  java: `# Java
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+target/
+build/
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/`,
+
+  php: `# PHP
+vendor/
+.env
+.env.local
+.env.production.local
+composer.lock
+.DS_Store
+*.log
+.phpunit.result.cache
+.idea/
+.vscode/
+.php_cs.cache
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/`,
+
+  go: `# Go
+bin/
+pkg/
+*.exe
+*.exe~
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+.env
+go.sum
+.DS_Store
+.idea/
+.vscode/`,
+
+  rust: `# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+.env
+.DS_Store
+.idea/
+.vscode/`,
+
+  docker: `# Docker
+docker-compose.override.yml
+.env
+.dockerignore
+Dockerfile.local
+.DS_Store`,
+
+  vercel: `# Vercel Specific
+.vercel/
+.next/
+.next/cache/
+.next/standalone/
+.env.*.local
+*.log`,
+
+  netlify: `# Netlify
+.netlify/
+functions/
+.netlify/functions/
+dist/
+build/
+.env
+.env.*
+*.log`,
+
+  github: `# GitHub Pages
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+vendor/bundle/
+build/
+dist/
+out/
+.env
+.env.local`,
+
+  aws: `# AWS
+.aws-sam/
+samconfig.toml
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+.env
+.idea/
+.vscode/
+*.log
+node_modules/
+dist/
+build/`,
+
+  firebase: `# Firebase
+.firebase/
+firebase-debug.log
+.firebaserc
+dist/
+build/
+.env
+.env.local
+*.log`
+};
+
+// ============================================
+// MAIN FUNCTIONALITY
+// ============================================
+
+// Update technology badge count
+function updateTechBadge() {
+  const selectedTechs = document.querySelectorAll('.tech-item input[type="checkbox"]:checked');
+  const badge = document.getElementById('techBadge');
+  const count = selectedTechs.length;
+
+  if (badge) {
+    badge.textContent = `${count} selected`;
+    if (count > 0) {
+      badge.classList.add('success');
+    } else {
+      badge.classList.remove('success');
+    }
+  }
+}
+
+// Update line count in output
+function updateLineCount() {
+  const textarea = document.getElementById('gitignoreContent');
+  const lineCountBadge = document.getElementById('lineCount');
+
+  if (textarea && lineCountBadge) {
+    const lines = textarea.value.split('\n').filter(line => line.trim() !== '').length;
+    lineCountBadge.textContent = `${lines} lines`;
+  }
+}
+
+// Generate .gitignore content
+function generateGitignore() {
+  const selectedTechs = Array.from(document.querySelectorAll('.tech-item input[type="checkbox"]:checked'))
+    .map(input => input.value);
+  const platformInput = document.querySelector('.platform-item input[type="radio"]:checked');
+  const platform = platformInput ? platformInput.value : 'general';
+  const outputDiv = document.getElementById('output');
+  const textarea = document.getElementById('gitignoreContent');
+
+  if (selectedTechs.length === 0) {
+    showNotification('Please select at least one technology', 'warning');
+    return;
+  }
+
+  let content = `# .gitignore generated by GitIgnore Generator Pro
+# Generated: ${new Date().toLocaleString()}
+# Technologies: ${selectedTechs.join(', ')}
+# Platform: ${platform === 'general' ? 'General' : platform.charAt(0).toUpperCase() + platform.slice(1)}
+\n`;
+
+  selectedTechs.forEach(tech => {
+    if (templates[tech]) {
+      content += templates[tech] + '\n\n';
+    }
+  });
+
+  if (platform !== 'general' && templates[platform]) {
+    content += templates[platform] + '\n\n';
+  }
+
+  content += `# Common files\n.DS_Store\nThumbs.db\n*.log\n.env\n.env.local\n.idea/\n.vscode/\n`;
+
+  textarea.value = content.trim();
+  outputDiv.classList.add('visible');
+
+  updateLineCount();
+
+  outputDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  showNotification('.gitignore generated successfully!', 'success');
+}
+
+// Copy to clipboard
+function copyToClipboard() {
+  const textarea = document.getElementById('gitignoreContent');
+  const copyBtn = document.getElementById('copyBtn');
+
+  if (!textarea || textarea.value.trim() === '') {
+    showNotification('Nothing to copy! Generate content first.', 'warning');
+    return;
+  }
+
+  textarea.select();
+  textarea.setSelectionRange(0, 99999);
+
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    // Store original state
+    const originalDisabled = copyBtn.disabled;
+    const span = copyBtn.querySelector('span');
+    const originalText = span ? span.textContent : 'Copy';
+
+    // Update button text (CSP-safe, no innerHTML)
+    if (span) {
+      span.textContent = 'Copied!';
+    }
+
+    // Use CSS class for visual changes
+    copyBtn.classList.add('success-state');
+    copyBtn.disabled = true;
+
+    showNotification('Copied to clipboard!', 'success');
+
+    setTimeout(() => {
+      if (span) {
+        span.textContent = originalText;
+      }
+      copyBtn.classList.remove('success-state');
+      copyBtn.disabled = originalDisabled;
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    document.execCommand('copy');
+    showNotification('Copied to clipboard!', 'success');
+  });
+}
+
+// Download .gitignore file
+function downloadGitignore() {
+  const textarea = document.getElementById('gitignoreContent');
+
+  if (!textarea || textarea.value.trim() === '') {
+    showNotification('Nothing to download! Generate content first.', 'warning');
+    return;
+  }
+
+  const content = textarea.value;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+
+  a.href = url;
+  a.download = '.gitignore';
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+
+  showNotification('.gitignore file downloaded!', 'success');
+}
+
+// Show notification
+function showNotification(message, type = 'success') {
+  const existingNotification = document.querySelector('.notification');
+  if (existingNotification) {
+    existingNotification.remove();
+  }
+
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.style.animation = 'slideOutToRight 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+// Detect tech stack using ONLY DOM analysis (no network requests)
+function getTechStackFromDOM() {
+  const detected = [];
+
+  // ============================================
+  // REACT DETECTION
+  // ============================================
+  if (document.querySelector('script[src*="react"]') ||
+    document.querySelector('script[src*="React"]') ||
+    window.React ||
+    window.__REACT_DEVTOOLS_GLOBAL_HOOK__ ||
+    document.querySelector('[data-reactroot]') ||
+    document.querySelector('[data-reactid]')) {
+    detected.push('react');
+  }
+
+  // ============================================
+  // NEXT.JS DETECTION
+  // ============================================
+  if (window.__NEXT_DATA__ ||
+    document.querySelector('script[src*="_next/"]') ||
+    document.querySelector('script[src*="next/"]') ||
+    document.querySelector('meta[name="next-head-count"]')) {
+    detected.push('next');
+  }
+
+  // ============================================
+  // NODE.JS DETECTION
+  // ============================================
+  const bodyText = document.body?.textContent || '';
+  if ((bodyText.includes('package.json') &&
+    (window.location.hostname.includes('github') ||
+      window.location.hostname.includes('gitlab'))) ||
+    window.express ||
+    document.querySelector('meta[name="generator"][content*="Express"]')) {
+    detected.push('node');
+  }
+
+  // ============================================
+  // PYTHON DETECTION
+  // ============================================
+  if (window.django || document.querySelector('meta[name="generator"][content*="Django"]') ||
+    document.querySelector('[data-django-app]')) {
+    detected.push('python');
+  }
+  if (window.flask || document.querySelector('meta[name="generator"][content*="Flask"]')) {
+    detected.push('python');
+  }
+
+  // ============================================
+  // DOCKER DETECTION
+  // ============================================
+  if (bodyText.includes('Dockerfile') || bodyText.includes('docker-compose')) {
+    detected.push('docker');
+  }
+
+  // ============================================
+  // PHP DETECTION
+  // ============================================
+  if (document.querySelector('meta[name="generator"][content*="PHP"]') ||
+    window.location.pathname.endsWith('.php') ||
+    (document.querySelector('meta[name="csrf-token"]') && document.querySelector('script[src*="laravel"]'))) {
+    detected.push('php');
+  }
+
+  // ============================================
+  // JAVA DETECTION
+  // ============================================
+  if (document.querySelector('meta[name="generator"][content*="Spring"]') ||
+    document.querySelector('meta[name="generator"][content*="Java"]')) {
+    detected.push('java');
+  }
+
+  // ============================================
+  // GO DETECTION
+  // ============================================
+  if (document.querySelector('meta[name="generator"][content*="Hugo"]') ||
+    document.querySelector('meta[name="go-import"]')) {
+    detected.push('go');
+  }
+
+  // ============================================
+  // RUST DETECTION
+  // ============================================
+  if (window.WebAssembly &&
+    (bodyText.includes('rust') || bodyText.includes('wasm'))) {
+    detected.push('rust');
+  }
+
+  return [...new Set(detected)];
+}
+
+// Auto-detect technology from current page
+async function autoDetectTech() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (!tab) {
+      showNotification('No active tab found', 'warning');
+      return;
+    }
+
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://')) {
+      showNotification('Auto-detect not available on this page', 'warning');
+      return;
+    }
+
+    // Show loading state
+    const autoDetectBtn = document.getElementById('autoDetectBtn');
+    autoDetectBtn.classList.add('loading');
+    autoDetectBtn.disabled = true;
+
+    // Execute script directly from popup (requires scripting permission)
+    const injectionResult = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: getTechStackFromDOM
+    });
+
+    // Remove loading state
+    autoDetectBtn.classList.remove('loading');
+    autoDetectBtn.disabled = false;
+
+    const detectedTechs = injectionResult?.[0]?.result || [];
+
+    if (detectedTechs.length > 0) {
+      // Clear previous selections
+      document.querySelectorAll('.tech-item input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = detectedTechs.includes(checkbox.value);
+      });
+
+      updateTechBadge();
+      showNotification(`Auto-detected: ${detectedTechs.join(', ')}`, 'success');
+    } else {
+      showNotification('No technologies detected on this page', 'warning');
+    }
+  } catch (error) {
+    console.error('Auto-detect error:', error);
+    const autoDetectBtn = document.getElementById('autoDetectBtn');
+    autoDetectBtn.classList.remove('loading');
+    autoDetectBtn.disabled = false;
+
+    // Improved error messages
+    if (error.message.includes('cannot be scripted')) {
+      showNotification('Cannot access this page (System/Store page)', 'warning');
+    } else if (error.message.includes('Missing host permission')) {
+      showNotification('Permission denied. Refresh page and try again.', 'warning');
+    } else {
+      showNotification(`Auto-detect failed: ${error.message}`, 'warning');
+    }
+  }
+}
+
+// Clear all selections
+function clearSelections() {
+  document.querySelectorAll('.tech-item input[type="checkbox"]').forEach(checkbox => {
+    checkbox.checked = false;
+  });
+
+  document.querySelectorAll('.platform-item input[type="radio"]').forEach(radio => {
+    radio.checked = false;
+  });
+
+  // Set general platform as default
+  const generalRadio = document.querySelector('.platform-item input[value="general"]');
+  if (generalRadio) {
+    generalRadio.checked = true;
+  }
+
+  updateTechBadge();
+
+  const outputDiv = document.getElementById('output');
+  outputDiv.classList.remove('visible');
+
+  showNotification('Selection cleared', 'success');
+}
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function () {
+  initTheme();
+
+  // Tech checkbox change listeners
+  document.querySelectorAll('.tech-item input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', updateTechBadge);
+  });
+
+  // Button click listeners
+  document.getElementById('autoDetectBtn').addEventListener('click', autoDetectTech);
+  document.getElementById('generateBtn').addEventListener('click', generateGitignore);
+  document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+  document.getElementById('downloadBtn').addEventListener('click', downloadGitignore);
+  document.getElementById('clearBtn').addEventListener('click', clearSelections);
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      generateGitignore();
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c' &&
+      document.activeElement.id === 'gitignoreContent') {
+      copyToClipboard();
+    }
+
+    if (e.key === 'Escape') {
+      const outputDiv = document.getElementById('output');
+      outputDiv.classList.remove('visible');
+    }
+  });
+
+  // Initialize badge
+  updateTechBadge();
+});

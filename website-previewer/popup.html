@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Website Preview Pro</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Animated background blobs -->
+<div class="bg-blob b1"></div>
+<div class="bg-blob b2"></div>
+<div class="bg-blob b3"></div>
+
+<div class="shell">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="3" width="20" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.6"/>
+      </svg>
+      <span>Preview Pro</span>
+    </div>
+    <div class="topbar-right">
+      <button id="currentTabBtn" class="pill-btn" title="Use current tab URL">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+        Current Tab
+      </button>
+    </div>
+  </header>
+
+  <!-- URL INPUT ROW -->
+  <div class="input-row">
+    <div class="url-wrap">
+      <svg class="url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="urlInput" placeholder="Enter URL or domain…" autocomplete="off" spellcheck="false"/>
+    </div>
+    <button id="previewBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Preview
+    </button>
+  </div>
+
+  <!-- DEVICE TOGGLE -->
+  <div class="device-row">
+    <div class="device-switch">
+      <button class="active" data-size="desktop">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 21h8M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Desktop
+      </button>
+      <button data-size="mobile">
+        <svg width="10" height="12" viewBox="0 0 24 24" fill="none"><rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
+        Mobile
+      </button>
+    </div>
+    <div id="statusBadge" class="status-badge hidden">
+      <span id="statusDot" class="sdot"></span>
+      <span id="statusText">Ready</span>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <p id="errorText"></p>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="loader-ring"></div>
+    <span>Generating preview…</span>
+  </div>
+
+  <!-- PREVIEW BOX -->
+  <div id="previewContainer" class="preview-box">
+    <div class="empty-state" id="emptyState">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.2"/></svg>
+      <p>Enter a URL to generate a live preview</p>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS (hidden until preview loads) -->
+  <div class="action-row" id="actionRow">
+    <button id="copyBtn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+      Copy Image
+    </button>
+    <a id="openSite" target="_blank" rel="noopener">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="2"/><path d="M15 3h6v6M10 14 21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Open Site
+    </a>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-section">
+    <div class="history-head">
+      <span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Recent
+      </span>
+      <button id="clearHistory">Clear all</button>
+    </div>
+    <ul id="historyList"></ul>
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

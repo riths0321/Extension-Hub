@@ -1,0 +1,205 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    width: 360px;
+    background: linear-gradient(180deg, #1a237e, #283593);
+    /* Darker blue background */
+    color: #fff;
+}
+
+.header {
+    text-align: center;
+    padding: 16px 16px 10px;
+}
+
+.header h2 {
+    margin: 5px 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.header p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* TABS */
+.tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 10px 16px 0;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+}
+
+.tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    opacity: 0.7;
+    color: #fff;
+    background: transparent;
+    border: none;
+}
+
+.tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    opacity: 1;
+}
+
+.tab.active {
+    background: #fff;
+    color: #1a237e;
+    /* Primary color */
+    opacity: 1;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* DECRYPT MODE THEME */
+body.decrypt-mode {
+    background: linear-gradient(180deg, #1b5e20, #2e7d32);
+    /* Green theme */
+}
+
+body.decrypt-mode .tab.active {
+    color: #1b5e20;
+}
+
+.card {
+    background: #fff;
+    color: #333;
+    border-radius: 0 0 16px 16px;
+    padding: 20px 16px 16px;
+    margin: 0 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+label {
+    font-size: 13px;
+    margin-bottom: 6px;
+    display: block;
+    font-weight: 600;
+    color: #555;
+    transition: color 0.3s;
+}
+
+textarea,
+input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 2px solid #e0e0e0;
+    outline: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    margin-bottom: 14px;
+    resize: none;
+    background: #f9f9f9;
+    color: #333;
+    transition: 0.2s;
+}
+
+textarea:focus,
+input:focus {
+    border-color: #3949ab;
+    background: #fff;
+}
+
+/* Decrypt mode inputs */
+body.decrypt-mode textarea:focus,
+body.decrypt-mode input:focus {
+    border-color: #43a047;
+}
+
+textarea::placeholder,
+input::placeholder {
+    color: #999;
+}
+
+.btn-main {
+    width: 100%;
+    background: #3949ab;
+    /* Indigo */
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: 0.2s ease;
+    box-shadow: 0 4px 6px rgba(57, 73, 171, 0.3);
+}
+
+.btn-main:hover {
+    background: #303f9f;
+    transform: translateY(-1px);
+}
+
+/* Decrypt Button Style */
+body.decrypt-mode .btn-main {
+    background: #43a047;
+    /* Green */
+    box-shadow: 0 4px 6px rgba(67, 160, 71, 0.3);
+}
+
+body.decrypt-mode .btn-main:hover {
+    background: #388e3c;
+}
+
+
+.btn-row {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-secondary {
+    flex: 1;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #eee;
+    color: #333;
+}
+
+/* COPY BUTTON SUCCESS EFFECT */
+.copied {
+    background: #4caf50 !important;
+    color: #fff !important;
+    border-color: #4caf50 !important;
+}
+
+.status {
+    text-align: center;
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 16px;
+    font-weight: 500;
+}
+
+.footer {
+    text-align: center;
+    font-size: 11px;
+    opacity: 0.7;
+    padding: 16px 0 10px;
+    color: #ddd;
+}
+
+.mt-16 {
+    margin-top: 16px;
+}

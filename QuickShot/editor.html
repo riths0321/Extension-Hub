@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>QuickShot Editor</title>
+
+    <!-- ✅ ONLY local CSS (CSP safe) -->
+    <link rel="stylesheet" href="editor.css">
+</head>
+
+<body>
+    <!-- Loading Overlay (styled from editor.css now) -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div>Loading Editor...</div>
+    </div>
+
+    <div class="editor-container hidden">
+        <!-- Left Sidebar - Tools -->
+        <aside class="toolbar">
+            <div class="toolbar-header">
+                <h2>✏️ Tools</h2>
+                <div class="toolbar-subtitle">QuickShot Editor</div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="section-header">Selection & Drawing</div>
+                <div class="tools-grid">
+                    <button class="tool-btn active" data-tool="select" title="Select/Move">
+                        <span class="icon">✋</span>
+                        <span class="label">Select</span>
+                    </button>
+                    <button class="tool-btn" data-tool="pen" title="Freehand Pen">
+                        <span class="icon">✏️</span>
+                        <span class="label">Pen</span>
+                    </button>
+                    <button class="tool-btn" data-tool="arrow" title="Draw Arrow">
+                        <span class="icon">↗️</span>
+                        <span class="label">Arrow</span>
+                    </button>
+                    <button class="tool-btn" data-tool="rect" title="Draw Rectangle">
+                        <span class="icon">⬜</span>
+                        <span class="label">Rectangle</span>
+                    </button>
+                    <button class="tool-btn" data-tool="circle" title="Draw Circle">
+                        <span class="icon">⭕</span>
+                        <span class="label">Circle</span>
+                    </button>
+                    <button class="tool-btn" data-tool="line" title="Draw Line">
+                        <span class="icon">📏</span>
+                        <span class="label">Line</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="section-header">Text & Shapes</div>
+                <div class="tools-grid">
+                    <button class="tool-btn" data-tool="text" title="Add Text">
+                        <span class="icon">T</span>
+                        <span class="label">Text</span>
+                    </button>
+                    <button class="tool-btn" data-tool="blur" title="Blur Area">
+                        <span class="icon">🌀</span>
+                        <span class="label">Blur</span>
+                    </button>
+                    <button class="tool-btn" data-tool="highlight" title="Highlight">
+                        <span class="icon">🟡</span>
+                        <span class="label">Highlight</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="section-header">Colors</div>
+                <div class="colors-grid">
+                    <div class="color-swatch active" data-color="#ef4444" title="Red"></div>
+                    <div class="color-swatch" data-color="#f97316" title="Orange"></div>
+                    <div class="color-swatch" data-color="#eab308" title="Yellow"></div>
+                    <div class="color-swatch" data-color="#22c55e" title="Green"></div>
+                    <div class="color-swatch" data-color="#0ea5e9" title="Light Blue"></div>
+                    <div class="color-swatch" data-color="#3b82f6" title="Blue"></div>
+                    <div class="color-swatch" data-color="#8b5cf6" title="Purple"></div>
+                    <div class="color-swatch" data-color="#ec4899" title="Pink"></div>
+                    <div class="color-swatch white-swatch" data-color="#ffffff" title="White"></div>
+                    <div class="color-swatch" data-color="#000000" title="Black"></div>
+                    <div class="color-swatch" data-color="#64748b" title="Gray"></div>
+                    <div class="color-swatch" data-color="#475569" title="Dark Gray"></div>
+                </div>
+
+                <div class="color-picker-container">
+                    <input type="color" id="custom-color" value="#3b82f6">
+                    <label for="custom-color">Custom Color</label>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="section-header">Brush Size</div>
+                <div class="brush-controls">
+                    <div class="brush-preview">
+                        <div class="brush-circle" id="brush-preview-circle"></div>
+                    </div>
+                    <input type="range" id="brush-size" min="1" max="50" value="3">
+                    <span id="brush-size-value">3px</span>
+                </div>
+            </div>
+
+            <div class="toolbar-section">
+                <div class="section-header">Opacity</div>
+                <div class="opacity-controls">
+                    <input type="range" id="opacity-slider" min="10" max="100" value="100">
+                    <span id="opacity-value">100%</span>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="btn-undo" class="action-btn secondary">↩️ Undo</button>
+                <button id="btn-redo" class="action-btn secondary">↪️ Redo</button>
+                <button id="btn-clear" class="action-btn secondary">🗑️ Clear</button>
+                <button id="btn-copy" class="action-btn primary">📋 Copy to Clipboard</button>
+                <button id="btn-download" class="action-btn primary">💾 Download Image</button>
+            </div>
+        </aside>
+
+        <main class="canvas-area">
+            <div class="canvas-controls">
+                <button id="btn-zoom-in" class="control-btn">➕</button>
+                <button id="btn-zoom-out" class="control-btn">➖</button>
+                <button id="btn-zoom-reset" class="control-btn">↺</button>
+                <button id="btn-fit-to-screen" class="control-btn">⛶</button>
+                <div class="zoom-display" id="zoom-level">100%</div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="editor-canvas"></canvas>
+
+                <!-- Grid Overlay (optional) -->
+                <div class="grid-overlay" id="grid-overlay"></div>
+
+                <!-- Selection Rectangle (for select tool) -->
+                <div class="selection-rectangle hidden" id="selection-rectangle"></div>
+
+                <div class="status-bar">
+                    <div class="status-info">
+                        <span id="cursor-position">X: 0, Y: 0</span>
+                        <span id="canvas-size">0 × 0</span>
+                        <span id="tool-status">Select Tool</span>
+                    </div>
+                    <div class="status-actions">
+                        <button id="btn-grid-toggle" class="status-btn">#</button>
+                        <button id="btn-ruler-toggle" class="status-btn">📏</button>
+                        <div class="save-status" id="save-status">Auto-saved</div>
+                    </div>
+                </div>
+        </main>
+    </div>
+
+    <!-- Text Input Modal -->
+    <div class="modal" id="text-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Text</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="text-input" rows="4"></textarea>
+                <div class="text-controls">
+                    <select id="font-family">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Courier New, monospace">Monospace</option>
+                    </select>
+                    <input type="number" id="font-size" min="8" max="72" value="24">
+                </div>
+                <div class="modal-actions">
+                    <button id="text-cancel" class="btn-secondary">Cancel</button>
+                    <button id="text-apply" class="btn-primary">Add Text</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Local script only -->
+    <script src="editor.js"></script>
+</body>
+
+</html>

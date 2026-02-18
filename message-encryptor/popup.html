@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Message Encryptor</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+
+  <div class="header">
+    <h2>Message Encryptor</h2>
+    <p>Encrypt & decrypt your messages securely</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabEncrypt">ENCRYPT</button>
+    <button class="tab" id="tabDecrypt">DECRYPT</button>
+  </div>
+
+  <div class="card">
+    <label id="labelMessage" for="message">Message to Encrypt</label>
+    <textarea id="message" rows="3" placeholder="Enter text here..."></textarea>
+
+    <label for="password">Secret Password</label>
+    <input type="password" id="password" placeholder="Enter a strong password" autocomplete="off">
+
+    <button class="btn-main" id="actionBtn">ENCRYPT MESSAGE</button>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="copyBtn">Copy Output</button>
+      <button class="btn-secondary" id="clearBtn">Clear All</button>
+    </div>
+
+    <label class="mt-16" for="output">Output Result</label>
+    <textarea id="output" rows="3" placeholder="Result will appear here..." readonly></textarea>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="footer">© 2026 Encryption Tool</div>
+
+  <script src="popup.js"></script>
+
+</body>
+
+</html>

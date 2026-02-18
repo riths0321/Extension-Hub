@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Play Quiz</title>
+</head>
+
+<body style="
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  font-family:Arial,sans-serif;
+">
+
+<main style="
+  background:#fff;
+  width:100%;
+  max-width:600px;
+  border-radius:16px;
+  padding:20px;
+">
+
+<header style="text-align:center;margin-bottom:15px;">
+  <h2>🧠 Quiz Challenge</h2>
+  <div>
+    <span id="progress"></span> |
+    <span id="score"></span>
+  </div>
+</header>
+
+<section>
+  <h3 id="q" style="margin-bottom:15px;"></h3>
+  <div id="opts"></div>
+  <p id="feedback" style="font-weight:bold;margin-top:10px;"></p>
+</section>
+
+<div style="text-align:center;margin-top:15px;">
+  <button id="next" disabled style="padding:10px 25px;">Next →</button>
+</div>
+
+</main>
+
+<script src="viewer.js"></script>
+</body>
+</html>

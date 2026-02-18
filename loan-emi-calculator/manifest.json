@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Loan EMI Calculator",
+  "description": "Calculate EMI, total interest and total payment easily.",
+  "version": "1.0",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

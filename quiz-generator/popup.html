@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Generator</title>
+
+  <!-- ✅ THIS WAS MISSING -->
+  <link rel="stylesheet" href="popup.css" />
+</head>
+
+<body>
+  <main class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <h2>🧠 Quiz Generator</h2>
+      <p class="subtitle">Create, share, and import quizzes instantly</p>
+    </header>
+
+    <!-- Create Question -->
+    <section class="card">
+      <h3>Create Question</h3>
+
+      <div class="field">
+        <label>Question</label>
+        <input id="question" placeholder="Enter your question" />
+      </div>
+
+      <div class="options">
+        <div class="field">
+          <label>Option A</label>
+          <input id="opt1" />
+        </div>
+        <div class="field">
+          <label>Option B</label>
+          <input id="opt2" />
+        </div>
+        <div class="field">
+          <label>Option C</label>
+          <input id="opt3" />
+        </div>
+        <div class="field">
+          <label>Option D</label>
+          <input id="opt4" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Correct Answer</label>
+        <select id="answer">
+          <option value="">Select correct option</option>
+          <option value="0">A</option>
+          <option value="1">B</option>
+          <option value="2">C</option>
+          <option value="3">D</option>
+        </select>
+      </div>
+
+      <button id="add" class="primary">Add Question</button>
+    </section>
+
+    <!-- Questions List -->
+    <section class="card">
+      <h3>Questions</h3>
+      <p id="empty" class="empty">No questions added yet</p>
+      <ul id="list"></ul>
+    </section>
+
+    <!-- Share -->
+    <section class="card">
+      <h3>Share Quiz</h3>
+      <button id="share" class="secondary">Generate Share Link</button>
+      <input id="shareLink" readonly />
+    </section>
+
+    <!-- Import -->
+    <section class="card">
+      <h3>Import Quiz</h3>
+      <input id="importLink" placeholder="Paste quiz link" />
+      <button id="import" class="secondary">Import Quiz</button>
+    </section>
+
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

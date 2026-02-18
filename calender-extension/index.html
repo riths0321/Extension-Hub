@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Secure, offline dynamic calendar extension." />
+
+    <!-- Strict CSP for Extension Security -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';">
+
+    <title>Dynamic Calendar</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="month-nav">
+                <button class="nav-btn prev" aria-label="Previous Month">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="current-date">
+                    <h1 class="month-year"></h1>
+                </div>
+                <button class="nav-btn next" aria-label="Next Month">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="calendar-main">
+            <div class="calendar-board">
+                <!-- Headers and Days injected via JS -->
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <button id="btn-today" class="footer-btn secondary">Today</button>
+            <button id="btn-add-event" class="footer-btn primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Event
+            </button>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
