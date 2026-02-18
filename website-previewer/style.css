@@ -2,9 +2,6 @@
    Website Preview Pro — Premium UI
    Theme: Deep ocean glass — dark midnight tones, cyan accents
    ============================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 /* --- Variables ------------------------------------------- */
 :root {
   --bg:        #0b0f1a;
@@ -19,8 +16,9 @@
   --danger:    #f87171;
   --success:   #34d399;
   --radius:    14px;
-  --font:      'DM Sans', sans-serif;
-  --mono:      'JetBrains Mono', monospace;
+  --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
 }
 
 body.light {

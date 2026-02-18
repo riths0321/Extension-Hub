@@ -37,6 +37,7 @@ document.querySelectorAll(".device-switch button").forEach(btn => {
 ----------------------------------------------------------- */
 chrome.storage.local.get(["dark", "last", "history"], d => {
   if (d.dark) applyDark(true);
+  else applyDark(false);
   if (d.history && d.history.length) d.history.forEach(addHistory);
   if (d.last) {
     input.value = d.last;
@@ -65,21 +66,27 @@ document.getElementById("currentTabBtn").addEventListener("click", () => {
 /* -----------------------------------------------------------
    Dark Mode Toggle
 ----------------------------------------------------------- */
-document.getElementById("darkToggle").addEventListener("click", () => {
-  const isDark = body.classList.toggle("dark");
-  applyDark(isDark);
-  chrome.storage.local.set({ dark: isDark });
-});
+const darkToggle = document.getElementById("darkToggle");
+if (darkToggle) {
+  darkToggle.addEventListener("click", () => {
+    const isDark = body.classList.toggle("dark");
+    applyDark(isDark);
+    chrome.storage.local.set({ dark: isDark });
+  });
+}
 
 function applyDark(isDark) {
+  const moon = document.getElementById("moonIcon");
+  const sun  = document.getElementById("sunIcon");
+
   if (isDark) {
     body.classList.add("dark");
-    document.getElementById("moonIcon").style.display = "none";
-    document.getElementById("sunIcon").style.display  = "block";
+    if (moon) moon.style.display = "none";
+    if (sun)  sun.style.display  = "block";
   } else {
     body.classList.remove("dark");
-    document.getElementById("moonIcon").style.display = "block";
-    document.getElementById("sunIcon").style.display  = "none";
+    if (moon) moon.style.display = "block";
+    if (sun)  sun.style.display  = "none";
   }
 }
 
@@ -153,25 +160,35 @@ function generate(raw) {
   img.className = "preview-image";
   img.alt = "Website preview for " + url;
 
-  img.addEventListener("load", () => {
+    img.addEventListener("load", () => {
     loading.style.display = "none";
     preview.appendChild(img);
     lastLoadedImg = img;
 
-    // Update open-site link safely
-    openSite.href = url;
-    openSite.textContent = ""; // reset
-    const linkIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    // Just set href — text set via textContent below
-    openSite.setAttribute("href", url);
+    /* ---------- Safe external link handling ---------- */
+    try {
+      const safeUrl = new URL(url);
 
-    // Show action row
+      if (safeUrl.protocol === "http:" || safeUrl.protocol === "https:") {
+        openSite.href = safeUrl.href;
+        openSite.setAttribute("href", safeUrl.href);
+      } else {
+        openSite.removeAttribute("href");
+      }
+
+    } catch {
+      openSite.removeAttribute("href");
+    }
+
+    /* ---------- Show actions ---------- */
     actionRow.classList.add("show");
     setStatus("ready");
 
+    /* ---------- Save last + history ---------- */
     chrome.storage.local.set({ last: raw });
     saveHistory(raw);
   });
+
 
   img.addEventListener("error", () => {
     loading.style.display = "none";
@@ -184,27 +201,57 @@ function generate(raw) {
 /* -----------------------------------------------------------
    Copy Image to Clipboard
 ----------------------------------------------------------- */
-copyBtn.addEventListener("click", () => {
+copyBtn.addEventListener("click", async () => {
   if (!lastLoadedImg) return;
 
-  const canvas = document.createElement("canvas");
-  canvas.width  = lastLoadedImg.naturalWidth  || lastLoadedImg.width;
-  canvas.height = lastLoadedImg.naturalHeight || lastLoadedImg.height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(lastLoadedImg, 0, 0);
+  try {
+    // Must be secure context (required by Chrome policies)
+    if (!window.isSecureContext) {
+      showError("Clipboard not allowed in insecure context.");
+      return;
+    }
 
-  canvas.toBlob(blob => {
-    if (!blob) { showError("Copy failed."); return; }
-    navigator.clipboard.write([
-      new ClipboardItem({ "image/png": blob })
-    ]).then(() => {
-      copyBtn.textContent = "✓ Copied!";
-      setTimeout(() => { copyBtn.textContent = "Copy Image"; }, 1800);
-    }).catch(() => {
-      showError("Clipboard write failed. Try again.");
-    });
-  }, "image/png");
+    const canvas = document.createElement("canvas");
+    canvas.width  = lastLoadedImg.naturalWidth  || lastLoadedImg.width;
+    canvas.height = lastLoadedImg.naturalHeight || lastLoadedImg.height;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      showError("Canvas unsupported.");
+      return;
+    }
+
+    ctx.drawImage(lastLoadedImg, 0, 0);
+
+    canvas.toBlob(async (blob) => {
+      if (!blob || blob.type !== "image/png") {
+        showError("Copy failed.");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob })
+        ]);
+
+        copyBtn.textContent = "✓ Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = "Copy Image";
+        }, 1800);
+
+      } catch (err) {
+        console.error(err);
+        showError("Clipboard write blocked by browser.");
+      }
+
+    }, "image/png");
+
+  } catch (e) {
+    console.error(e);
+    showError("Unexpected error while copying.");
+  }
 });
+
 
 /* -----------------------------------------------------------
    Status Badge
@@ -259,30 +306,34 @@ function saveHistory(u) {
    Add History Item — CSP-safe DOM creation
 ----------------------------------------------------------- */
 function addHistory(u) {
+  if (!u || typeof u !== "string") return;
+
   const li = document.createElement("li");
 
-  // Favicon
-  const fav = document.createElement("img");
+  /* ---------- Safe favicon placeholder ---------- */
+  const fav = document.createElement("div");
   fav.className = "hist-favicon";
-  try {
-    const host = new URL(normalize(u)).hostname;
-    fav.src = "https://www.google.com/s2/favicons?domain=" + host + "&sz=16";
-  } catch (_) {
-    fav.src = "";
-  }
-  fav.alt = "";
-  fav.width = 14;
-  fav.height = 14;
+  fav.textContent = "🌐";
 
-  // Label
+  /* ---------- Safe label ---------- */
   const label = document.createElement("span");
-  label.textContent = u;
+
+  // Limit length + remove control chars
+  const safeText = u.replace(/[\x00-\x1F\x7F]/g, "").slice(0, 120);
+  label.textContent = safeText;
+
+  /* ---------- Safe click handler ---------- */
+  li.addEventListener("click", () => {
+    try {
+      const safeUrl = normalize(u);
+      input.value = safeUrl;
+      generate(safeUrl);
+    } catch {
+      showError("Invalid history URL");
+    }
+  });
 
   li.appendChild(fav);
   li.appendChild(label);
-  li.addEventListener("click", () => {
-    input.value = u;
-    generate(u);
-  });
   historyList.appendChild(li);
 }

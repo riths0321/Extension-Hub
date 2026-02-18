@@ -48,7 +48,9 @@ function startSelectionOverlay() {
   cancelBtn.className = 'qs-cancel-btn';
   cancelBtn.textContent = '✕ Cancel';
   cancelBtn.addEventListener('click', () => {
-    document.body.removeChild(overlay);
+    if (overlay && overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
   });
   overlay.appendChild(cancelBtn);
 
@@ -94,7 +96,9 @@ function startSelectionOverlay() {
     const rect = selectionBox.getBoundingClientRect();
 
     // Remove overlay
-    document.body.removeChild(overlay);
+    if (overlay && overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
 
     if (rect.width < 10 || rect.height < 10) {
       console.log('⚠️ Selection too small, ignoring');
@@ -116,17 +120,24 @@ function startSelectionOverlay() {
 
     console.log('📤 Sending coordinates to background:', coords);
 
-    // Send coords to background
     chrome.runtime.sendMessage({
       action: 'selection_completed',
       coords: coords
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('❌ Failed to send selection coords:', chrome.runtime.lastError.message);
+      } else {
+        console.log('✅ Selection coords sent, response:', response);
+      }
     });
   });
 
   // ESC key to cancel
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
-      document.body.removeChild(overlay);
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
       document.removeEventListener('keydown', handleKeyDown);
     }
   };

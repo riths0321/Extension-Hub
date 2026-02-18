@@ -193,6 +193,19 @@ class QuickShotEditor {
             const color = swatch.getAttribute('data-color');
             if (color) {
                 swatch.style.backgroundColor = color;
+                
+                // Add click event listener to select the color
+                swatch.addEventListener('click', (e) => {
+                    this.setColor(color);
+                    
+                    // Remove active class from all swatches
+                    document.querySelectorAll('.color-swatch').forEach(s => {
+                        s.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked swatch
+                    e.currentTarget.classList.add('active');
+                });
             }
         });
 
@@ -430,10 +443,15 @@ class QuickShotEditor {
                 this.drawRectangle(this.startX, this.startY, this.lastX - this.startX, this.lastY - this.startY);
                 this.saveState();
                 break;
-            case 'circle':
-                this.drawCircle(this.startX, this.startY, this.lastX - this.startX, this.lastY - this.startY);
+            case 'circle': {
+                const radius = Math.sqrt(
+                    Math.pow(this.lastX - this.startX, 2) +
+                    Math.pow(this.lastY - this.startY, 2)
+                );
+                this.drawCircle(this.startX, this.startY, radius);
                 this.saveState();
                 break;
+            }
             case 'line':
                 this.drawLine(this.startX, this.startY, this.lastX, this.lastY);
                 this.saveState();
@@ -1088,31 +1106,12 @@ class QuickShotEditor {
     }
 
     render() {
-        // Main render loop if needed
-        requestAnimationFrame(() => this.render());
+        // Render is driven by drawing events — no continuous loop needed
     }
 }
 
 // Initialize editor when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Add notification animation styles
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-        .notification {
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-        }
-    `;
-    document.head.appendChild(style);
-
     // Create and initialize editor
     window.editor = new QuickShotEditor();
 });
