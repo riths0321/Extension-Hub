@@ -1,262 +1,449 @@
+// ── popup.js — Email Extractor Pro ───────────────────────────────
+// CSP Safe · No innerHTML · No eval · Premium Features
+
+function createIcon(name) {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("width", "14");
+  svg.setAttribute("height", "14");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+
+  if (name === "copy") {
+    const rect = document.createElementNS(ns, "rect");
+    rect.setAttribute("x","9"); rect.setAttribute("y","9");
+    rect.setAttribute("width","13"); rect.setAttribute("height","13");
+    rect.setAttribute("rx","2"); rect.setAttribute("stroke","currentColor");
+    rect.setAttribute("stroke-width","2");
+
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d","M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
+    path.setAttribute("stroke","currentColor");
+    path.setAttribute("stroke-width","2");
+
+    svg.append(rect,path);
+  }
+
+  if (name === "check") {
+    const poly = document.createElementNS(ns,"polyline");
+    poly.setAttribute("points","20 6 9 17 4 12");
+    poly.setAttribute("stroke","currentColor");
+    poly.setAttribute("stroke-width","2");
+    poly.setAttribute("stroke-linecap","round");
+    poly.setAttribute("stroke-linejoin","round");
+    svg.appendChild(poly);
+  }
+
+  return svg;
+}
+
 // DOM elements
-const extractBtn = document.getElementById('extractBtn');
-const copyAllBtn = document.getElementById('copyAllBtn');
-const exportBtn = document.getElementById('exportBtn');
-const clearBtn = document.getElementById('clearBtn');
-const emailList = document.getElementById('emailList');
-const emailCount = document.getElementById('emailCount');
-const domainCount = document.getElementById('domainCount');
-const emptyState = document.getElementById('emptyState');
-const toast = document.getElementById('toast');
+const DOM = {
+  extractBtn: document.getElementById('extractBtn'),
+  copyAllBtn: document.getElementById('copyAllBtn'),
+  exportBtn: document.getElementById('exportBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  emailList: document.getElementById('emailList'),
+  emailCount: document.getElementById('emailCount'),
+  domainCount: document.getElementById('domainCount'),
+  emailCountBadge: document.getElementById('emailCountBadge'),
+  emptyState: document.getElementById('emptyState'),
+  toast: document.getElementById('toast')
+};
 
 let extractedEmails = [];
+let isProcessing = false;
+let currentTabId = null;
 
-// Load saved emails on popup open
-chrome.storage.local.get(['emails'], (result) => {
-  if (result.emails && result.emails.length > 0) {
-    extractedEmails = result.emails;
-    displayEmails();
-  }
-});
-
-// Extract emails from current page
-extractBtn.addEventListener('click', async () => {
-  const originalText = extractBtn.innerHTML;
-  extractBtn.innerHTML = `
-    <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-      <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-    Extracting...
-  `;
-  extractBtn.classList.add('loading');
-  extractBtn.disabled = true;
-
+// Initialize - Get current tab and load ONLY its emails
+async function initialize() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    // Check if URL is restricted
-    if (tab.url.startsWith('chrome://') || 
-        tab.url.startsWith('chrome-extension://') ||
-        tab.url.startsWith('edge://') ||
-        tab.url.startsWith('about:')) {
-      showToast('❌ Cannot extract from browser internal pages', 'error');
-      extractBtn.innerHTML = originalText;
-      extractBtn.classList.remove('loading');
-      extractBtn.disabled = false;
-      return;
-    }
-    
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      function: extractEmailsFromPage
-    });
-
-    if (results && results[0] && results[0].result) {
-      const newEmails = results[0].result;
-      const beforeCount = extractedEmails.length;
+    if (tab) {
+      currentTabId = tab.id;
       
-      // Merge with existing emails and remove duplicates
-      extractedEmails = [...new Set([...extractedEmails, ...newEmails])];
-      
-      // Save to storage
-      chrome.storage.local.set({ emails: extractedEmails });
-      
-      displayEmails();
-      
-      const addedCount = extractedEmails.length - beforeCount;
-      if (addedCount > 0) {
-        showToast(`✅ Found ${addedCount} new email(s)!`, 'success');
-      } else {
-        showToast('ℹ️ No new emails found', 'success');
-      }
+      // Load emails for this specific tab only
+      const storageKey = `emails_${tab.id}`;
+      chrome.storage.local.get([storageKey], (result) => {
+        if (result[storageKey] && Array.isArray(result[storageKey])) {
+          extractedEmails = result[storageKey];
+        } else {
+          extractedEmails = [];
+        }
+        displayEmails();
+      });
     }
   } catch (error) {
-    showToast('❌ Error extracting emails', 'error');
+    console.error('Initialization error:', error);
+    extractedEmails = [];
+    displayEmails();
+  }
+}
+
+// Call initialize when popup opens
+initialize();
+
+// Extract emails from current page
+DOM.extractBtn.addEventListener('click', async () => {
+  if (isProcessing) return;
+  isProcessing = true;
+
+  // Save original children
+  const originalNodes = Array.from(DOM.extractBtn.childNodes);
+
+  // ---- loading UI ----
+  DOM.extractBtn.replaceChildren();
+  DOM.extractBtn.classList.add('loading');
+  DOM.extractBtn.disabled = true;
+
+  const spinner = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  spinner.setAttribute("width","20");
+  spinner.setAttribute("height","20");
+  spinner.setAttribute("viewBox","0 0 24 24");
+  spinner.classList.add("btn-icon");
+
+  const circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+  circle.setAttribute("cx","12");
+  circle.setAttribute("cy","12");
+  circle.setAttribute("r","10");
+  circle.setAttribute("stroke","currentColor");
+  circle.setAttribute("stroke-width","2");
+  circle.setAttribute("fill","none");
+
+  spinner.appendChild(circle);
+
+  const label = document.createElement("span");
+  label.textContent = "Extracting...";
+
+  DOM.extractBtn.append(spinner, label);
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (!tab || !tab.url) {
+      showToast('No active tab found', 'error');
+      return;
+    }
+
+    if (!/^https?:/.test(tab.url)) {
+      showToast('Cannot extract from browser internal pages', 'error');
+      return;
+    }
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: extractEmailsFromPage,
+      world: 'MAIN'
+    });
+
+    const newEmails = results?.[0]?.result || [];
+    extractedEmails = [...new Set(newEmails)].sort();
+
+    await chrome.storage.local.set({ [`emails_${tab.id}`]: extractedEmails });
+
+    displayEmails();
+
+    showToast(`${extractedEmails.length} email(s) found`, 'success');
+
+  } catch (error) {
     console.error(error);
+    showToast('Error extracting emails', 'error');
   } finally {
-    extractBtn.innerHTML = originalText;
-    extractBtn.classList.remove('loading');
-    extractBtn.disabled = false;
+
+    // ---- restore original button ----
+    DOM.extractBtn.replaceChildren(...originalNodes);
+    DOM.extractBtn.classList.remove('loading');
+    DOM.extractBtn.disabled = false;
+    isProcessing = false;
   }
 });
 
-// Function to extract emails (injected into page)
+// Extract emails from page (injected function)
 function extractEmailsFromPage() {
+  // Comprehensive email regex
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  const pageText = document.body.innerText;
-  const pageHTML = document.body.innerHTML;
   
-  // Extract from both text and HTML
+  // Get all text from the page
+  const pageText = document.body.innerText || '';
+  const pageHTML = document.body.innerHTML || '';
+  
+  // Get mailto links
+  const mailtoLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]'))
+    .map(a => a.getAttribute('href').replace('mailto:', '').split('?')[0].trim())
+    .filter(email => email && email.includes('@'));
+  
+  // Extract from text and HTML
   const textEmails = pageText.match(emailRegex) || [];
   const htmlEmails = pageHTML.match(emailRegex) || [];
   
-  // Extract from mailto links
-  const mailtoLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]'))
-    .map(a => a.href.replace('mailto:', '').split('?')[0]);
-  
-  // Combine and remove duplicates
+  // Combine all sources
   const allEmails = [...new Set([...textEmails, ...htmlEmails, ...mailtoLinks])];
   
-  // Filter out common false positives
+  // Filter out invalid emails
   return allEmails.filter(email => {
-    if (!email || email.length < 5) return false;
+    if (!email || typeof email !== 'string') return false;
     
-    const domain = email.split('@')[1];
-    if (!domain) return false;
+    email = email.toLowerCase().trim();
+    if (email.length < 5 || email.length > 254) return false;
     
-    const domainLower = domain.toLowerCase();
+    const parts = email.split('@');
+    if (parts.length !== 2) return false;
     
-    // Exclude common placeholder/example domains
+    const [localPart, domain] = parts;
+    if (!localPart || !domain) return false;
+    if (localPart.length > 64) return false;
+    if (!domain.includes('.') || domain.length < 4) return false;
+    
+    // Exclude common placeholder domains
     const excludeDomains = [
-      'example.com',
-      'domain.com',
-      'email.com',
-      'test.com',
-      'sample.com',
-      'placeholder.com',
-      'yourdomain',
-      'yoursite',
-      'company.com'
+      'example.com', 'domain.com', 'email.com', 'test.com', 
+      'sample.com', 'placeholder.com', 'yourdomain.com', 
+      'yoursite.com', 'company.com', 'mysite.com', 'website.com'
     ];
     
-    return !excludeDomains.some(excluded => domainLower.includes(excluded));
+    return !excludeDomains.some(excluded => domain === excluded);
   });
 }
 
 // Display emails in the list
 function displayEmails() {
-  emailList.innerHTML = '';
-  emailCount.textContent = extractedEmails.length;
+  // Clear current list
+  DOM.emailList.replaceChildren();
+  
+  // Update counts
+  const count = extractedEmails.length;
+  DOM.emailCount.textContent = count;
+  if (DOM.emailCountBadge) DOM.emailCountBadge.textContent = count;
   
   // Calculate unique domains
-  const domains = new Set(extractedEmails.map(email => email.split('@')[1]));
-  domainCount.textContent = domains.size;
+  const domains = new Set(extractedEmails.map(email => email.split('@')[1]).filter(Boolean));
+  DOM.domainCount.textContent = domains.size;
 
-  if (extractedEmails.length === 0) {
-    emptyState.style.display = 'flex';
-    copyAllBtn.disabled = true;
-    exportBtn.disabled = true;
-    clearBtn.disabled = true;
+  // Handle empty state
+  if (count === 0) {
+    updateEmptyState(true);
     return;
   }
 
-  emptyState.style.display = 'none';
-  copyAllBtn.disabled = false;
-  exportBtn.disabled = false;
-  clearBtn.disabled = false;
+  // Hide empty state, enable buttons
+  DOM.emptyState.style.display = 'none';
+  DOM.copyAllBtn.disabled = false;
+  DOM.exportBtn.disabled = false;
+  DOM.clearBtn.disabled = false;
 
+  // Create email items with staggered animation
   extractedEmails.forEach((email, index) => {
-    const emailItem = document.createElement('div');
-    emailItem.className = 'email-item';
-    emailItem.style.animationDelay = `${index * 0.05}s`;
-    
-    const emailText = document.createElement('div');
-    emailText.className = 'email-text';
-    
-    // Split email to highlight domain
-    const [localPart, domain] = email.split('@');
-    emailText.innerHTML = `${localPart}@<span class="email-domain">${domain}</span>`;
-    
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'btn-copy-single';
-    copyBtn.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
-      </svg>
-      Copy
-    `;
-    
-    copyBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      copyToClipboard(email, copyBtn);
-    });
-    
-    emailItem.appendChild(emailText);
-    emailItem.appendChild(copyBtn);
-    emailList.appendChild(emailItem);
+    const emailItem = createEmailElement(email, index);
+    DOM.emailList.appendChild(emailItem);
   });
 }
 
-// Copy individual email to clipboard
-function copyToClipboard(email, button) {
-  navigator.clipboard.writeText(email).then(() => {
-    const originalHTML = button.innerHTML;
-    button.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Copied!
-    `;
+// Create email element (CSP safe)
+function createEmailElement(email, index) {
+  const emailItem = document.createElement('div');
+  emailItem.className = 'email-item';
+  emailItem.style.animationDelay = `${index * 0.05}s`;
+  
+  // Avatar with first letter
+  const avatar = document.createElement('div');
+  avatar.className = 'email-avatar';
+  avatar.textContent = email.charAt(0).toUpperCase();
+  
+  // Content container
+  const content = document.createElement('div');
+  content.className = 'email-content';
+  
+  // Email text with highlighted domain
+  const emailText = document.createElement('div');
+  emailText.className = 'email-text';
+  
+  const [localPart, domain] = email.split('@');
+  emailText.textContent = "";
+  emailText.append(localPart + "@");
+
+  const span = document.createElement("span");
+  span.className = "email-domain";
+  span.textContent = domain;
+
+  emailText.appendChild(span);
+
+  
+  // Domain meta
+  const meta = document.createElement('div');
+  meta.className = 'email-meta';
+  meta.textContent = domain;
+  
+  content.appendChild(emailText);
+  content.appendChild(meta);
+  
+  // Copy button
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn-copy-single';
+  copyBtn.textContent = "";
+  copyBtn.appendChild(createIcon("copy"));
+  copyBtn.append(" Copy");
+
+  
+  copyBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    copyToClipboard(email, copyBtn);
+  });
+  
+  emailItem.appendChild(avatar);
+  emailItem.appendChild(content);
+  emailItem.appendChild(copyBtn);
+  
+  return emailItem;
+}
+
+// Update empty state
+function updateEmptyState(show = true) {
+  if (show) {
+    DOM.emptyState.style.display = 'flex';
+    DOM.copyAllBtn.disabled = true;
+    DOM.exportBtn.disabled = true;
+    DOM.clearBtn.disabled = true;
+  } else {
+    DOM.emptyState.style.display = 'none';
+  }
+}
+
+async function copyToClipboard(email, button) {
+  try {
+    await navigator.clipboard.writeText(email);
+
+    // Save original child nodes safely
+    const originalNodes = Array.from(button.childNodes);
+
+    // Clear button safely
+    button.replaceChildren();
+    button.appendChild(createIcon("check"));
+    button.append(" Copied!");
     button.classList.add('copied');
-    
+
+    showToast(`Copied: ${email}`, 'success');
+
     setTimeout(() => {
-      button.innerHTML = originalHTML;
+      button.replaceChildren(...originalNodes);
       button.classList.remove('copied');
     }, 2000);
-  }).catch(() => {
-    showToast('❌ Failed to copy', 'error');
-  });
+
+  } catch (error) {
+    showToast('Failed to copy to clipboard', 'error');
+  }
 }
 
 // Copy all emails to clipboard
-copyAllBtn.addEventListener('click', () => {
-  const emailText = extractedEmails.join('\n');
-  navigator.clipboard.writeText(emailText).then(() => {
-    showToast('✅ All emails copied to clipboard!', 'success');
-  }).catch(() => {
+DOM.copyAllBtn.addEventListener('click', async () => {
+  try {
+    const emailText = extractedEmails.join('\n');
+    await navigator.clipboard.writeText(emailText);
+    showToast(`✅ Copied ${extractedEmails.length} email${extractedEmails.length > 1 ? 's' : ''} to clipboard!`, 'success');
+  } catch (error) {
     showToast('❌ Failed to copy emails', 'error');
-  });
+  }
 });
 
 // Export emails as CSV
-exportBtn.addEventListener('click', () => {
-  const csvContent = 'Email Address,Domain\n' + 
-    extractedEmails.map(email => {
-      const [local, domain] = email.split('@');
+DOM.exportBtn.addEventListener('click', () => {
+  try {
+    // Create CSV content
+    const headers = 'Email Address,Domain\n';
+    const rows = extractedEmails.map(email => {
+      const domain = email.split('@')[1] || '';
       return `${email},${domain}`;
     }).join('\n');
-  
-  const blob = new Blob([csvContent], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `extracted-emails-${date}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ Emails exported successfully!', 'success');
+    
+    const csvContent = headers + rows;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `emails-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    
+    // Cleanup
+    URL.revokeObjectURL(url);
+    showToast(`✅ Exported ${extractedEmails.length} emails to CSV`, 'success');
+  } catch (error) {
+    showToast('❌ Failed to export emails', 'error');
+  }
 });
 
-// Clear all emails
-clearBtn.addEventListener('click', () => {
-  if (confirm('Are you sure you want to clear all emails?')) {
+// Clear all emails for current tab only
+DOM.clearBtn.addEventListener('click', () => {
+  if (extractedEmails.length === 0) return;
+  
+  if (confirm('Are you sure you want to clear all emails from this page?')) {
+    // Clear from memory
     extractedEmails = [];
-    chrome.storage.local.remove('emails');
-    displayEmails();
-    showToast('🗑️ All emails cleared', 'success');
+    
+    // Clear from storage for current tab
+    if (currentTabId) {
+      const storageKey = `emails_${currentTabId}`;
+      chrome.storage.local.remove(storageKey, () => {
+        displayEmails();
+        showToast('🗑️ All emails cleared for this page', 'info');
+      });
+    } else {
+      displayEmails();
+      showToast('🗑️ All emails cleared', 'info');
+    }
   }
 });
 
 // Show toast notification
 function showToast(message, type = 'success') {
+  const toast = DOM.toast;
   const toastIcon = toast.querySelector('.toast-icon');
   const toastMessage = toast.querySelector('.toast-message');
   
   // Set icon based on type
-  if (type === 'success') {
-    toastIcon.textContent = '✓';
-  } else if (type === 'error') {
-    toastIcon.textContent = '✕';
-  } else {
-    toastIcon.textContent = 'ℹ';
-  }
+  const icons = {
+    success: '✅',
+    error: '❌',
+    info: 'ℹ️'
+  };
   
+  toastIcon.textContent = icons[type] || 'ℹ️';
   toastMessage.textContent = message.replace(/[✅❌ℹ️🗑️]/g, '').trim();
-  toast.className = `toast ${type} show`;
   
+  // Set toast type
+  toast.className = `toast ${type}`;
+  
+  // Show toast
+  setTimeout(() => toast.classList.add('show'), 10);
+  
+  // Hide after delay
   setTimeout(() => {
     toast.classList.remove('show');
   }, 3000);
 }
+
+// Handle keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd + E to extract
+  if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+    e.preventDefault();
+    DOM.extractBtn.click();
+  }
+  // Escape to clear
+  if (e.key === 'Escape' && extractedEmails.length > 0) {
+    DOM.clearBtn.click();
+  }
+});
+
+// Error boundary for async operations
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled rejection:', event.reason);
+  showToast('⚠️ An unexpected error occurred', 'error');
+});
+
+// Listen for tab changes (optional - to show warning)
+chrome.tabs.onActivated.addListener(() => {
+  // We don't auto-clear here because popup might not be open
+  // Instead, we'll check when popup opens
+});

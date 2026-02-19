@@ -3,39 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email Extractor Pro</title>
+  <title>Email Extractor Pro – Current Page Only</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
+    <!-- Premium Header with Glassmorphism -->
     <div class="header">
       <div class="header-content">
         <div class="logo">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M22 6l-10 7L2 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <div class="header-text">
-          <h1>Email Extractor</h1>
-          <p>Find & Copy Emails Instantly</p>
+          <h1>Email Extractor Pro</h1>
+          <p>
+            <span>✨ Extract & Manage Emails</span>
+            <span class="badge">v2.0</span>
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- Stats Card -->
-    <div class="stats-card">
-      <div class="stat-item">
-        <div class="stat-icon">📊</div>
+    <!-- Premium Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-wrapper">📧</div>
         <div class="stat-content">
           <div class="stat-value" id="emailCount">0</div>
           <div class="stat-label">Emails Found</div>
         </div>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <div class="stat-icon">🌐</div>
+      <div class="stat-card">
+        <div class="stat-icon-wrapper">🌐</div>
         <div class="stat-content">
           <div class="stat-value" id="domainCount">0</div>
           <div class="stat-label">Unique Domains</div>
@@ -43,7 +45,7 @@
       </div>
     </div>
 
-    <!-- Extract Button -->
+    <!-- Premium Extract Button -->
     <div class="action-section">
       <button id="extractBtn" class="btn btn-extract">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -55,10 +57,13 @@
       </button>
     </div>
 
-    <!-- Email List -->
+    <!-- Premium Email List Section -->
     <div class="email-section">
       <div class="section-header">
-        <h3>Extracted Emails</h3>
+        <h3>
+          <span>📋 Extracted Emails</span>
+          <span class="header-badge" id="emailCountBadge">0</span>
+        </h3>
         <button id="clearBtn" class="btn-clear" disabled>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -77,7 +82,7 @@
       </div>
     </div>
 
-    <!-- Bottom Actions -->
+    <!-- Premium Bottom Actions -->
     <div class="bottom-actions">
       <button id="copyAllBtn" class="btn btn-secondary" disabled>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -96,7 +101,7 @@
       </button>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- Premium Toast Notification -->
     <div id="toast" class="toast">
       <div class="toast-icon"></div>
       <div class="toast-message"></div>

@@ -1,239 +1,421 @@
 # 📧 Email Extractor Pro - Chrome Extension
 
-A beautiful, modern Chrome extension that extracts email addresses from any webpage with stunning UI and individual copy buttons for each email.
+<div align="center">
+  <img src="icons/icon128.png" alt="Email Extractor Pro Logo" width="128" height="128">
+  <h3>Extract emails from any webpage with style and precision</h3>
+  <p>Premium UI · Per-Tab Storage · Instant Copy</p>
+</div>
+
+---
 
 ## ✨ Key Features
 
-### 🎨 **Beautiful Modern Interface**
-- Stunning purple gradient design
-- Smooth animations and transitions
-- Clean, intuitive layout
-- Professional UI/UX
+### 🎨 **Premium Modern Interface**
+- Stunning purple gradient design with glassmorphism
+- Smooth animations and micro-interactions
+- Clean, intuitive layout with premium card design
+- Professional UI/UX with haptic feedback
 
 ### 📋 **Individual Copy Buttons**
-- Copy button for EACH extracted email
-- Visual feedback when copied
-- Quick and easy one-click copying
-- "Copied!" confirmation animation
+- Copy button for **EACH** extracted email
+- Visual feedback with "Copied!" animation
+- One-click copying with success indicators
+- Avatar icons with first letter for each email
 
 ### 📊 **Live Statistics Dashboard**
-- Real-time email count
-- Unique domain counter
-- Beautiful stats cards with icons
+- Real-time email count with animated counters
+- Unique domain counter with categorization
+- Beautiful stats cards with 3D hover effects
+- Domain metadata under each email
 
-### 💾 **Smart Storage**
-- Auto-saves all extracted emails
-- Persistent storage across sessions
-- Never lose your extracted data
+### 🔄 **Per-Tab Smart Storage** (NEW)
+- **Automatic refresh** when switching tabs
+- Each tab maintains its **OWN** email collection
+- No mixing emails from different pages
+- Clean state for every new webpage
+- Persistent storage per tab across sessions
 
-### ⚡ **Powerful Extraction**
-- Scans entire webpage (visible & hidden)
+### ⚡ **Powerful Extraction Engine**
+- Scans entire webpage (visible & hidden content)
 - Extracts from text, HTML, and mailto links
-- Smart duplicate removal
-- Filters out placeholder emails
+- Smart duplicate removal with sorting
+- Advanced placeholder email filtering
+- Support for dynamic content
 
-### 🎯 **Additional Features**
-- Copy all emails at once
-- Export to CSV with domain info
-- Clear all with confirmation
-- Toast notifications for actions
+### 🎯 **Additional Premium Features**
+- Copy all emails at once with one click
+- Export to CSV with domain breakdown
+- Clear all with confirmation dialog
+- Premium toast notifications with animations
+- Keyboard shortcuts (Ctrl/Cmd+E to extract)
 - Protected against browser internal pages
+- Escape key to clear emails
+
+---
 
 ## 🚀 Installation Guide
 
 ### Method 1: Load as Unpacked Extension (Recommended for Testing)
 
 1. **Extract the ZIP File**
-   - Unzip `email-extractor-extension.zip` to a folder
+   ```bash
+   unzip email-extractor-pro.zip -d email-extractor-pro
+Open Chrome Extensions
 
-2. **Open Chrome Extensions**
-   - Navigate to `chrome://extensions/`
-   - Or: Menu (⋮) → More tools → Extensions
+Navigate to chrome://extensions/
 
-3. **Enable Developer Mode**
-   - Toggle the switch in the top-right corner
+Or: Menu (⋮) → More tools → Extensions
 
-4. **Load the Extension**
-   - Click "Load unpacked"
-   - Select the `email-extractor-extension` folder
-   - Click "Select Folder"
+Enable Developer Mode
 
-5. **Start Using!**
-   - Extension icon appears in toolbar
-   - Click to open and start extracting
+Toggle the switch in the top-right corner
 
-### Method 2: Chrome Web Store (For Public Release)
+Load the Extension
 
-To publish to Chrome Web Store:
-1. Register as Chrome Web Store developer ($5 one-time fee)
-2. Create ZIP of extension folder
-3. Upload through [Developer Dashboard](https://chrome.google.com/webstore/devconsole)
-4. Submit for review
+Click "Load unpacked"
 
-## 📖 How to Use
+Select the email-extractor-pro folder
 
-### Basic Usage
+Click "Select Folder"
 
-1. **Visit Any Webpage** with email addresses
-2. **Click Extension Icon** in Chrome toolbar
-3. **Press "Extract Emails from Page"** button
-4. **View Results** in beautiful card layout
+Start Using!
 
-### Copy Single Email
-- Click the **"Copy"** button next to any email
-- Button changes to "Copied!" with checkmark
-- Email is now in your clipboard
+Extension icon appears in toolbar
 
-### Copy All Emails
-- Click **"Copy All"** button at bottom
-- All emails copied as list (one per line)
-- Ready to paste anywhere
+Click to open and start extracting
 
-### Export to CSV
-- Click **"Export CSV"** button
-- Downloads CSV file with emails and domains
-- Timestamped filename for easy organization
+Method 2: Chrome Web Store (Coming Soon)
+📖 How to Use
+Basic Usage Flow
+Navigate to any webpage with email addresses
 
-### Clear All
-- Click **"Clear All"** button
-- Confirmation dialog prevents accidents
-- Removes all stored emails
+Click the extension icon in Chrome toolbar
 
-## 🎨 UI Preview
+Press "Extract Emails from Page" button
 
-Open `preview.html` in your browser to see the extension interface and features showcase!
+Watch as emails appear in beautiful cards
 
-## 🔧 Technical Details
+Per-Tab Workflow
+text
+Page A (example.com)    → Extract → Shows emails from example.com
+Switch to Page B (test.com) → Popup auto-refreshes → Empty state
+Page B (test.com)       → Extract → Shows emails from test.com only
+Back to Page A          → Popup shows emails from example.com again
+Copy Single Email
+Click the "Copy" button next to any email
 
-### Built With
-- **Manifest V3** (Latest Chrome standard)
-- **Pure JavaScript** (No external dependencies)
-- **Modern CSS3** (Gradients, animations, grid)
-- **Chrome Storage API**
+Button transforms to "Copied!" with checkmark
 
-### Permissions Required
-- `activeTab` - Access current webpage content
-- `storage` - Save emails locally
-- `scripting` - Inject extraction script
+Email instantly in your clipboard
 
-### Browser Compatibility
-- ✅ Google Chrome (Primary)
-- ✅ Microsoft Edge (Chromium)
-- ✅ Brave Browser
-- ✅ Opera
-- ✅ Any Chromium-based browser
+Copy All Emails
+Click "Copy All" button at bottom
 
-## 🔒 Privacy & Security
+All emails copied as list (one per line)
 
-- ✅ **100% Local** - All data stored on your device
-- ✅ **No External Servers** - Zero data transmission
-- ✅ **No Tracking** - No analytics or telemetry
-- ✅ **Open Source** - Review the code yourself
-- ✅ **Minimal Permissions** - Only what's needed
-- ✅ **Protected Pages** - Won't run on chrome:// URLs
+Perfect for pasting into spreadsheets
 
-## 📁 File Structure
+Export to CSV
+Click "Export CSV" button
 
-```
-email-extractor-extension/
-├── manifest.json          # Extension configuration
-├── popup.html            # Main UI (beautiful interface)
-├── popup.css             # Styling (gradients & animations)
-├── popup.js              # Logic (extraction & copy functions)
-├── preview.html          # UI preview page
-├── icons/                # Extension icons
-│   ├── icon16.png       # Toolbar icon (small)
-│   ├── icon48.png       # Extension manager (medium)
-│   └── icon128.png      # Chrome Web Store (large)
-└── README.md            # This file
-```
+Downloads CSV with emails and domains
 
-## 🎯 What Makes This Special?
+Filename includes timestamp: emails-2024-01-15.csv
 
-### Compared to Other Email Extractors:
+Clear Current Page
+Click "Clear All" button
 
-✨ **Individual Copy Buttons** - Most extensions only offer "copy all"  
-🎨 **Modern Beautiful UI** - Professional gradient design, not basic  
-📊 **Live Statistics** - See email count and unique domains  
-💾 **Smart Storage** - Auto-saves everything, persists forever  
-⚡ **Fast Animations** - Smooth, delightful user experience  
-🔒 **Safe Extraction** - Protected against restricted pages  
+Confirmation dialog prevents accidents
 
-## 🐛 Troubleshooting
+Only clears emails for current tab
 
-**"Cannot extract from this page" error:**
-- This appears on browser internal pages (chrome://, chrome-extension://)
-- Navigate to a regular website to extract emails
+🎨 UI Components Preview
+text
+┌─────────────────────────────────┐
+│  📧 Email Extractor Pro    v2.0 │
+├─────────────────────────────────┤
+│  ┌─────────────┐ ┌─────────────┐│
+│  │ 📧 42       │ │ 🌐 12       ││
+│  │ Emails Found│ │ Unique Doms ││
+│  └─────────────┘ └─────────────┘│
+├─────────────────────────────────┤
+│  [ 🔄 Extract Emails from Page ] │
+├─────────────────────────────────┤
+│  📋 Extracted Emails     (42)   │
+│  ┌─────────────────────────────┐│
+│  │ J john@company.com    [Copy]││
+│  │ S support@site.com    [Copy]││
+│  │ I info@business.com   [Copy]││
+│  └─────────────────────────────┘│
+├─────────────────────────────────┤
+│  [ Copy All ]    [ Export CSV ] │
+└─────────────────────────────────┘
+🔧 Technical Details
+Built With
+Technology	Purpose
+Manifest V3	Latest Chrome extension standard
+Vanilla JavaScript	No external dependencies, pure performance
+Modern CSS3	Gradients, animations, grid, flexbox
+Chrome Storage API	Per-tab persistent storage
+Scripting API	Safe page content extraction
+Permissions Explained
+Permission	Reason	Required
+activeTab	Access current webpage content	✅ Yes
+storage	Save emails per tab locally	✅ Yes
+scripting	Inject extraction script safely	✅ Yes
+host_permissions	Run on all URLs	✅ Yes
+Browser Compatibility
+✅ Google Chrome (Primary - v88+)
 
-**No emails found:**
-- Ensure page has finished loading
-- Try scrolling to load dynamic content
-- Some emails might be in images (can't extract those)
+✅ Microsoft Edge (Chromium)
 
-**Extension not appearing:**
-- Make sure Developer Mode is enabled
-- Check that all files are in the folder
-- Reload the extension from chrome://extensions/
+✅ Brave Browser
 
-**Copy button not working:**
-- Make sure clipboard permissions are granted
-- Try using "Copy All" instead
-- Check browser console for errors
+✅ Opera
 
-## 🚀 Future Enhancements
+✅ Vivaldi
 
-Possible additions for v3.0:
-- 🌓 Dark mode toggle
-- 🔍 Search/filter emails by domain
-- ✅ Email validation (check if valid)
-- 📧 Email verification (check if active)
-- 🏷️ Tag and categorize emails
-- 📱 Mobile browser support
-- 🌐 Multi-tab extraction
-- 📝 Custom export formats (JSON, TXT)
+✅ Any Chromium-based browser
 
-## 💡 Tips & Best Practices
+📁 File Structure
+text
+email-extractor-pro/
+├── 📄 manifest.json          # Extension configuration (MV3)
+├── 📄 popup.html            # Premium UI interface
+├── 📄 popup.css             # Styling with animations
+├── 📄 popup.js              # Core logic with per-tab storage
+├── 📁 icons/                # Extension icons
+│   ├── icon16.png          # Toolbar icon
+│   ├── icon48.png          # Extensions page
+│   └── icon128.png         # Chrome Web Store
+└── 📄 README.md             # You are here
+🎯 What Makes This Special?
+Compared to Other Email Extractors:
+Feature	Email Extractor Pro	Others
+Individual Copy Buttons	✅ Yes, per email	❌ Copy all only
+Per-Tab Storage	✅ Auto-refresh on tab switch	❌ Mixes all emails
+Premium UI/UX	✅ Glassmorphism + animations	❌ Basic interface
+Live Statistics	✅ Real-time counts	❌ Static display
+Smart Filtering	✅ Advanced placeholder removal	❌ Basic regex
+Keyboard Shortcuts	✅ Ctrl/Cmd+E, Escape	❌ Mouse only
+CSV Export	✅ With domain breakdown	✅ Basic only
+Toast Notifications	✅ Premium animations	❌ None
+🐛 Troubleshooting
+Common Issues & Solutions
+"Cannot extract from this page" error:
 
-1. **Extract from Multiple Pages** - Results accumulate
-2. **Export Regularly** - Save CSV backups of important lists
-3. **Check Stats** - Domain count shows variety
-4. **Use Individual Copy** - When you need just one email
-5. **Clear When Done** - Start fresh for new projects
+🔹 This appears on browser internal pages
 
-## 📝 Version History
+🔹 Navigate to a regular website (http:// or https://)
 
-**v2.0.0** (Current) - Major UI Overhaul
-- ✨ Completely redesigned beautiful interface
-- 📋 Individual copy button for each email
-- 📊 Live statistics dashboard
-- 🎨 Gradient design with smooth animations
-- 🔒 Protected against chrome:// URLs
-- 💾 Enhanced storage management
+🔹 Examples of unsupported: chrome://, edge://, about:
 
-**v1.0.0** - Initial Release
-- Basic email extraction
-- Copy all functionality
-- CSV export
-- Simple UI
+No emails found:
 
-## 📄 License
+🔹 Ensure page has fully loaded
 
-Free and open source. Use, modify, and distribute freely.  
-No attribution required.
+🔹 Try scrolling to load dynamic content
 
-## 🤝 Support
+🔹 Check if emails are in images (can't extract)
 
-Having issues or suggestions?
-- Check troubleshooting section above
-- Review code to understand functionality
-- Modify for your specific needs
+🔹 Some sites obfuscate emails to prevent scraping
 
-## 💖 Credits
+Extension not appearing:
 
-**Made with love for productivity enthusiasts**
+🔹 Make sure Developer Mode is enabled
 
-Enjoy extracting emails with style! 🚀
+🔹 Check all files are in the correct folder
 
----
+🔹 Reload extension from chrome://extensions/
 
-**Star this project if you find it useful!** ⭐
+🔹 Check console for errors (F12)
+
+Copy button not working:
+
+🔹 Ensure clipboard permissions are granted
+
+🔹 Try using "Copy All" as fallback
+
+🔹 Check if page has focus
+
+🔹 Some secure contexts restrict clipboard
+
+Emails showing from old page:
+
+🔹 This was fixed in v2.0 with per-tab storage
+
+🔹 Update to latest version
+
+🔹 Clear storage and re-extract
+
+💡 Tips & Best Practices
+Per-Page Organization
+
+Each tab maintains its own email list
+
+Perfect for comparing different sites
+
+No cross-contamination of data
+
+Export Regularly
+
+Save CSV backups of important lists
+
+Filenames include date for tracking
+
+Great for lead generation
+
+Use Keyboard Shortcuts
+
+Ctrl/Cmd + E → Extract emails
+
+Escape → Clear current page
+
+Faster than mouse navigation
+
+Check Domain Stats
+
+Unique domain count shows variety
+
+Helps identify primary domains
+
+Useful for competitor analysis
+
+Clear When Done
+
+Start fresh for new projects
+
+Prevents accidental mixing
+
+Better performance
+
+📝 Version History
+v2.0.0 (Current) - Premium UI + Per-Tab Storage
+✨ Completely redesigned premium interface
+
+🔄 Per-tab storage with auto-refresh on tab switch
+
+📋 Individual copy buttons for each email
+
+📊 Live statistics with animated counters
+
+🎨 Glassmorphism design with 3D effects
+
+⌨️ Keyboard shortcuts (Ctrl/Cmd+E, Escape)
+
+🔒 Better security with CSP compliance
+
+💾 Optimized storage per tab
+
+🚫 Enhanced filtering of placeholder emails
+
+⚡ Faster extraction with deduplication
+
+v1.0.0 - Initial Release
+Basic email extraction functionality
+
+Copy all emails feature
+
+Simple CSV export
+
+Basic UI with minimal styling
+
+🔒 Privacy & Security
+Privacy First Approach
+✅ 100% Local - All data stays on your device
+✅ No External Servers - Zero data transmission
+✅ No Tracking - No analytics or telemetry
+✅ No Data Collection - Your emails are yours
+✅ No Logging - We don't track usage
+
+Security Features
+✅ CSP Compliant - Content Security Policy enforced
+✅ Minimal Permissions - Only what's absolutely needed
+✅ Protected Pages - Won't run on chrome:// URLs
+✅ Safe Scripting - Isolated execution context
+✅ Open Source - Fully auditable code
+
+Data Storage
+Emails stored locally in Chrome storage
+
+Per-tab isolation prevents mixing
+
+Auto-cleaned when tab is closed
+
+Never synced to cloud
+
+No third-party access
+
+🚀 Future Roadmap
+Coming in v3.0
+🌓 Dark/Light theme toggle
+
+🔍 Search/filter emails by domain
+
+✅ Email validation (MX record check)
+
+📧 Email verification (active/inactive)
+
+🏷️ Tag and categorize emails
+
+📱 Mobile browser support
+
+🌐 Multi-tab batch extraction
+
+📝 Custom export formats (JSON, TXT, XML)
+
+📊 Analytics dashboard with charts
+
+🔔 Smart notifications for new emails
+
+🤝 Contributing
+Contributions are welcome! Here's how you can help:
+
+Fork the repository
+
+Create a feature branch
+
+Commit your changes
+
+Push to the branch
+
+Open a Pull Request
+
+Development Setup
+bash
+git clone https://github.com/yourusername/email-extractor-pro.git
+cd email-extractor-pro
+# Load as unpacked extension in Chrome
+# Start coding!
+📄 License
+MIT License - Free for personal and commercial use
+
+text
+Copyright (c) 2024 Email Extractor Pro
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software...
+💖 Support & Feedback
+🐛 Report Issues: GitHub Issues
+
+💡 Suggest Features: Discussions
+
+⭐ Star the Project: Show your support
+
+📧 Contact: email@example.com
+
+👨‍💻 Author
+Email Extractor Pro is crafted with ❤️ by developers who care about:
+
+Privacy - Your data stays yours
+
+Performance - Lightning fast extraction
+
+Design - Beautiful, intuitive interfaces
+
+Innovation - Always improving
+
+<div align="center"> <sub>Made with 💜 for the open-source community</sub> <br> <sub>© 2024 Email Extractor Pro. All rights reserved.</sub> <br> <sub>⭐ Star us on GitHub if you find this useful! ⭐</sub> </div> ```
