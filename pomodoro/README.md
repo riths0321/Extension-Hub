@@ -1,53 +1,132 @@
-# 🍅 Pomodoro Timer
+# 🍅 Focus – Premium Pomodoro Timer
+### Made by Saurabh Tiwari
 
-## 👨‍💻 Made by Saurabh Tiwari
+A beautifully crafted Chrome Extension (Manifest V3) with a dark premium UI, session tracking, and proper background timer.
 
-### 🧩 Description
-**Pomodoro Timer** is a productivity tool based on the famous Pomodoro Technique. Break your work into 25-minute intervals separated by short breaks. Stay focused, avoid burnout, and track your completed sessions.
+---
 
-### 🚀 Features
-- **Timer**: 25m / 5m / 15m presets for Focus, Short Break, Long Break.
-- **Notifications**: Audio and visual alerts when time is up.
-- **Customizable**: Adjust timer durations in settings.
-- **Tasks**: (Optional) Associate timers with specific tasks.
+## 📂 Final Folder Structure
 
-### 🛠️ Tech Stack
-- **HTML5**: Timer UI.
-- **CSS3**: Circular progress bar.
-- **JavaScript**: Interval logic and Alarms.
-- **Chrome Extension (Manifest V3)**: Service Worker.
-
-### 📂 Folder Structure
 ```
 pomodoro/
-├── icons/             # Icons
-├── background.js      # Timer (Service Worker)
-├── popup.html         # UI
-└── manifest.json      # Config
+│
+├── icons/
+│   ├── icon16.png          ← You already have this ✅
+│   ├── icon48.png          ← You already have this ✅
+│   ├── icon128.png         ← You already have this ✅
+│   └── alarm.mp3           ← 🔔 ADD YOUR ALARM SOUND HERE (see below)
+│
+├── manifest.json
+├── background.js           ← Service Worker (alarm-based timer)
+├── popup.html              ← Extension UI
+├── popup.js                ← UI logic
+├── styles.css              ← Premium dark theme
+└── README.md
 ```
 
-### ⚙️ Installation (Developer Mode)
-1.  Download source.
-2.  Open `chrome://extensions`.
-3.  Turn on **Developer mode**.
-4.  Load unpacked -> `pomodoro`.
+---
 
-### 🧠 How It Works
-1.  **Start**: `chrome.alarms.create` sets a timer in the background.
-2.  **Tick**: The popup queries the remaining time from storage or the background script.
-3.  **End**: Service worker fires a notification when the alarm triggers.
+## 🔔 How to Add Alarm Sound
 
-### 🔐 Permissions Explained
-- **`alarms`**: Essential for the timer to run reliably in the background.
-- **`notifications`**: To alert you when the session ends.
-- **`storage`**: To save your settings and session history.
+Chrome Extensions **cannot play audio from the background service worker** directly.  
+The sound must be played from the **popup** (which has access to the Web Audio API).
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Timer Interface](https://via.placeholder.com/600x400?text=Timer+Interface)
+### Step 1 — Add your audio file
+Place your sound file inside the `icons/` folder (or create a new `sounds/` folder):
 
-### 🔒 Privacy Policy
-- **No Tracking**: We do not track your work habits.
+```
+icons/alarm.mp3
+```
 
-### 📄 License
-This project is licensed under the **MIT License**.
+> ✅ Supported formats: `.mp3`, `.ogg`, `.wav`  
+> 🎵 Recommended: a short 1–3 second chime (keep file size small)
+
+### Step 2 — Add this to `manifest.json` under `"web_accessible_resources"`
+
+```json
+"web_accessible_resources": [
+  {
+    "resources": ["icons/alarm.mp3"],
+    "matches": ["<all_urls>"]
+  }
+]
+```
+
+### Step 3 — Add this function to `popup.js`
+
+Paste this near the top of `popup.js`:
+
+```js
+function playAlarm() {
+  const audio = new Audio(chrome.runtime.getURL("icons/alarm.mp3"));
+  audio.volume = 0.8;
+  audio.play().catch(() => {});
+}
+```
+
+### Step 4 — Call `playAlarm()` when timer hits zero
+
+Inside the `render()` function in `popup.js`, find the section where `time === 0` and add the call.
+Or, listen for a storage change from the background:
+
+```js
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.pomodoro) {
+    const newVal = changes.pomodoro.newValue;
+    const oldVal = changes.pomodoro.oldValue;
+    // Play sound when timer just stopped (session ended)
+    if (oldVal && oldVal.running && !newVal.running && newVal.time === newVal.totalTime) {
+      playAlarm();
+    }
+    render(newVal);
+  }
+});
+```
+
+---
+
+## ⚙️ Installation (Developer Mode)
+
+1. Download / unzip the `pomodoro/` folder
+2. Open Chrome → go to `chrome://extensions`
+3. Toggle **Developer Mode** ON (top-right corner)
+4. Click **Load unpacked** → select the `pomodoro/` folder
+5. Pin it from the Extensions menu 📌
+
+---
+
+## ✨ Features
+
+- ⏱ **3 Timer Modes** — Focus (25m), Short Break (5m), Long Break (15m)
+- 🔄 **Auto mode switching** — transitions automatically after each session
+- 💾 **Persistent timer** — keeps running in background even when popup is closed
+- 📊 **Session stats** — tracks sessions today, total focused minutes, streak
+- 🎨 **Premium dark UI** — animated SVG ring, color-coded modes, smooth transitions
+- 🔔 **Desktop notifications** — Chrome notification when session ends
+- ✅ **100% CSP compliant** — no inline scripts, no external resources, no eval
+
+---
+
+## 🔐 Permissions Explained
+
+| Permission | Why |
+|---|---|
+| `alarms` | Runs the timer reliably in the background |
+| `notifications` | Desktop alert when session ends |
+| `storage` | Saves timer state across popup opens/closes |
+
+---
+
+## 🧠 How It Works
+
+1. **Start** → background.js sets a `chrome.alarms` repeating alarm every second
+2. **Tick** → alarm fires, calculates elapsed time from `startedAt` timestamp
+3. **Popup open** → syncs immediately from storage, then polls every 500ms for smooth display
+4. **Session end** → background switches mode, sends Chrome notification
+5. **Sound** → played from popup.js on storage change (audio needs popup context)
+
+---
+
+## 📄 License
+
+MIT License — free to use and modify.

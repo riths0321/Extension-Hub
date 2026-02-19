@@ -4,7 +4,7 @@
   "version": "2.3",
   "description": "Preview any website instantly. Dark mode, mobile/desktop views, history, copy screenshot.",
   "permissions": ["tabs", "storage", "clipboardWrite", "clipboardRead"],
-  "host_permissions": ["https://image.thum.io/*", "https://www.google.com/*"],
+  "host_permissions": ["https://image.thum.io/*"],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -14,6 +14,7 @@
     "default_popup": "popup.html"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
-  }
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://image.thum.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
+ }
+  
 }

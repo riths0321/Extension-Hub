@@ -1,13 +1,12 @@
-// Initialize when extension is installed
+// Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
-    // Initialize storage with empty array if not exists
+
     chrome.storage.sync.get(['quickLinks'], (result) => {
         if (!result.quickLinks) {
             chrome.storage.sync.set({ quickLinks: [] });
         }
     });
 
-    // Create context menu item
     chrome.contextMenus.create({
         id: "addToLinkManager",
         title: "Add to Link Manager",
@@ -15,58 +14,52 @@ chrome.runtime.onInstalled.addListener(() => {
     });
 });
 
-// Context menu click handler
+
+// Context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-    if (info.menuItemId === "addToLinkManager") {
-        const url = info.linkUrl || info.pageUrl;
-        const title = info.selectionText || tab.title;
 
-        // Get category based on URL
-        let category = 'general';
-        if (url.includes('mail') || url.includes('calendar') || url.includes('docs')) {
-            category = 'work';
-        } else if (url.includes('facebook') || url.includes('twitter') || url.includes('instagram')) {
-            category = 'social';
-        } else if (url.includes('amazon') || url.includes('flipkart') || url.includes('shop')) {
-            category = 'shopping';
-        } else if (url.includes('youtube') || url.includes('netflix') || url.includes('spotify')) {
-            category = 'entertainment';
-        }
+    if (info.menuItemId !== "addToLinkManager") return;
 
-        // Get existing links
-        chrome.storage.sync.get(['quickLinks'], (result) => {
-            const links = result.quickLinks || [];
-            
-            // Check if link already exists
-            const exists = links.some(link => link.url === url);
-            if (!exists) {
-                links.push({
-                    title: title,
-                    url: url,
-                    category: category,
-                    dateAdded: new Date().toISOString()
-                });
-                
-                chrome.storage.sync.set({ quickLinks: links }, () => {
-                    // Show notification
-                    chrome.notifications.create({
-                        type: 'basic',
-                        iconUrl: 'icons/icon128.png',
-                        title: 'Link Added',
-                        message: `"${title.substring(0, 30)}..." added to Link Manager`
-                    });
-                });
-            }
+    const url = info.linkUrl || info.pageUrl;
+    if (!url || url.startsWith("chrome://") || url.startsWith("edge://")) return;
+
+    const title = tab?.title || "Saved Link";
+
+    let category = 'general';
+    const lower = url.toLowerCase();
+
+    if (lower.includes('mail') || lower.includes('docs') || lower.includes('calendar')) category = 'work';
+    else if (lower.includes('facebook') || lower.includes('instagram') || lower.includes('twitter')) category = 'social';
+    else if (lower.includes('amazon') || lower.includes('flipkart') || lower.includes('shop')) category = 'shopping';
+    else if (lower.includes('youtube') || lower.includes('netflix') || lower.includes('spotify')) category = 'entertainment';
+
+
+    chrome.storage.sync.get(['quickLinks'], (result) => {
+
+        const links = result.quickLinks || [];
+
+        if (links.some(link => link.url === url)) return;
+
+        links.push({
+            title,
+            url,
+            category,
+            dateAdded: new Date().toISOString()
         });
-    }
+
+        chrome.storage.sync.set({ quickLinks: links });
+
+    });
 });
 
-// Listen for messages from popup
+
+// optional messaging
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
     if (message.action === 'getLinks') {
         chrome.storage.sync.get(['quickLinks'], (result) => {
             sendResponse({ links: result.quickLinks || [] });
         });
-        return true; // Will respond asynchronously
+        return true;
     }
 });

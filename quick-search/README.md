@@ -1,52 +1,64 @@
-# 🔍 Quick Search
+# 🔍 Quick Search — v2.0
 
-## 👨‍💻 Made by Saurabh Tiwari
+A premium Chrome Extension that lets you search selected text on 10+ platforms instantly.
 
-### 🧩 Description
-**Quick Search** supercharges your browsing by allowing you to search selected text on multiple engines instantly. Highlight any text, right-click (or use a shortcut), and jump directly to results on Google, Wikipedia, YouTube, or Amazon.
+---
 
-### 🚀 Features
-- **Context Menu**: "Search on..." right-click option.
-- **Keyboard Shortcut**: `Ctrl+Shift+S` (or `Cmd+Shift+S`).
-- **Multiple Engines**: Configurable search providers.
-- **Popup Search**: Type directly in the popup for quick results.
+## 📂 Folder Structure
 
-### 🛠️ Tech Stack
-- **HTML5**: Popup.
-- **JavaScript**: Tab creation logic.
-- **Chrome Extension (Manifest V3)**: Context Menus.
-
-### 📂 Folder Structure
 ```
 quick-search/
-├── icons/             # Icons
-├── content.js         # Selection handler
-├── background.js      # Menu handler
-├── popup.html         # Search bar
-└── manifest.json      # Config
+│
+├── icons/
+│   ├── icon16.png      ← Your icons here
+│   ├── icon48.png
+│   └── icon128.png
+│
+├── manifest.json       ← Extension config (MV3)
+├── background.js       ← Service Worker: context menu + history
+├── content.js          ← Floating popup injected into pages
+├── content.css         ← Styles for floating popup (injected via manifest)
+├── popup.html          ← Extension popup UI
+├── popup.js            ← Popup logic (tabs, history, custom engines)
+├── style.css           ← Popup styles (premium dark theme)
+└── README.md
 ```
 
-### ⚙️ Installation (Developer Mode)
-1.  Clone repo.
-2.  Go to `chrome://extensions`.
-3.  Enable **Developer mode**.
-4.  Load unpacked -> `quick-search`.
+---
 
-### 🧠 How It Works
-1.  **Selection**: User highlights text.
-2.  **Event**: On click, `background.js` constructs the search URL (e.g., `google.com/search?q=text`).
-3.  **Action**: Opens a new tab with the result.
+## ✨ Features
 
-### 🔐 Permissions Explained
-- **`contextMenus`**: To add the search option to the right-click menu.
-- **`storage`**: To save your preferred search engines.
+- **Auto popup** — select any text (2–200 chars) → popup appears below selection
+- **Context menu** — right-click selected text → Quick Search → choose engine
+- **Keyboard shortcut** — `Ctrl+Shift+S` / `Cmd+Shift+S`
+- **10 built-in engines** — Google, YouTube, Wikipedia, Amazon, GitHub, StackOverflow, Twitter, Reddit, Translate, Images
+- **Search history** — last 20 searches with re-search button
+- **Custom engines** — add any site with `%s` URL placeholder
+- **100% CSP compliant** — no innerHTML, no eval, no inline scripts/styles, no external resources
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Search Menu](https://via.placeholder.com/600x400?text=Search+Menu)
+---
 
-### 🔒 Privacy Policy
-- **No Logs**: We do not log your search queries.
+## ⚙️ Installation
 
-### 📄 License
-This project is licensed under the **MIT License**.
+1. Download / unzip the folder
+2. Open `chrome://extensions`
+3. Enable **Developer Mode** (top right)
+4. Click **Load unpacked** → select `quick-search/` folder
+5. Pin from Extensions menu
+
+---
+
+## 🔐 Permissions
+
+| Permission | Why |
+|---|---|
+| `contextMenus` | Right-click menu |
+| `storage` | Save history & custom engines |
+| `tabs` | Open search results in new tab |
+| `activeTab` | Send message to current page |
+
+---
+
+## 📄 License
+
+MIT License

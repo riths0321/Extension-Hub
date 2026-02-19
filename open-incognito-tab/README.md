@@ -1,155 +1,151 @@
-🕶️ Open Incognito Tab (Chrome Extension)
+# 🕶️ Open Incognito Tab
 
-Open Incognito Tab is a lightweight Chrome extension that lets you instantly open the current tab in Incognito mode — with extra privacy controls like clearing history, fullscreen mode, and auto-closing the original tab.
+<div align="center">
+  <img src="icons/icon128.png" alt="Open Incognito Tab Logo" width="128" height="128">
+  <h3>Lightweight · Fast · Privacy-Focused</h3>
+  <p>Open current tab in Incognito mode instantly with smart privacy controls</p>
+</div>
 
-Fast, simple, and privacy-focused.
+---
 
-🧩 Description
+## 📋 Description
 
-This extension allows you to:
+Open Incognito Tab is a sleek Chrome extension that lets you instantly open the current tab in Incognito mode — with extra privacy controls like clearing history, fullscreen mode, and auto-closing the original tab.
 
-Open the current active tab in an Incognito window
+### ✨ What you can do:
+- 🔓 Open current tab in Incognito window with one click
+- 🧹 Automatically remove URL from browsing history
+- 🖥️ Launch Incognito in fullscreen mode
+- ❌ Close original tab automatically after opening
+- 🎯 Trigger via popup, right-click menu, or keyboard shortcut
 
-Optionally remove the URL from browsing history
+---
 
-Open Incognito in fullscreen
+## 🚀 Features
 
-Close the original normal tab automatically
+| Feature | Description |
+|---------|-------------|
+| 🕶️ **One-Click Incognito** | Open current tab instantly in Incognito mode |
+| 🧹 **Clear History** | Automatically delete URL from Chrome history |
+| 🖥️ **Fullscreen Mode** | Open Incognito window in fullscreen |
+| ❌ **Close Original Tab** | Close normal tab after opening Incognito |
+| 🖱️ **Right-Click Support** | Context menu: "Open this tab in incognito" |
+| ⌨️ **Keyboard Shortcut** | `Alt + I` (Win/Linux) · `Option + I` (Mac) |
+| ⚙️ **Settings Page** | Simple controls to customize behavior |
+| 🎨 **Light/Dark Theme** | Clean, modern interface that adapts to your system |
 
-You can trigger it via:
+---
 
-Extension popup button
+## 🛠️ Tech Stack
 
-Right-click context menu
+- **HTML5** – Popup & options UI
+- **CSS3** – Clean minimal styling with light/dark theme
+- **JavaScript (Vanilla)** – Core logic
+- **Chrome Extension API** – Manifest V3
+- **Chrome Storage** – Settings persistence
 
-Keyboard shortcut
+---
 
-🚀 Features
-
-🕶️ One-Click Incognito
-
-Open the current tab instantly in Incognito mode
-
-🧹 Clear History Option
-
-Automatically delete the URL from Chrome history
-
-🖥️ Fullscreen Incognito
-
-Open Incognito window in fullscreen mode
-
-❌ Close Original Tab
-
-Close the normal tab after opening Incognito
-
-🖱️ Right-Click Support
-
-Context menu: Open this tab in incognito
-
-⌨️ Keyboard Shortcut
-
-Alt + I (Windows/Linux)
-
-Option + I (Mac)
-
-⚙️ Settings Page
-
-Simple options page to control behavior
-
-🛠️ Tech Stack
-
-HTML5 – Popup & options UI
-
-CSS3 – Clean minimal styling
-
-JavaScript (Vanilla) – Logic
-
-Chrome Extension API
-
-Manifest V3
-
-📂 Folder Structure
+## 📁 Folder Structure
 open-incognito-tab/
-├── manifest.json        # Extension configuration
-├── background.js        # Service worker logic
-├── popup.html           # Popup UI
-├── popup.js             # Popup actions
-├── popup.css            # Popup styles
-├── options.html         # Settings page
-└── icons/
-    ├── icon16.png
-    ├── icon48.png
-    └── icon128.png
+├── 📄 manifest.json # Extension configuration
+├── 📄 background.js # Service worker logic
+├── 📄 popup.html # Popup interface
+├── 📄 popup.js # Popup functionality
+├── 📄 popup.css # Popup styles
+├── 📄 options.html # Settings page
+└── 📁 icons/
+├── icon16.png
+├── icon48.png
+└── icon128.png
 
-⚙️ Installation (Developer Mode)
+text
 
-Clone or download this repository
+---
 
-Open Chrome and go to chrome://extensions
+## ⚙️ Installation (Developer Mode)
 
-Enable Developer mode (top-right)
+1. **Clone** or download this repository
+   ```bash
+   git clone https://github.com/yourusername/open-incognito-tab.git
+Open Chrome and navigate to chrome://extensions
+
+Enable Developer mode (toggle in top-right corner)
 
 Click Load unpacked
 
 Select the project folder
 
-The extension icon will appear in the toolbar 🕶️
+The extension icon 🕶️ will appear in your toolbar
 
 🧠 How It Works
 
+
+
+
+
+
+
+
+
+
+
 User triggers the extension (popup, shortcut, or right-click)
 
-Extension reads user settings from chrome.storage
+Reads settings from chrome.storage.local
 
-Opens a new Incognito window with the current tab URL
+Opens new Incognito window with current tab URL
 
-Optional actions:
+Applies optional actions based on settings:
 
 Remove URL from history
 
+Launch in fullscreen mode
+
 Close original tab
 
-Launch in fullscreen
-
-All logic runs locally using Chrome APIs.
+All logic runs locally using Chrome APIs — no data leaves your browser
 
 🔐 Permissions Explained
 Permission	Reason
-tabs	Get current active tab
+tabs	Get current active tab URL
 history	Remove URL from history (optional)
-contextMenus	Right-click menu support
-storage	Save user settings
-
-No page content access. No tracking.
+contextMenus	Add right-click menu support
+storage	Save user preferences locally
+No page content access. No tracking. No data collection.
 
 🔒 Privacy Policy
-
 ✅ No data collection
-
 ✅ No analytics
-
 ✅ No network requests
-
 ✅ No external servers
-
 ✅ Everything runs locally
 
 Your browsing activity never leaves your browser.
 
-⚠️ Notes
+⚠️ Important Notes
+🚫 Incognito windows still follow Chrome's Incognito limitations
 
-Incognito windows still follow Chrome’s Incognito limitations
+🧹 History removal only affects the opened URL, not entire browsing history
 
-History removal only affects the opened URL
+🔒 Does not bypass Chrome's built-in privacy features or website tracking
 
-Does not bypass Chrome or website tracking mechanisms
+📱 Internal pages (chrome://, edge://, about:) cannot be opened in Incognito
 
 📄 License
+MIT License — Free to use, modify, and distribute.
 
-MIT License
-Free to use, modify, and distribute.
- 
+text
+Copyright (c) 2024 Open Incognito Tab
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files...
+🤝 Contributing
+Contributions, issues, and feature requests are welcome!
+Feel free to check the issues page.
+
 👨‍💻 Author
-
 Open Incognito Tab
 Built for users who want speed + privacy without complexity.
+
+<div align="center"> <sub>Made with ❤️ for a more private web</sub> </div> ```
