@@ -1,191 +1,119 @@
-# README Generator Chrome Extension
+# 📘 README.md Generator — Chrome Extension
 
-privacy
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
+![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)
+![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
+![Privacy](https://img.shields.io/badge/tracking-none-success.svg)
 
-📘 README.md Generator – Offline & Private
+> A fast, modern, privacy-focused Chrome Extension that generates professional `README.md` files instantly from project descriptions. Runs **100% locally** — no servers, no data collection, no API keys.
 
-A fast, modern, and privacy-focused Chrome Extension that generates high-quality README.md files instantly from project descriptions.
-Everything runs 100% locally inside your browser — no servers, no data collection.
+---
 
-✨ Features
-📝 Instant README Generation
+## ✨ Features
 
-Paste your project details → get a clean, formatted README preview in real-time.
-The UI includes a live preview panel:
+- **⚡ Instant README Generation** — Paste your description, hit Generate, get a fully formatted README in seconds
+- **🧩 3 Templates** — Standard, Minimal, and Full Pro (with ToC, badges, Contributing section, code blocks)
+- **🏷️ License Picker** — MIT, Apache 2.0, GPL 3.0, ISC, or None — reflected in every generated README
+- **📋 Smart Extraction** — Automatically pulls title and feature bullet points from your description
+- **📥 Copy & Download** — Copy to clipboard or download as `README.md` in one click
+- **💾 Persistent Prefs** — Template and license choices saved via `chrome.storage.sync`
+- **🔒 Zero Tracking** — Everything runs in-browser; nothing is ever transmitted
 
+---
 
-popup
+## 📂 Project Structure
 
-🎨 Beautiful Dual-Theme UI (Dark & Light)
-
-Switch between Dark and Light themes with a single click.
-Theme variables come from your CSS system:
-
-
-popup
-
-🧩 Template Support
-
-Choose between:
-
-Standard Template
-
-Minimal Template
-
-Available from the dropdown menu:
-
-
-popup
-
-💾 Local Settings Storage
-
-The extension saves:
-
-Selected theme
-
-Selected template
-
-Onboarding status
-
-All via chrome.storage.sync:
-
-
-options
-
-📥 Export & Copy
-
-Copy README to clipboard
-
-Download README as .md file
-Buttons are enabled dynamically based on input:
-
-
-popup
-
-🔒 100% Local. 0% Tracking.
-
-Your privacy policy clearly states no data collection:
-
-
-privacy
-
-📂 Project Structure
+```
 README-Generator/
-│── manifest.json
-│── popup.html
-│── popup.css
-│── popup.js
-│── options.html
-│── options.css
-│── options.js
-│── privacy.html
-│── icons/
-│     ├── icon16.png
-│     ├── icon48.png
-│     ├── icon128.png
+├── manifest.json       # MV3 manifest with CSP
+├── popup.html          # Extension popup UI
+├── popup.css           # Dark navy theme, Sora + JetBrains Mono fonts
+├── popup.js            # Core logic (CSP-compliant, no eval/inline handlers)
+├── privacy.html        # Privacy policy page
+├── options.html        # Options page (theme/template/reset)
+├── options.css
+├── options.js
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
 
-🧠 How It Works
-1️⃣ Enter Project Description
+---
 
-Users paste project text into a <textarea> input.
+## 🧠 How It Works
 
-2️⃣ Choose Template
+**1. Enter Project Description**
+Paste your project details into the textarea (minimum 30 characters). A live counter shows your progress.
 
-From the dropdown (standard or minimal).
+**2. Choose Template & License**
+Pick from Standard, Minimal, or Full Pro templates. Select your preferred license from the dropdown.
 
-3️⃣ Generate README
+**3. Generate**
+Click **GENERATE README →** to instantly produce a formatted Markdown README in the preview panel.
 
-The extension formats a Markdown README and displays it in the preview panel.
+**4. Export**
+- **Copy** — copies the Markdown text to your clipboard
+- **Download** — saves `README.md` directly to your machine
 
-4️⃣ Export
+---
 
-Users can:
+## 📜 Templates
 
-Copy the README text
+| Template | Description |
+|----------|-------------|
+| **Standard** | Title, description, features, installation, usage, license |
+| **Minimal** | Title, description, features, license — clean and lean |
+| **Full Pro** | All of Standard + ToC, badges, overview callout, contributing guide, code blocks |
 
-Download as .md
+---
 
+## 🚀 Installation (Developer Mode)
 
-popup
+1. Open Chrome and go to `chrome://extensions/`
+2. Enable **Developer Mode** (top-right toggle)
+3. Click **Load unpacked**
+4. Select the project folder
 
-⚙️ Options Page
+---
 
-The extension includes a dedicated Options Page where users can:
+## 🔐 Content Security Policy
 
-Change theme
+This extension is fully MV3 CSP-compliant:
 
-Change default template
-
-Reset onboarding
-
-Built using options.html:
-
-
-options
-
-
-Styled with options.css:
-
-
-options
-
-
-Logic implemented in options.js:
-
-
-options
-
-📜 Manifest (MV3)
-
-Your extension uses Manifest V3 with popup and options page support:
-
-
-manifest
-
-{
-  "manifest_version": 3,
-  "name": "README.md Generator – Offline & Private",
-  "description": "Create professional README.md files from project descriptions. Runs entirely in your browser.",
-  "version": "1.0.0",
-  "permissions": ["storage"],
-  "action": {
-    "default_popup": "popup.html"
-  },
-  "options_page": "options.html"
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self'; object-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
 }
+```
 
-🚀 Installation (Developer Mode)
+- No `eval()` or `new Function()`
+- No inline event handlers (`onclick`, etc.)
+- No external scripts
+- Google Fonts whitelisted for UI typography only
 
-Open Chrome → chrome://extensions/
+---
 
-Enable Developer Mode
+## 🛠 Technologies
 
-Click Load unpacked
+- **HTML5** — Semantic, accessible markup
+- **CSS3** — Custom properties, transitions, scrollbar styling
+- **JavaScript (ES6+)** — DOM API, Blob, clipboard, chrome.storage
+- **Chrome Storage API** — Sync preferences across devices
+- **Manifest V3** — Modern extension architecture
 
-Select the project folder
+---
 
-🛠 Technologies Used
+## 🌟 Future Enhancements
 
-HTML5
+- [ ] AI-powered description improvement suggestions
+- [ ] More README templates (library, CLI tool, API, mobile app)
+- [ ] GitHub badge auto-generator
+- [ ] Local template library (save your own templates)
+- [ ] Dark/Light theme toggle
 
-CSS3 (Theme Variables)
+---
 
-JavaScript (DOM + Markdown Generator)
+## 📄 License
 
-Chrome Storage API
-
-Manifest V3
-
-🌟 Future Enhancements
-
-More README templates
-
-AI-powered improvement suggestions
-
-GitHub-optimized badges and sections
-
-Local templates library
-
-📄 License
-
-MIT — open-source and free to modify.
+MIT — open-source and free to modify. See `LICENSE` for details.
