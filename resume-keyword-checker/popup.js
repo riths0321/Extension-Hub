@@ -131,19 +131,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('Response from content script:', response);
                     
                     if (chrome.runtime.lastError) {
-                        console.error('Runtime error:', chrome.runtime.lastError);
+                        console.error('Runtime error details:', chrome.runtime.lastError.message);
                         
                         // If content script isn't loaded, try to inject it
-                        if (chrome.runtime.lastError.message.includes('receiving end')) {
+                        if (chrome.runtime.lastError.message && 
+                            chrome.runtime.lastError.message.includes('Receiving end does not exist')) {
                             console.log('Injecting content script...');
                             injectContentScript(tabs[0].id);
                         } else {
-                            showError('Error: ' + chrome.runtime.lastError.message);
+                            showError('Error: ' + (chrome.runtime.lastError.message || 'Unknown error'));
                             resetScrapeButton();
                         }
                         return;
                     }
-                    
+                            
                     if (response) {
                         if (response.jobDescription && response.jobDescription.trim() !== '') {
                             jobDescription.value = response.jobDescription;
@@ -316,6 +317,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return [...new Set(words)].sort();
     }
 
+     // Replace the entire displayResults function in popup.js (around line 274)
+
     function displayResults(score, found, missing, totalKeywords) {
         scoreElement.textContent = score;
         
@@ -363,20 +366,29 @@ document.addEventListener('DOMContentLoaded', function() {
             missingKeywordsList.appendChild(li);
         }
         
-        // Display summary
-        summaryElement.innerHTML = `
-            <p>• Total keywords in JD: ${totalKeywords}</p>
-            <p>• Keywords found: ${found.length}</p>
-            <p>• Keywords missing: ${missing.length}</p>
-            <p>• Match rate: ${score}%</p>
-            ${score >= 80 ? 
-                '<p>🎉 Great! Your resume has good ATS compatibility.</p>' : 
-                score >= 60 ? 
-                '<p>⚠️ Your resume needs some improvements for better ATS compatibility.</p>' :
-                '<p>🚨 Your resume needs significant improvements to pass ATS systems.</p>'
-            }
-        `;
+        // Clear summary and add lines
+        summaryElement.innerHTML = '';
+        
+        function addLine(text) {
+            const p = document.createElement("p");
+            p.textContent = text;
+            summaryElement.appendChild(p);
+        }
+        
+        addLine(`• Total keywords in JD: ${totalKeywords}`);
+        addLine(`• Keywords found: ${found.length}`);
+        addLine(`• Keywords missing: ${missing.length}`);
+        addLine(`• Match rate: ${score}%`);
+        
+        let msg = "";
+        if (score >= 80) msg = "🎉 Great! Your resume has good ATS compatibility.";
+        else if (score >= 60) msg = "⚠️ Your resume needs some improvements for better ATS compatibility.";
+        else msg = "🚨 Your resume needs significant improvements to pass ATS systems.";
+        
+        addLine(msg);
     }
+
+    // Replace the generateSuggestions function in popup.js
 
     function generateSuggestions(found, missing) {
         let suggestions = '<p><strong>Recommendations:</strong></p><ul>';
@@ -398,13 +410,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         suggestionsElement.innerHTML = suggestions;
     }
-
     function openOptionsPage() {
-    chrome.tabs.create({ 
-        url: chrome.runtime.getURL('options.html') 
-    }, function(tab) {
-        console.log('Options page opened');
-    });
+        chrome.tabs.create({ 
+            url: chrome.runtime.getURL('options.html') 
+        }, function(tab) {
+            console.log('Options page opened');
+        });
+    }
 
-}
 });

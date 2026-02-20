@@ -1,6 +1,10 @@
-// Content script for scraping job descriptions and resumes from web pages
-
-console.log('Resume Keyword Checker content script loaded');
+// Add this at the beginning of content.js
+(function() {
+    console.log('Resume Keyword Checker content script loaded on:', window.location.href);
+    
+    // Notify that content script is ready
+    chrome.runtime.sendMessage({action: "contentScriptReady", url: window.location.href});
+})();
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
