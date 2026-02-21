@@ -1,41 +1,40 @@
-// Background service worker for Simple Highlighter
+// background.js — Super Simple Highlighter service worker
 
-// Set up context menu
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Simple Highlighter installed');
-  
-  // Create context menu
+
+  // Context menu (requires "contextMenus" permission in manifest)
   chrome.contextMenus.create({
-    id: 'toggle-highlight',
-    title: 'Toggle Highlight Mode',
+    id:       'toggle-highlight',
+    title:    'Toggle Highlight Mode',
     contexts: ['all']
   });
-  
-  // Set default settings
+
+  // Default settings
   chrome.storage.sync.set({
     highlightColor: 'yellow',
-    autoRestore: true,
-    showTooltip: true
+    autoRestore:    true,
+    showTooltip:    true
   });
 });
 
-// Handle context menu clicks
+// Context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'toggle-highlight') {
     chrome.tabs.sendMessage(tab.id, {
-      action: 'setHighlightMode',
+      action:  'setHighlightMode',
       enabled: true
     });
   }
 });
 
-// Handle keyboard shortcut
+// Keyboard shortcut (declared in manifest commands)
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'toggle-highlight') {
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {
-          action: 'setHighlightMode',
+          action:  'setHighlightMode',
           enabled: true
         });
       }
@@ -43,19 +42,17 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
-// Handle tab updates to restore highlights
+// Restore highlights on page load (if autoRestore is enabled)
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
-    // Check if auto-restore is enabled
     chrome.storage.sync.get(['autoRestore'], (data) => {
       if (data.autoRestore !== false) {
-        // Give page time to load completely
+        // Small delay so the page's own scripts settle first
         setTimeout(() => {
-          chrome.tabs.sendMessage(tabId, {
-            action: 'refreshHighlights'
-          }).catch(() => {
-            // Content script might not be ready yet
-          });
+          chrome.tabs.sendMessage(tabId, { action: 'refreshHighlights' })
+            .catch(() => {
+              // Content script not yet injected — this is normal on first load
+            });
         }, 1000);
       }
     });
