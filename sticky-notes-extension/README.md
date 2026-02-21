@@ -11,6 +11,7 @@ A powerful Chrome extension that lets you place real, interactive sticky notes d
 - **Rich Text Formatting**: Bold, italic, underline, and font size controls
 - **Multiple Colors**: 8 vibrant note colors (yellow, blue, green, pink, orange, purple, teal, gray)
 - **Interactive Controls**: Pin, hide, minimize, lock, and resize notes
+- **CSP-Compatible**: Works on sites with strict Content Security Policies (GitHub, Google, etc.)
 
 ### 🎨 Design Features
 - **Modern UI**: Clean, gradient-based design with subtle animations
@@ -18,6 +19,7 @@ A powerful Chrome extension that lets you place real, interactive sticky notes d
 - **Visual Feedback**: Interactive hover states and button feedback
 - **Font Awesome Icons**: Beautiful, consistent iconography
 - **Custom Scrollbars**: Styled scrollbars that match the theme
+- **Custom Confirm Dialog**: Native-looking in-DOM modal — no blocked `window.confirm()` calls
 
 ### 🔧 Technical Features
 - **Drag & Drop**: Move notes anywhere on the page
@@ -71,7 +73,7 @@ sticky-notes-extension/
 - **Hide**: Click eye icon to hide/show note
 - **Lock**: Click lock icon to prevent editing
 - **Change Color**: Click palette icon to change note color
-- **Close**: Click X icon to remove note
+- **Close**: Click X icon to remove note (confirmed via in-page dialog)
 
 ### Popup Controls:
 - **New Note**: Creates a new sticky note at default position
@@ -87,7 +89,7 @@ sticky-notes-extension/
 - **Manifest V3**: Uses service workers instead of background pages
 - **Direct DOM Manipulation**: Notes are real HTML elements, not iframes
 - **Event-Driven**: Mouse events for dragging and resizing
-- **Chrome Storage API**: Persistent storage using chrome.storage.local
+- **Chrome Storage API**: Persistent storage using `chrome.storage.local`
 
 ### Storage Schema:
 ```javascript
@@ -125,17 +127,54 @@ sticky-notes-extension/
 - **Event Delegation**: Uses event delegation for better performance
 - **Debounced Saving**: Prevents excessive storage writes
 
+## 🔒 Content Security Policy (CSP) Compatibility
+
+Many modern websites (GitHub, Google, Notion, etc.) enforce strict Content Security Policies that block common browser APIs and inline styles. This extension is fully CSP-hardened:
+
+### What was fixed and why
+
+| Issue | Root Cause | Fix Applied |
+|---|---|---|
+| `window.confirm()` blocked | Many CSPs disallow synchronous dialog APIs | Replaced with a fully in-DOM async modal (`showConfirmDialog()`) with keyboard support (Escape / Enter) |
+| Inline `background` styles blocked | Strict `style-src` policies disallow JS-written inline styles | Note colours are now driven by `data-color` attribute selectors in CSS — no inline background values written by JS |
+| `cursor` style written by JS during drag | Minor `style-src` exposure | Replaced with a `.dragging` CSS class toggled via `classList` |
+| `backdrop-filter` on note elements | Blocked by some strict `style-src` CSPs; not critical to UX | Removed entirely |
+| `contentEditable` set as JS property | Could be affected by strict DOM policies on some hosts | Changed to `element.setAttribute('contenteditable', ...)` |
+
+### Custom Confirm Dialog
+
+Instead of `window.confirm()` (which is silently suppressed on CSP-strict pages), the extension renders its own lightweight modal:
+
+- Appended directly to `document.body` — no iframes, no `eval`, no external resources
+- Keyboard accessible: **Enter** to confirm, **Escape** to cancel, click-outside to dismiss
+- Animated with pure CSS (`@keyframes`) — no JS animation libraries
+- Automatically cleaned up from the DOM after use
+
+### manifest.json CSP recommendation
+
+To ensure the extension itself does not trigger CSP violations, keep your `content_security_policy` in `manifest.json` as restrictive as possible:
+
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self'; object-src 'self'"
+}
+```
+
+The content script injects no inline `<script>` tags, uses no `eval()` or `new Function()`, and loads no external resources — making it compatible with the strictest host-page CSPs.
+
 ## 🎨 Customization
 
 ### Note Colors:
-- Yellow (default): #FFF9C4
-- Blue: #E3F2FD
-- Green: #E8F5E9
-- Pink: #FCE4EC
-- Orange: #FFF3E0
-- Purple: #F3E5F5
-- Teal: #E0F2F1
-- Gray: #F5F5F5
+- Yellow (default): `#FFF9C4`
+- Blue: `#E3F2FD`
+- Green: `#E8F5E9`
+- Pink: `#FCE4EC`
+- Orange: `#FFF3E0`
+- Purple: `#F3E5F5`
+- Teal: `#E0F2F1`
+- Gray: `#F5F5F5`
+
+Colors are applied via `[data-color]` attribute selectors in `content.css` — changing a note's color never writes an inline style.
 
 ### Font Sizes:
 - Small: 14px
@@ -152,20 +191,21 @@ sticky-notes-extension/
 - Brave 1.3+ (Chromium-based)
 
 ### Dependencies:
-- **Font Awesome 6.4.0**: For icons
-- **Chrome APIs**: storage, tabs, contextMenus, activeTab
+- **Font Awesome 6.4.0**: For icons (loaded via extension resource, not external CDN in content)
+- **Chrome APIs**: `storage`, `tabs`, `contextMenus`, `activeTab`
 
 ### Code Architecture:
 - **StickyNoteManager Class**: Main controller for note management
 - **Event-Driven Design**: Uses Chrome message passing
 - **Modular CSS**: Separate styles for content and popup
-- **Responsive Design**: Works on various screen sizes
+- **Attribute-Driven Theming**: Visual state (color, drag, lock, pin) controlled by CSS classes and `data-*` attributes rather than JS inline styles
 
 ### Security Considerations:
-- **Content Security Policy**: No external scripts in content
-- **Sandboxed Execution**: Content script runs in isolated context
-- **No Data Collection**: All data stored locally
-- **Permission Minimalism**: Only requests necessary permissions
+- **Content Security Policy**: No `eval()`, no `new Function()`, no inline scripts, no external resource fetches from content scripts. All dynamic visual state is driven by CSS classes and `data-*` attributes.
+- **No `window.confirm()`**: Replaced with a sandboxed in-DOM modal to avoid CSP dialog restrictions.
+- **Sandboxed Execution**: Content script runs in Chrome's isolated world — it cannot access page JS variables and page scripts cannot access extension APIs.
+- **No Data Collection**: All data stored locally via `chrome.storage.local`.
+- **Permission Minimalism**: Only requests necessary permissions.
 
 ## 🔍 Future Enhancements
 
@@ -186,7 +226,7 @@ sticky-notes-extension/
 - [ ] Better conflict resolution for overlapping notes
 - [ ] Undo/redo functionality
 - [ ] Localization support
-- [ ] Accessibility improvements
+- [ ] Accessibility improvements (ARIA roles on custom dialog)
 - [ ] Unit tests
 - [ ] CI/CD pipeline
 
@@ -195,7 +235,7 @@ sticky-notes-extension/
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make your changes
-4. Test thoroughly
+4. Test thoroughly on CSP-strict sites (GitHub, Google Docs, Notion)
 5. Submit a pull request
 
 ### Development Setup:
@@ -203,34 +243,54 @@ sticky-notes-extension/
 # Clone the repository
 git clone https://github.com/yourusername/sticky-notes-extension.git
 
-# Install dependencies (if any)
-# Currently no build process required
+# No build process required — load unpacked directly
 ```
 
 ### Testing:
-- Test on multiple websites
+- Test on multiple websites, including CSP-strict ones (GitHub, Google, Notion)
 - Verify note persistence across page reloads
-- Check performance with many notes
+- Check browser console for any CSP violation errors (`Refused to...`)
 - Test on different screen sizes
+- Verify the custom confirm dialog appears correctly on close
 
 ## 🐛 Troubleshooting
 
 ### Common Issues:
-1. **Notes not appearing**: Check if content script is running (check console)
-2. **Notes not saving**: Verify storage permissions in manifest
-3. **Context menu missing**: Extension may need reloading
-4. **Performance issues**: Too many notes on one page
+
+**Notes not appearing**
+Check the browser console for CSP errors (`Refused to apply inline style...`). If present, ensure you're using the latest version of `content.js` and `content.css` which replace all inline style writes with CSS class toggling.
+
+**"Close note" dialog not showing**
+This means `window.confirm()` was blocked by the page's CSP. Update to the latest version — the custom in-DOM dialog requires no browser dialog permissions.
+
+**Notes not saving**
+Verify `storage` permission is present in `manifest.json`.
+
+**Context menu missing**
+The extension may need reloading at `chrome://extensions/`.
+
+**Performance issues**
+Too many notes on one page. Consider using the Hide All feature to reduce DOM overhead.
+
+### Checking for CSP Violations:
+Open DevTools → Console and look for messages starting with `Refused to`. Common ones and their fixes:
+
+```
+Refused to apply inline style...       → Fixed: colours now use data-color CSS selectors
+Refused to execute inline script...    → Fixed: no inline scripts injected
+Refused to load the script...          → Fixed: no external scripts fetched by content
+```
 
 ### Debugging:
 ```javascript
-// Check if extension is running
-chrome.runtime.getBackgroundPage(console.log)
-
 // Check storage contents
 chrome.storage.local.get(null, console.log)
 
-// Reload content script
-chrome.tabs.reload()
+// Manually trigger note load
+window.stickyNoteManager.loadExistingNotes()
+
+// List active notes
+window.stickyNoteManager.notes
 ```
 
 ## 📄 License
@@ -248,6 +308,7 @@ MIT License - See LICENSE file for details
 - [Chrome Extensions Documentation](https://developer.chrome.com/docs/extensions/)
 - [Manifest V3 Migration Guide](https://developer.chrome.com/docs/extensions/mv3/intro/)
 - [Chrome Storage API](https://developer.chrome.com/docs/extensions/reference/storage/)
+- [Content Security Policy Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
 
 ---
 

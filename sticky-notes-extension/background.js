@@ -61,7 +61,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         handleAddNote(info, tab);
     }
 });
-
 function handleAddNote(info, tab) {
     if (!tab || !tab.id) {
         console.error('No tab found');
