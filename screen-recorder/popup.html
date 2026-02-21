@@ -1,36 +1,48 @@
 <!DOCTYPE html>
+
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Screen Recorder</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <main class="container">
-      <header class="header">
-        <h3 class="title">🎥 Screen Recorder</h3>
-        <p class="subtitle">Record your screen, tab, or window</p>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <title>Screen Recorder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
 
-      <section class="card">
-        <div class="status-row">
-          <span class="dot" id="recordDot"></span>
-          <span id="status">Idle</span>
-          <span id="timer">00:00</span>
-        </div>
+<body>
+  <main class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="title">Screen Recorder</h1>
+      <p class="subtitle">Fast • Private • Offline</p>
+    </header>
 
-        <div class="controls">
-          <button id="startBtn" class="primary">Start Recording</button>
-          <button id="stopBtn" class="danger" disabled>Stop Recording</button>
-        </div>
-      </section>
+    <!-- Main Card -->
+    <section class="card">
 
-      <footer class="footer">
-        <small>Private • Offline • No tracking</small>
-      </footer>
-    </main>
+      <!-- Recording Status -->
+      <div class="status">
+        <span class="record-indicator" id="recordDot"></span>
+        <span id="status" class="status-text">Ready to record</span>
+      </div>
+
+      <!-- Big Timer -->
+      <div id="timer" class="timer">00:00</div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button id="startBtn" class="primary">Start Recording</button>
+        <button id="stopBtn" class="danger" disabled>Stop</button>
+      </div>
+
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <small>Your recording never leaves your computer</small>
+    </footer>
 
     <script src="popup.js"></script>
-  </body>
+
+  </main>
+</body>
 </html>

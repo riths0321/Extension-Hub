@@ -17,6 +17,7 @@ function formatTime(sec) {
   return `${m}:${s}`;
 }
 
+
 // Start recording
 startBtn.addEventListener("click", async () => {
   try {
