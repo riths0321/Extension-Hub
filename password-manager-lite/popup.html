@@ -1,143 +1,148 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=400, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=400, initial-scale=1" />
   <title>Password Manager</title>
-  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <div class="container">
-    <!-- Lock Screen -->
+
+    <!-- ══════════════════════════════════
+         LOCK SCREEN
+    ══════════════════════════════════ -->
     <div id="lockScreen" class="screen">
-      <div class="lock-icon">🔒</div>
-      <h2>Password Manager</h2>
-      <p>Enter your master password</p>
-      
-      <div class="input-group">
-        <input type="password" id="masterPassword" placeholder="Master Password" autofocus>
-        <button id="unlockBtn">Unlock</button>
+      <div class="lock-hero">
+        <div class="lock-icon-wrap">
+          <img src="icons/icon48.png" alt="Lock" class="lock-icon-img" />
+        </div>
+        <h1 class="lock-title">Password Manager</h1>
+        <p class="lock-subtitle">Enter your master password to unlock</p>
       </div>
-      
-      <div class="setup-hint" id="setupHint">
-        First time? Set a master password
+
+      <div class="master-input-wrap">
+        <span class="input-icon">🔑</span>
+        <input type="password" id="masterPassword" placeholder="Master password" autocomplete="current-password" />
+        <button class="input-eye" id="toggleMasterPw" type="button" aria-label="Toggle visibility">👁️</button>
       </div>
-      
+
+      <div id="lockError" class="error-text">Incorrect password. Please try again.</div>
+
+      <button class="btn-unlock" id="unlockBtn" type="button">Unlock Vault</button>
+
+      <div class="setup-hint" id="setupHint">First time? Set a master password above (min 8 chars)</div>
+
       <div class="features">
         <div class="feature">
-          <span>🔒</span>
-          <span>Local Encryption</span>
+          <div class="feature-icon">🔒</div>
+          <span>AES-256 local encryption</span>
         </div>
         <div class="feature">
-          <span>📋</span>
-          <span>Copy to Clipboard</span>
+          <div class="feature-icon">📋</div>
+          <span>One-click clipboard copy</span>
         </div>
         <div class="feature">
-          <span>💾</span>
-          <span>Secure Storage</span>
+          <div class="feature-icon">🚫</div>
+          <span>Zero cloud — stays on device</span>
         </div>
       </div>
     </div>
 
-    <!-- Main Dashboard -->
+    <!-- ══════════════════════════════════
+         DASHBOARD
+    ══════════════════════════════════ -->
     <div id="dashboard" class="screen hidden">
+
       <!-- Header -->
       <div class="header">
         <div class="header-top">
-          <div class="title">
-            <span class="title-icon">🔒</span>
-            <span>Password Manager</span>
+          <div class="brand">
+            <div class="brand-icon">
+              <img src="icons/icon48.png" alt="PM" />
+            </div>
+            <span class="brand-name">Password Vault</span>
           </div>
-          <button id="lockBtn" title="Lock">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-            </svg>
-          </button>
+          <div class="header-actions">
+            <button class="icon-btn" id="lockBtn" title="Lock vault">🔒</button>
+          </div>
         </div>
 
-        <div class="stats">
-          <div class="stat-item">
-            <span class="stat-icon">📊</span>
-            <span id="passwordCount">0 passwords</span>
+        <div class="stats-bar">
+          <div class="stat-chip">
+            <div class="dot"></div>
+            <span id="passwordCount">0 saved</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-icon">🔍</span>
+          <div class="stat-chip" id="weakChip">
+            <div class="dot warn" id="weakDot"></div>
             <span id="weakCount">0 weak</span>
           </div>
         </div>
 
-        <div class="search-box">
-          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-          </svg>
-          <input type="text" id="search" placeholder="Search passwords...">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search" placeholder="Search by site, username…" autocomplete="off" />
         </div>
       </div>
 
-      <!-- Passwords List -->
+      <!-- Passwords list -->
       <div class="passwords-list" id="passwordsList">
         <div class="empty-state">
-          <div class="empty-icon">🔐</div>
+          <div class="empty-icon">🗝️</div>
           <div class="empty-text">No passwords saved yet</div>
-          <div class="empty-subtext">Click + to add your first password</div>
+          <div class="empty-subtext">Click "Add Password" to get started</div>
         </div>
       </div>
 
-      <!-- Actions -->
+      <!-- Bottom actions -->
       <div class="actions">
-        <button class="action-btn" id="addPassword">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-          </svg>
-          Add Password
+        <button class="btn-action primary" id="addPassword">
+          <span>➕</span> Add Password
         </button>
-        <button class="action-btn" id="importBtn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
-          </svg>
-          Import
+        <button class="btn-action" id="importBtn">
+          <span>📥</span> Import
         </button>
-        <button class="action-btn" id="exportBtn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-          </svg>
-          Export
+        <button class="btn-action" id="exportBtn">
+          <span>📤</span> Export
         </button>
       </div>
     </div>
 
-    <!-- Add/Edit Password Modal -->
+    <!-- ══════════════════════════════════
+         ADD / EDIT MODAL
+    ══════════════════════════════════ -->
     <div id="passwordModal" class="modal hidden">
       <div class="modal-content">
         <div class="modal-header">
-          <h3 id="modalTitle">Add Password</h3>
-          <button class="close-btn" id="closeModal">&times;</button>
+          <h3>
+            <div class="modal-header-icon">🔐</div>
+            <span id="modalTitle">Add Password</span>
+          </h3>
+          <button class="close-btn" id="closeModal" type="button">✕</button>
         </div>
-        
+
         <div class="modal-body">
           <div class="form-group">
-            <label>Website/App</label>
-            <input type="text" id="website" placeholder="https://example.com">
+            <label>Website / App</label>
+            <input type="text" id="website" placeholder="example.com" autocomplete="off" />
           </div>
-          
           <div class="form-group">
-            <label>Username/Email</label>
-            <input type="text" id="username" placeholder="user@example.com">
+            <label>Username / Email</label>
+            <input type="text" id="username" placeholder="you@example.com" autocomplete="off" />
           </div>
-          
           <div class="form-group">
             <label>Password</label>
             <div class="password-input">
-              <input type="password" id="password" placeholder="Enter your password">
-              <button class="show-password" id="showPassword">👁️</button>
+              <input type="password" id="password" placeholder="Enter password" autocomplete="new-password" />
+              <button class="show-password" id="showPassword" type="button">👁️</button>
             </div>
           </div>
-          
           <div class="form-group">
-            <label>Notes (Optional)</label>
-            <textarea id="notes" rows="2" placeholder="Additional info..."></textarea>
+            <label>
+              Notes <span class="optional-label">(optional)</span>
+            </label>
+            <textarea id="notes" rows="2" placeholder="Any extra notes…"></textarea>
           </div>
-          
           <div class="password-strength" id="passwordStrength">
             <div class="strength-bar">
               <div class="strength-fill" id="strengthFill"></div>
@@ -145,41 +150,118 @@
             <div class="strength-text" id="strengthText">Password strength</div>
           </div>
         </div>
-        
+
         <div class="modal-footer">
-          <button class="btn-secondary" id="cancelBtn">Cancel</button>
-          <button class="btn-primary" id="savePassword">Save Password</button>
+          <button class="btn-secondary" id="cancelBtn" type="button">Cancel</button>
+          <button class="btn-primary" id="savePassword" type="button">Save Password</button>
         </div>
       </div>
     </div>
 
-    <!-- Import Modal -->
+    <!-- ══════════════════════════════════
+         IMPORT MODAL
+    ══════════════════════════════════ -->
     <div id="importModal" class="modal hidden">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Import Passwords</h3>
-          <button class="close-btn" id="closeImport">&times;</button>
+          <h3>
+            <div class="modal-header-icon">📥</div>
+            Import Passwords
+          </h3>
+          <button class="close-btn" id="closeImport" type="button">✕</button>
         </div>
-        
+
         <div class="modal-body">
           <div class="form-group">
-            <label>Select JSON file to import</label>
-            <input type="file" id="importFile" accept=".json">
+            <label>Select JSON backup file</label>
+            <input type="file" id="importFile" accept=".json" />
           </div>
-          
           <div class="import-info">
-            <p><strong>Format:</strong> JSON file with passwords array</p>
-            <p><strong>Note:</strong> Will merge with existing passwords</p>
+            <p><strong>Format:</strong> JSON array exported from this extension</p>
+            <p><strong>Note:</strong> Merges with existing — no duplicates by ID</p>
           </div>
         </div>
-        
+
         <div class="modal-footer">
-          <button class="btn-secondary" id="cancelImport">Cancel</button>
-          <button class="btn-primary" id="confirmImport">Import</button>
+          <button class="btn-secondary" id="cancelImport" type="button">Cancel</button>
+          <button class="btn-primary" id="confirmImport" type="button">Import</button>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- ══════════════════════════════════
+         DELETE CONFIRM MODAL
+    ══════════════════════════════════ -->
+    <div id="deleteModal" class="modal hidden">
+      <div class="modal-content delete-confirm-modal">
+        <div class="modal-header">
+          <h3>
+            <div class="modal-header-icon">🗑️</div>
+            Delete Password
+          </h3>
+          <button class="close-btn" id="closeDelete" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="delete-message">Are you sure you want to delete the password for <strong id="deleteTarget">this entry</strong>? This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="cancelDelete" type="button">Cancel</button>
+          <button class="btn-danger" id="confirmDelete" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         DETAILS MODAL
+    ══════════════════════════════════ -->
+    <div id="detailsModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>
+            <div class="modal-header-icon" id="detailsFavicon">🔑</div>
+            <span id="detailsSite">Details</span>
+          </h3>
+          <button class="close-btn" id="closeDetails" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="details-field">
+            <div class="details-label">Website</div>
+            <div class="details-value" id="detailsWebsite">
+              <span id="detailsWebsiteVal">—</span>
+            </div>
+          </div>
+          <div class="details-field">
+            <div class="details-label">Username / Email</div>
+            <div class="details-value" id="detailsUsername">
+              <span id="detailsUsernameVal">—</span>
+              <button class="copy-inline-btn" id="copyDetailsUsername" title="Copy username">📋</button>
+            </div>
+          </div>
+          <div class="details-field">
+            <div class="details-label">Password</div>
+            <div class="details-value masked" id="detailsPassword">
+              <span id="detailsPasswordVal">••••••••</span>
+              <div class="details-actions">
+                <button class="copy-inline-btn" id="toggleDetailsPassword" title="Reveal">👁️</button>
+                <button class="copy-inline-btn" id="copyDetailsPassword" title="Copy password">📋</button>
+              </div>
+            </div>
+          </div>
+          <div class="details-field" id="detailsNotesWrap">
+            <div class="details-label">Notes</div>
+            <div class="details-value notes-font">
+              <span id="detailsNotesVal">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="editFromDetails" type="button">Edit</button>
+          <button class="btn-primary" id="closeDetailsBtn" type="button">Done</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.container -->
 
   <script src="popup.js"></script>
 </body>

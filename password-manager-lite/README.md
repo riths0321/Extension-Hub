@@ -1,130 +1,139 @@
 # 🔐 Password Manager Lite
 
-A secure, local password manager browser extension that stores your passwords encrypted on your device. No cloud storage, no subscriptions - just simple, secure password management.
-
-![Password Manager Preview](https://via.placeholder.com/400x650/0f172a/ffffff?text=Password+Manager)
+A secure, local password manager browser extension that stores your passwords encrypted on your device. No cloud storage, no subscriptions — just simple, hardened password management.
 
 ## ✨ Features
 
-### 🔒 **Security First**
-- **AES-256 Encryption** - Military-grade encryption for all passwords
-- **Master Password Protection** - Single password to unlock everything
-- **Local Storage Only** - Your data never leaves your computer
-- **Auto-lock Feature** - Automatically locks when closed
+### 🔒 Security First
+- **AES-256-GCM Encryption** — Military-grade authenticated encryption for all vault data
+- **PBKDF2 Master Password Hashing** — 100,000 iterations with random salt (not SHA-256)
+- **Constant-Time Verification** — Prevents timing-based side-channel attacks
+- **Local Storage Only** — Your data never leaves your device
+- **Memory Auto-Clear** — Plaintext passwords cleared from memory on lock or popup close
+- **No Window Exposure** — Manager not attached to `window` object; inaccessible to other scripts
 
-### 💾 **Password Management**
-- **Save Passwords** - Store website, username, password, and notes
-- **One-Click Copy** - Copy username or password to clipboard
-- **Search & Filter** - Instantly find any password
-- **Edit & Delete** - Full control over your passwords
-- **Import/Export** - Backup and restore your passwords
+### 💾 Password Management
+- **Save Passwords** — Store website, username, password, and notes
+- **One-Click Copy** — Copy username or password to clipboard instantly
+- **Search & Filter** — Find any password in real time
+- **Edit & Delete** — Full control over your entries
+- **Import / Export** — Backup and restore your vault as JSON (with confirm dialog before export)
 
-### 🎨 **User Experience**
-- **Dark Theme** - Easy on the eyes
-- **Password Strength Indicator** - Visual feedback on password strength
-- **Website Favicons** - Visual identification
-- **Toast Notifications** - Confirmation when copying
-- **Auto-detect Website** - Automatically fills website from current tab
+### 🎨 User Experience
+- **Dark Glassmorphism Theme** — Navy + gold luxury aesthetic
+- **Password Strength Indicator** — Visual feedback: Weak / Medium / Strong
+- **Letter Avatar** — Deterministic color + initial rendered locally (no Google favicons, no remote requests)
+- **Toast Notifications** — Feedback for every action
+- **Auto-detect Website** — Fills hostname from your active tab when adding a password
+- **Details View** — Reveal/copy password inline without editing
+- **Export Confirmation** — Warns you the backup is plain-text before downloading
 
 ## 🚀 Installation
 
-### Method 1: Load Unpacked (Development)
+### Load Unpacked (Developer Mode)
 1. Download or clone this repository
-2. Open Chrome/Edge and go to `chrome://extensions/`
-3. Enable **Developer mode** (toggle in top-right)
-4. Click **"Load unpacked"**
+2. Go to `chrome://extensions/`
+3. Enable **Developer mode** (top-right toggle)
+4. Click **Load unpacked**
 5. Select the `password-manager` folder
 6. Pin the extension to your toolbar
 
-### Method 2: From Chrome Web Store
-*(Coming soon)*
+### Keyboard Shortcut
+`Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (Mac) opens the vault directly.
 
 ## 📖 How to Use
 
 ### First Time Setup
-1. **Click** the Password Manager icon in your toolbar
-2. **Set Master Password** - Enter a strong password (min 8 characters)
-3. **Remember this password** - You'll need it every time to unlock
+1. Click the Password Manager icon in your toolbar
+2. Enter a strong master password (minimum 8 characters — 12+ recommended)
+3. Press **Unlock Vault** — this sets and saves your master password
+4. Remember it — it cannot be recovered
 
 ### Adding Passwords
-1. **Click** the "+" button or "Add Password"
-2. **Website** - Automatically detected from current tab (or enter manually)
-3. **Username/Email** - Enter your login username
-4. **Password** - Enter your password (type or paste)
-5. **Notes** - Optional additional information
-6. **Save** - Securely stores the password
+1. Click **Add Password**
+2. Website is auto-filled from your active tab — edit if needed
+3. Enter your username/email and password
+4. Optionally add notes
+5. Click **Save Password**
 
 ### Using Saved Passwords
-1. **Search** for a website or username
-2. **Click** 🔑 to copy password to clipboard
-3. **Click** 👤 to copy username to clipboard
-4. **Paste** where needed
-5. **Click** ✏️ to edit or 🗑️ to delete
+1. Use the search bar to filter by site or username
+2. **Click a card** to open the Details view
+3. Use the action buttons (🔑 Copy pw / 👤 Copy user / ✏️ Edit / 🗑️ Delete) on hover
+4. Paste where needed
 
 ### Backup & Restore
-- **Export**: Click "Export" to download all passwords as JSON
-- **Import**: Click "Import" to restore from JSON backup file
+- **Export** — Downloads a plain-text JSON backup (confirmation required)
+- **Import** — Merges a JSON backup into your vault (no duplicate IDs)
 
 ## 🔧 Technical Details
 
 ### Browser Compatibility
-- ✅ Chrome 88+
-- ✅ Edge 88+
-- ✅ Brave 1.20+
-- ✅ Opera 74+
+- ✅ Chrome 114+
+- ✅ Edge 114+
+- ✅ Brave 1.50+
+- ✅ Opera 100+
 
 ### File Structure
 ```
 password-manager/
-├── manifest.json          # Extension configuration
-├── popup.html            # Main interface
-├── popup.css             # Styles
-├── popup.js              # Core logic (encryption, storage)
-├── background.js         # Background service worker
+├── manifest.json     # MV3 config with strict CSP
+├── popup.html        # Main interface
+├── popup.css         # Styles (glassmorphism, animations)
+├── popup.js          # Core logic — crypto, storage, UI
+├── background.js     # Service worker
+├── content.js        # Auto-fill helper
 └── icons/
-    ├── icon16.png        # Toolbar icon (small)
-    ├── icon48.png        # Extension icon (medium)
-    └── icon128.png       # Store icon (large)
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
 ```
 
 ### Security Implementation
-- **PBKDF2** - Password-based key derivation (100,000 iterations)
-- **AES-GCM** - Authenticated encryption algorithm
-- **SHA-256** - Master password hashing
-- **Secure Key Storage** - Keys derived on-the-fly, never stored
+
+| Layer | Method | Detail |
+|---|---|---|
+| Vault encryption | AES-256-GCM | Authenticated, unique IV per save |
+| Key derivation | PBKDF2 | 100,000 iterations, SHA-256, 16-byte salt |
+| Master pw storage | PBKDF2 hash | Salted, NOT raw SHA-256 |
+| Verification | Constant-time compare | Bitwise XOR over all bytes |
+| Memory | Cleared on lock/close | `passwords` array zeroed, master pw nulled |
+| Script exposure | None | `new PasswordManager()` — not on `window` |
+| Favicons | Canvas letter avatars | No remote requests, no CSP violations |
+| CSP | Strict `script-src 'self'` | No inline JS, no unsafe-eval |
 
 ## 🛡️ Privacy & Security
 
-### What We Do NOT Collect:
+### What We Do NOT Collect
 - ❌ No personal information
 - ❌ No browsing history
 - ❌ No usage analytics
 - ❌ No cloud synchronization
-- ❌ No third-party tracking
+- ❌ No third-party requests (not even favicons)
 
-### What We Do:
-- ✅ All encryption happens locally
-- ✅ Master password never leaves your device
-- ✅ Passwords encrypted before storage
+### What We Do
+- ✅ All encryption happens locally in the browser
+- ✅ Master password never stored in plaintext
+- ✅ Vault data encrypted before hitting storage
 - ✅ No internet connection required
+- ✅ Memory cleared when popup closes
 
-### Security Best Practices:
-1. Use a **strong master password** (12+ characters, mix of types)
-2. **Export backups** regularly
-3. **Lock** when not in use
+### Security Best Practices
+1. Use a **strong master password** (12+ characters, mixed types)
+2. **Export a backup** right after setup and store it securely
+3. **Lock the vault** when not in use
 4. Keep your browser updated
-5. Use on trusted devices only
+5. Only use on trusted devices
 
-## 🔄 Import/Export Format
+## 🔄 Import / Export Format
 
-### Export File (JSON):
 ```json
 [
   {
     "id": "unique-id",
     "website": "example.com",
     "username": "user@example.com",
-    "password": "encrypted-password",
+    "password": "your-password",
     "notes": "Optional notes",
     "createdAt": "2024-01-29T10:30:00.000Z",
     "updatedAt": "2024-01-29T10:30:00.000Z"
@@ -132,164 +141,64 @@ password-manager/
 ]
 ```
 
-## 🚨 Known Limitations
-
-### Current Limitations:
-- No automatic form filling
-- No password generator (intentional - use existing passwords)
-- No mobile app (browser extension only)
-- No cross-device sync (local storage only)
-
-### Planned Features:
-- [ ] Password audit (weak/duplicate detection)
-- [ ] Categories/tags for organization
-- [ ] Two-factor authentication codes
-- [ ] Emergency access for trusted contacts
-- [ ] Browser autofill integration
-
-## 🛠️ Development
-
-### Prerequisites
-- Basic knowledge of HTML, CSS, JavaScript
-- Chrome/Edge browser
-- Text editor (VS Code recommended)
-
-### Building from Source
-1. Clone repository:
-   ```bash
-   git clone https://github.com/yourusername/password-manager-lite.git
-   cd password-manager-lite
-   ```
-
-2. Install dependencies (if any):
-   ```bash
-   npm install
-   ```
-
-3. Load extension in browser as described above
-
-### Customizing
-- **Change Theme**: Modify CSS variables in `popup.css`
-- **Add Features**: Extend `popup.js` functionality
-- **Update Icons**: Replace files in `icons/` folder
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Test thoroughly
-5. Commit: `git commit -m 'Add some feature'`
-6. Push: `git push origin feature-name`
-7. Open a Pull Request
-
-### Development Guidelines
-- Follow existing code style
-- Add comments for complex logic
-- Test on multiple browsers
-- Ensure no security vulnerabilities
-- Update documentation if needed
+> ⚠️ Export files contain **decrypted** passwords. Store them safely and never share them.
 
 ## 📝 Changelog
 
-### v1.0.0 (Current)
-- Initial release
-- AES-256 encryption
+### v2.0.0 (Current)
+- 🔐 Replaced SHA-256 master password hash with salted PBKDF2
+- 🔐 Added constant-time comparison to prevent timing attacks
+- 🔐 Memory cleared on popup close and vault lock
+- 🔐 Removed `window.pm` exposure
+- 🔐 Removed Google favicon API (privacy + CSP fix)
+- 🔐 Removed all inline `onerror` handlers (CSP fix)
+- 🔐 Added export confirmation dialog
+- ✨ Canvas letter avatars replace remote favicons
+- ✨ Full DOM-based card rendering (no `innerHTML` with user data)
+- ✨ New Details modal with inline reveal / copy
+- ✨ Custom delete confirmation modal (no browser `confirm()`)
+- ✨ Luxury dark glassmorphism UI
+
+### v1.0.0
+- Initial release with AES-256-GCM encryption
 - Master password protection
-- Password storage and management
-- Import/export functionality
-- Search and filtering
-- Dark theme interface
+- Import/export, search, dark theme
 
 ## ⚠️ Important Notes
 
-### Before Using:
-1. **Backup your passwords** - Export immediately after setup
-2. **Remember master password** - Cannot be recovered if forgotten
-3. **Test with dummy data** first
-4. **Export regularly** for backup
+### Before Using
+1. **Set a strong master password** — cannot be recovered if forgotten
+2. **Export a backup immediately** after setup
+3. **Test with a dummy entry** before migrating real passwords
+4. **Export regularly** to keep your backup current
 
-### If You Forget Master Password:
-1. You cannot recover your passwords
-2. You must reset the extension
-3. Import from your backup file
+### If You Forget Your Master Password
+1. Your encrypted data cannot be decrypted without it
+2. Clear extension storage: `chrome://extensions` → Details → Clear storage
+3. Import from your last backup file
 4. Set a new master password
-
-## 📧 Support
-
-### Getting Help:
-1. **Check FAQ** below
-2. **Create GitHub Issue** with:
-   - Browser version
-   - Steps to reproduce
-   - Screenshots if applicable
-   - Console errors (F12 → Console)
-
-### Quick Troubleshooting:
-- **Extension not loading?** Check browser compatibility
-- **Passwords not saving?** Check storage permissions
-- **Import not working?** Verify JSON format
-- **Copy not working?** Check clipboard permissions
 
 ## ❓ FAQ
 
-### Q: Is my data safe?
-**A:** Yes! All encryption happens locally on your device. We never send your data anywhere.
+**Q: Is my data safe?**  
+All encryption and decryption runs locally. Nothing is sent to any server.
 
-### Q: What if I forget my master password?
-**A:** You cannot recover it. You'll need to reset the extension and import from backup.
+**Q: What if I forget my master password?**  
+It cannot be recovered. Keep a backup export and your master password in a safe place.
 
-### Q: Can I use this on multiple computers?
-**A:** Yes, but you need to export/import manually as there's no cloud sync.
+**Q: Can I use this on multiple computers?**  
+Yes — export from one device, import on another.
 
-### Q: Is this better than LastPass/1Password?
-**A:** For basic needs - yes! It's free, open-source, and completely private.
+**Q: Why no favicons from Google?**  
+Fetching favicons from `https://www.google.com/s2/favicons` leaks which sites you have saved and violates a strict CSP. We use locally-rendered letter avatars instead.
 
-### Q: Can I contribute to development?
-**A:** Absolutely! See the Contributing section above.
+**Q: Why was the master password hashing changed in v2?**  
+v1 used raw SHA-256 which is very fast — an attacker who accesses your storage could brute-force it quickly. v2 uses PBKDF2 with 100,000 iterations and a random salt, making offline attacks vastly harder.
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Web Crypto API documentation
-- Chrome Extensions API
-- Security researchers and contributors
-- Open source community
-- Early testers and feedback providers
-
-## 🌟 Why Choose Password Manager Lite?
-
-### 🏆 **For Security-Conscious Users**
-- **Complete Privacy** - No data leaves your device
-- **Open Source** - Code can be audited by anyone
-- **No Subscriptions** - Free forever
-- **Simple & Effective** - Does one thing well
-
-### 🛠️ **For Developers**
-- **Clean Codebase** - Well-structured and documented
-- **Modern Web APIs** - Uses Web Crypto API
-- **Easy to Extend** - Modular architecture
-- **Educational** - Learn about encryption and browser extensions
+MIT License
 
 ---
 
-## 🚀 Quick Start Summary
-
-1. **Install** extension
-2. **Set** master password
-3. **Add** your passwords
-4. **Export** backup
-5. **Use** daily with copy-paste
-
-**That's it!** You now have a secure password manager that works entirely on your device. 🎉
-
----
-
-*Made with ❤️ for the privacy-conscious internet user*
-
-*Last Updated: January 2024*
+*Built for the privacy-conscious user. Your passwords stay yours.*
