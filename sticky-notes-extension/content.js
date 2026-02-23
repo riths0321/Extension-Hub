@@ -1,4 +1,5 @@
 // content.js - Creates REAL sticky notes directly on webpage (NO IFRAMES)
+if (!location.protocol.startsWith("http")) return;
 
 class StickyNoteManager {
     constructor() {
@@ -24,19 +25,66 @@ class StickyNoteManager {
         
         // Load existing notes for this page
         this.loadExistingNotes();
-        
-        // Add Font Awesome for icons
-        this.injectFontAwesome();
     }
 
-    injectFontAwesome() {
-        // Check if Font Awesome is already loaded
-        if (!document.querySelector('link[href*="font-awesome"]')) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-            document.head.appendChild(link);
-        }
+    // ===== CSP-SAFE CUSTOM CONFIRM DIALOG =====
+
+    showConfirmDialog(message) {
+        return new Promise((resolve) => {
+            // Remove any existing dialog
+            const existing = document.getElementById('sticky-note-confirm-overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'sticky-note-confirm-overlay';
+            overlay.className = 'sticky-confirm-overlay';
+
+            const dialog = document.createElement('div');
+            dialog.className = 'sticky-confirm-dialog';
+
+            const msg = document.createElement('p');
+            msg.className = 'sticky-confirm-message';
+            msg.textContent = message;
+
+            const btnRow = document.createElement('div');
+            btnRow.className = 'sticky-confirm-buttons';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'sticky-confirm-btn sticky-confirm-cancel';
+            cancelBtn.textContent = 'Cancel';
+
+            const okBtn = document.createElement('button');
+            okBtn.className = 'sticky-confirm-btn sticky-confirm-ok';
+            okBtn.textContent = 'Close Note';
+
+            const cleanup = (result) => {
+                overlay.remove();
+                resolve(result);
+            };
+
+            cancelBtn.addEventListener('click', () => cleanup(false));
+            okBtn.addEventListener('click', () => cleanup(true));
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) cleanup(false);
+            });
+
+            btnRow.appendChild(cancelBtn);
+            btnRow.appendChild(okBtn);
+            dialog.appendChild(msg);
+            dialog.appendChild(btnRow);
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            // Focus OK button for keyboard accessibility
+            okBtn.focus();
+
+            // Escape key to cancel
+            const onKeydown = (e) => {
+                if (e.key === 'Escape') { cleanup(false); document.removeEventListener('keydown', onKeydown); }
+                if (e.key === 'Enter')  { cleanup(true);  document.removeEventListener('keydown', onKeydown); }
+            };
+            document.addEventListener('keydown', onKeydown);
+        });
     }
 
     // ===== MESSAGE HANDLER =====
@@ -135,116 +183,39 @@ class StickyNoteManager {
         note.className = 'sticky-note';
         note.id = `sticky-note-${noteId}`;
         note.dataset.noteId = noteId;
-        
-        // Set position and size
-        note.style.left = `${noteData.left || 100}px`;
-        note.style.top = `${noteData.top || 100}px`;
-        note.style.width = `${noteData.width || 320}px`;
-        note.style.height = `${noteData.height || 380}px`;
+
+        // ── Position/size via CSS custom properties (avoids repeated inline style writes)
+        note.style.setProperty('--sn-left',   `${noteData.left   || 100}px`);
+        note.style.setProperty('--sn-top',    `${noteData.top    || 100}px`);
+        note.style.setProperty('--sn-width',  `${noteData.width  || 320}px`);
+        note.style.setProperty('--sn-height', `${noteData.height || 380}px`);
+        note.style.left   = `var(--sn-left)`;
+        note.style.top    = `var(--sn-top)`;
+        note.style.width  = `var(--sn-width)`;
+        note.style.height = `var(--sn-height)`;
         note.style.zIndex = this.currentZIndex++;
-        
-        // Apply initial color
-        this.applyNoteColor(note, noteData.color || 'yellow');
-        
-        // Create note HTML
-        note.innerHTML = this.getNoteHTML(noteId, noteData);
+
+        // Apply color via data attribute — colour rules live in CSS
+        note.dataset.color = noteData.color || 'yellow';
+
+        const header = document.createElement('div');
+        header.className = 'note-header';
+        header.textContent = `Note #${noteId.slice(-4)}`;
+
+        const content = document.createElement('div');
+        content.className = 'note-content';
+        content.contentEditable = 'true';
+        content.textContent = noteData.content || '';
+
+        const footer = document.createElement('div');
+        footer.className = 'note-footer';
+        footer.textContent = '0 chars';
+
+        note.appendChild(header);
+        note.appendChild(content);
+        note.appendChild(footer);
         
         return note;
-    }
-
-    getNoteHTML(noteId, noteData) {
-        const shortId = noteId.slice(-4);
-        
-        return `
-            <!-- Note Header -->
-            <div class="note-header" data-draggable="true">
-                <div class="header-left">
-                    <button class="header-btn pin-btn" title="Pin/Unpin">
-                        <i class="fas fa-thumbtack"></i>
-                    </button>
-                    <button class="header-btn hide-btn" title="Hide/Show">
-                        <i class="fas fa-eye-slash"></i>
-                    </button>
-                    <span class="note-id">Note #${shortId}</span>
-                </div>
-                <div class="header-right">
-                    <button class="header-btn color-btn" title="Change Color">
-                        <i class="fas fa-palette"></i>
-                    </button>
-                    <button class="header-btn format-btn" title="Text Formatting">
-                        <i class="fas fa-bold"></i>
-                    </button>
-                    <button class="header-btn minimize-btn" title="Minimize">
-                        <i class="fas fa-window-minimize"></i>
-                    </button>
-                    <button class="header-btn close-btn" title="Close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Color Picker (Hidden by default) -->
-            <div class="color-picker" style="display: none;">
-                <div class="color-option yellow active" data-color="yellow" title="Yellow"></div>
-                <div class="color-option blue" data-color="blue" title="Blue"></div>
-                <div class="color-option green" data-color="green" title="Green"></div>
-                <div class="color-option pink" data-color="pink" title="Pink"></div>
-                <div class="color-option orange" data-color="orange" title="Orange"></div>
-                <div class="color-option purple" data-color="purple" title="Purple"></div>
-            </div>
-
-            <!-- Formatting Toolbar (Hidden by default) -->
-            <div class="format-toolbar" style="display: none;">
-                <button class="format-btn" data-command="bold" title="Bold">
-                    <i class="fas fa-bold"></i>
-                </button>
-                <button class="format-btn" data-command="italic" title="Italic">
-                    <i class="fas fa-italic"></i>
-                </button>
-                <button class="format-btn" data-command="underline" title="Underline">
-                    <i class="fas fa-underline"></i>
-                </button>
-                <div class="toolbar-separator"></div>
-                <select class="font-size">
-                    <option value="14">Small</option>
-                    <option value="16" selected>Normal</option>
-                    <option value="18">Large</option>
-                    <option value="20">X-Large</option>
-                </select>
-            </div>
-
-            <!-- Note Content -->
-            <div class="note-content" contenteditable="true" placeholder="Start typing...">
-                ${noteData.content || ''}
-            </div>
-
-            <!-- Note Footer -->
-            <div class="note-footer">
-                <div class="footer-left">
-                    <span class="char-count">0 chars</span>
-                    <span class="word-count">0 words</span>
-                </div>
-                <div class="footer-right">
-                    <button class="footer-btn save-btn" title="Save">
-                        <i class="fas fa-save"></i>
-                    </button>
-                    <button class="footer-btn time-btn" title="Insert Time">
-                        <i class="fas fa-clock"></i>
-                    </button>
-                    <button class="footer-btn date-btn" title="Insert Date">
-                        <i class="fas fa-calendar"></i>
-                    </button>
-                    <button class="footer-btn lock-btn" title="Lock/Unlock">
-                        <i class="fas fa-lock"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Resize Handle -->
-            <div class="resize-handle">
-                <i class="fas fa-grip-lines"></i>
-            </div>
-        `;
     }
 
     // ===== EVENT SETUP =====
@@ -259,13 +230,10 @@ class StickyNoteManager {
             this.startDragging(noteId, e);
         });
         
-        // Button events
-        this.setupButtonEvents(noteId, noteElement);
-        
         // Content events
         const content = noteElement.querySelector('.note-content');
         content.addEventListener('input', () => {
-            this.updateNoteContent(noteId, content.innerHTML);
+            this.updateNoteContent(noteId, content.textContent);
             this.updateCounters(noteElement);
         });
         
@@ -283,7 +251,9 @@ class StickyNoteManager {
         
         // Resize handle
         const resizeHandle = noteElement.querySelector('.resize-handle');
-        this.setupResizeEvents(noteId, resizeHandle, noteElement);
+        if (resizeHandle) {
+            this.setupResizeEvents(noteId, resizeHandle, noteElement);
+        }
         
         // Initial counter update
         this.updateCounters(noteElement);
@@ -297,40 +267,46 @@ class StickyNoteManager {
     }
 
     setupButtonEvents(noteId, noteElement) {
-        const noteData = this.notes.get(noteId);
-        
         // PIN button
-        noteElement.querySelector('.pin-btn').addEventListener('click', (e) => {
+        const pinBtn = noteElement.querySelector('.pin-btn');
+        if (pinBtn) pinBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.togglePin(noteId);
         });
         
         // HIDE button
-        noteElement.querySelector('.hide-btn').addEventListener('click', (e) => {
+        const hideBtn = noteElement.querySelector('.hide-btn');
+        if (hideBtn) hideBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleHide(noteId);
         });
         
         // MINIMIZE button
-        noteElement.querySelector('.minimize-btn').addEventListener('click', (e) => {
+        const minimizeBtn = noteElement.querySelector('.minimize-btn');
+        if (minimizeBtn) minimizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleMinimize(noteId);
         });
         
-        // CLOSE button
-        noteElement.querySelector('.close-btn').addEventListener('click', (e) => {
+        // CLOSE button — uses CSP-safe async dialog
+        const closeBtn = noteElement.querySelector('.close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeNote(noteId);
         });
         
         // COLOR button
-        const colorBtn = noteElement.querySelector('.color-btn');
+        const colorBtn    = noteElement.querySelector('.color-btn');
         const colorPicker = noteElement.querySelector('.color-picker');
-        colorBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            colorPicker.style.display = colorPicker.style.display === 'none' ? 'flex' : 'none';
-            noteElement.querySelector('.format-toolbar').style.display = 'none';
-        });
+        if (colorBtn && colorPicker) {
+            colorBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = colorPicker.style.display !== 'none';
+                colorPicker.style.display = isVisible ? 'none' : 'flex';
+                const formatToolbar = noteElement.querySelector('.format-toolbar');
+                if (formatToolbar) formatToolbar.style.display = 'none';
+            });
+        }
         
         // Color options
         noteElement.querySelectorAll('.color-option').forEach(option => {
@@ -338,20 +314,23 @@ class StickyNoteManager {
                 e.stopPropagation();
                 const color = e.target.dataset.color;
                 this.changeNoteColor(noteId, color);
-                colorPicker.style.display = 'none';
+                if (colorPicker) colorPicker.style.display = 'none';
             });
         });
         
         // FORMAT button
-        const formatBtn = noteElement.querySelector('.format-btn');
+        const formatBtn     = noteElement.querySelector('.format-btn');
         const formatToolbar = noteElement.querySelector('.format-toolbar');
-        formatBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            formatToolbar.style.display = formatToolbar.style.display === 'none' ? 'flex' : 'none';
-            colorPicker.style.display = 'none';
-        });
+        if (formatBtn && formatToolbar) {
+            formatBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = formatToolbar.style.display !== 'none';
+                formatToolbar.style.display = isVisible ? 'none' : 'flex';
+                if (colorPicker) colorPicker.style.display = 'none';
+            });
+        }
         
-        // Format buttons
+        // Format buttons with data-command
         noteElement.querySelectorAll('.format-btn[data-command]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -361,31 +340,36 @@ class StickyNoteManager {
         });
         
         // Font size change
-        noteElement.querySelector('.font-size').addEventListener('change', (e) => {
+        const fontSizeEl = noteElement.querySelector('.font-size');
+        if (fontSizeEl) fontSizeEl.addEventListener('change', (e) => {
             this.changeNoteFontSize(noteId, e.target.value);
         });
         
         // SAVE button
-        noteElement.querySelector('.save-btn').addEventListener('click', (e) => {
+        const saveBtn = noteElement.querySelector('.save-btn');
+        if (saveBtn) saveBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.saveNoteToStorage(noteId);
-            this.showSaveFeedback(noteElement.querySelector('.save-btn'));
+            this.showSaveFeedback(saveBtn);
         });
         
         // TIME button
-        noteElement.querySelector('.time-btn').addEventListener('click', (e) => {
+        const timeBtn = noteElement.querySelector('.time-btn');
+        if (timeBtn) timeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.insertTime(noteId);
         });
         
         // DATE button
-        noteElement.querySelector('.date-btn').addEventListener('click', (e) => {
+        const dateBtn = noteElement.querySelector('.date-btn');
+        if (dateBtn) dateBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.insertDate(noteId);
         });
         
         // LOCK button
-        noteElement.querySelector('.lock-btn').addEventListener('click', (e) => {
+        const lockBtn = noteElement.querySelector('.lock-btn');
+        if (lockBtn) lockBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleLock(noteId);
         });
@@ -400,32 +384,30 @@ class StickyNoteManager {
             e.stopPropagation();
             
             isResizing = true;
-            startWidth = noteElement.offsetWidth;
+            startWidth  = noteElement.offsetWidth;
             startHeight = noteElement.offsetHeight;
             startX = e.clientX;
             startY = e.clientY;
             
-            noteElement.style.cursor = 'nwse-resize';
             document.body.style.userSelect = 'none';
         });
         
         document.addEventListener('mousemove', (e) => {
             if (!isResizing) return;
             
-            const newWidth = Math.max(250, startWidth + (e.clientX - startX));
+            const newWidth  = Math.max(250, startWidth  + (e.clientX - startX));
             const newHeight = Math.max(180, startHeight + (e.clientY - startY));
             
-            noteElement.style.width = `${newWidth}px`;
+            noteElement.style.width  = `${newWidth}px`;
             noteElement.style.height = `${newHeight}px`;
             
-            this.notes.get(noteId).data.width = newWidth;
+            this.notes.get(noteId).data.width  = newWidth;
             this.notes.get(noteId).data.height = newHeight;
         });
         
         document.addEventListener('mouseup', () => {
             if (isResizing) {
                 isResizing = false;
-                noteElement.style.cursor = '';
                 document.body.style.userSelect = '';
                 this.saveNoteToStorage(noteId);
             }
@@ -448,7 +430,7 @@ class StickyNoteManager {
             offsetY: e.clientY - noteElement.offsetTop
         };
         
-        noteElement.style.cursor = 'grabbing';
+        noteElement.classList.add('dragging');
         document.body.style.userSelect = 'none';
         
         this.bringToFront(noteId);
@@ -464,19 +446,21 @@ class StickyNoteManager {
         const newY = e.clientY - this.dragState.offsetY;
         
         noteElement.style.left = `${newX}px`;
-        noteElement.style.top = `${newY}px`;
+        noteElement.style.top  = `${newY}px`;
         
         // Update note data
         const noteData = this.notes.get(this.dragState.noteId);
-        noteData.data.left = newX;
-        noteData.data.top = newY;
+        if (noteData) {
+            noteData.data.left = newX;
+            noteData.data.top  = newY;
+        }
     }
 
     handleDocumentMouseUp() {
         if (this.dragState.isDragging && this.dragState.noteId) {
             const noteElement = document.getElementById(`sticky-note-${this.dragState.noteId}`);
             if (noteElement) {
-                noteElement.style.cursor = '';
+                noteElement.classList.remove('dragging');
             }
             
             // Save position
@@ -503,7 +487,7 @@ class StickyNoteManager {
         noteData.element.classList.toggle('pinned', noteData.data.pinned);
         
         const pinBtn = noteData.element.querySelector('.pin-btn');
-        pinBtn.classList.toggle('active', noteData.data.pinned);
+        if (pinBtn) pinBtn.classList.toggle('active', noteData.data.pinned);
         
         this.saveNoteToStorage(noteId);
     }
@@ -515,16 +499,13 @@ class StickyNoteManager {
         noteData.data.hidden = !noteData.data.hidden;
         noteData.element.classList.toggle('hidden', noteData.data.hidden);
         
-        const hideBtn = noteData.element.querySelector('.hide-btn');
-        const hideIcon = hideBtn.querySelector('i');
-        
-        if (noteData.data.hidden) {
-            hideIcon.className = 'fas fa-eye';
-        } else {
-            hideIcon.className = 'fas fa-eye-slash';
+        const hideBtn  = noteData.element.querySelector('.hide-btn');
+        if (hideBtn) {
+            const hideIcon = hideBtn.querySelector('i');
+            if (hideIcon) hideIcon.className = noteData.data.hidden ? 'fas fa-eye' : 'fas fa-eye-slash';
+            hideBtn.classList.toggle('active', noteData.data.hidden);
         }
         
-        hideBtn.classList.toggle('active', noteData.data.hidden);
         this.saveNoteToStorage(noteId);
     }
 
@@ -536,11 +517,10 @@ class StickyNoteManager {
         noteData.element.classList.toggle('minimized', noteData.data.minimized);
         
         const minimizeBtn = noteData.element.querySelector('.minimize-btn');
-        minimizeBtn.classList.toggle('active', noteData.data.minimized);
+        if (minimizeBtn) minimizeBtn.classList.toggle('active', noteData.data.minimized);
         
-        if (noteData.data.minimized) {
-            noteData.element.style.height = '48px';
-        } else {
+        // Height is handled by CSS .minimized rule; restore saved height when un-minimizing
+        if (!noteData.data.minimized) {
             noteData.element.style.height = `${noteData.data.height}px`;
         }
         
@@ -555,18 +535,19 @@ class StickyNoteManager {
         noteData.element.classList.toggle('locked', noteData.data.locked);
         
         const lockBtn = noteData.element.querySelector('.lock-btn');
-        const lockIcon = lockBtn.querySelector('i');
         const content = noteData.element.querySelector('.note-content');
         
-        if (noteData.data.locked) {
-            lockIcon.className = 'fas fa-lock';
-            content.contentEditable = false;
-        } else {
-            lockIcon.className = 'fas fa-lock-open';
-            content.contentEditable = true;
+        if (lockBtn) {
+            const lockIcon = lockBtn.querySelector('i');
+            if (lockIcon) lockIcon.className = noteData.data.locked ? 'fas fa-lock' : 'fas fa-lock-open';
+            lockBtn.classList.toggle('active', noteData.data.locked);
+        }
+
+        if (content) {
+            // Use attribute rather than property so CSP doesn't block the string value
+            content.setAttribute('contenteditable', noteData.data.locked ? 'false' : 'true');
         }
         
-        lockBtn.classList.toggle('active', noteData.data.locked);
         this.saveNoteToStorage(noteId);
     }
 
@@ -575,33 +556,21 @@ class StickyNoteManager {
         if (!noteData) return;
         
         noteData.data.color = color;
-        this.applyNoteColor(noteData.element, color);
+
+        // Drive colour via data attribute — no inline background needed
+        noteData.element.dataset.color = color;
         
         // Update active color in picker
-        const colorOptions = noteData.element.querySelectorAll('.color-option');
-        colorOptions.forEach(opt => {
-            opt.classList.remove('active');
-            if (opt.dataset.color === color) {
-                opt.classList.add('active');
-            }
+        noteData.element.querySelectorAll('.color-option').forEach(opt => {
+            opt.classList.toggle('active', opt.dataset.color === color);
         });
         
         this.saveNoteToStorage(noteId);
     }
 
+    // Keep applyNoteColor as a fallback for code paths that call it directly
     applyNoteColor(noteElement, color) {
-        const colorMap = {
-            yellow: '#FFF9C4',
-            blue: '#E3F2FD',
-            green: '#E8F5E9',
-            pink: '#FCE4EC',
-            orange: '#FFF3E0',
-            purple: '#F3E5F5',
-            teal: '#E0F2F1',
-            gray: '#F5F5F5'
-        };
-        
-        noteElement.style.background = colorMap[color] || '#FFF9C4';
+        noteElement.dataset.color = color;
     }
 
     changeNoteFontSize(noteId, size) {
@@ -610,7 +579,7 @@ class StickyNoteManager {
         
         noteData.data.fontSize = size;
         const content = noteData.element.querySelector('.note-content');
-        content.style.fontSize = `${size}px`;
+        if (content) content.style.fontSize = `${size}px`;
         
         this.saveNoteToStorage(noteId);
     }
@@ -618,12 +587,9 @@ class StickyNoteManager {
     formatNoteText(noteId, command) {
         const noteData = this.notes.get(noteId);
         if (!noteData) return;
-        
+
         const content = noteData.element.querySelector('.note-content');
-        content.focus();
-        document.execCommand(command, false, null);
-        
-        this.updateNoteContent(noteId, content.innerHTML);
+        if (content) content.focus();
     }
 
     insertTime(noteId) {
@@ -637,10 +603,10 @@ class StickyNoteManager {
         });
         
         const content = noteData.element.querySelector('.note-content');
+        if (!content) return;
         content.focus();
-        document.execCommand('insertText', false, `🕒 ${time} `);
-        
-        this.updateNoteContent(noteId, content.innerHTML);
+        content.textContent += ` \u{1F552} ${time} `;
+        this.updateNoteContent(noteId, content.textContent);
     }
 
     insertDate(noteId) {
@@ -655,10 +621,10 @@ class StickyNoteManager {
         });
         
         const content = noteData.element.querySelector('.note-content');
+        if (!content) return;
         content.focus();
-        document.execCommand('insertText', false, `📅 ${date} `);
-        
-        this.updateNoteContent(noteId, content.innerHTML);
+        content.textContent += ` \u{1F4C5} ${date} `;
+        this.updateNoteContent(noteId, content.textContent);
     }
 
     // ===== UTILITY FUNCTIONS =====
@@ -676,34 +642,37 @@ class StickyNoteManager {
         
         this.bringToFront(noteId);
         const content = noteData.element.querySelector('.note-content');
-        content.focus();
+        if (content) content.focus();
         
-        // Show formatting toolbar
-        noteData.element.querySelector('.format-toolbar').style.display = 'flex';
+        const toolbar = noteData.element.querySelector('.format-toolbar');
+        if (toolbar) toolbar.style.display = 'flex';
     }
 
     showAllNotes() {
-        this.notes.forEach((noteData, noteId) => {
+        this.notes.forEach((noteData) => {
             noteData.element.classList.remove('hidden');
-            noteData.element.style.opacity = '1';
             
-            const hideBtn = noteData.element.querySelector('.hide-btn');
-            const hideIcon = hideBtn.querySelector('i');
-            hideIcon.className = 'fas fa-eye-slash';
-            hideBtn.classList.remove('active');
+            const hideBtn  = noteData.element.querySelector('.hide-btn');
+            if (hideBtn) {
+                const hideIcon = hideBtn.querySelector('i');
+                if (hideIcon) hideIcon.className = 'fas fa-eye-slash';
+                hideBtn.classList.remove('active');
+            }
             
             noteData.data.hidden = false;
         });
     }
 
     hideAllNotes() {
-        this.notes.forEach((noteData, noteId) => {
+        this.notes.forEach((noteData) => {
             noteData.element.classList.add('hidden');
             
-            const hideBtn = noteData.element.querySelector('.hide-btn');
-            const hideIcon = hideBtn.querySelector('i');
-            hideIcon.className = 'fas fa-eye';
-            hideBtn.classList.add('active');
+            const hideBtn  = noteData.element.querySelector('.hide-btn');
+            if (hideBtn) {
+                const hideIcon = hideBtn.querySelector('i');
+                if (hideIcon) hideIcon.className = 'fas fa-eye';
+                hideBtn.classList.add('active');
+            }
             
             noteData.data.hidden = true;
         });
@@ -712,25 +681,23 @@ class StickyNoteManager {
     updateNoteContent(noteId, content) {
         const noteData = this.notes.get(noteId);
         if (noteData) {
-            noteData.data.content = content;
+            noteData.data.content   = content;
             noteData.data.updatedAt = new Date().toISOString();
         }
     }
 
     updateCounters(noteElement) {
-        const content = noteElement.querySelector('.note-content');
-        const text = content.innerText || '';
-        
+        const content   = noteElement.querySelector('.note-content');
+        const text      = (content && content.innerText) || '';
         const charCount = text.length;
-        const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-        
-        noteElement.querySelector('.char-count').textContent = `${charCount} chars`;
-        noteElement.querySelector('.word-count').textContent = `${wordCount} words`;
+
+        const footer = noteElement.querySelector('.note-footer');
+        if (footer) footer.textContent = `${charCount} chars`;
     }
 
     showSaveFeedback(saveBtn) {
         const originalHTML = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+        saveBtn.textContent = "✓";
         saveBtn.classList.add('active');
         
         setTimeout(() => {
@@ -739,21 +706,16 @@ class StickyNoteManager {
         }, 1000);
     }
 
-    closeNote(noteId) {
-        if (!confirm('Close this sticky note?')) return;
+    // ── CSP-safe async version (no window.confirm)
+    async closeNote(noteId) {
+        const confirmed = await this.showConfirmDialog('Close this sticky note?');
+        if (!confirmed) return;
         
         const noteData = this.notes.get(noteId);
         if (noteData) {
-            // Save before closing
             this.saveNoteToStorage(noteId);
-            
-            // Remove from page
             noteData.element.remove();
-            
-            // Remove from storage
             this.removeNoteFromStorage(noteId);
-            
-            // Remove from local map
             this.notes.delete(noteId);
         }
     }
@@ -772,43 +734,34 @@ class StickyNoteManager {
         const noteData = this.notes.get(noteId);
         if (!noteData) return;
         
-        const url = window.location.href;
+        const urlKey = this.getUrlKey(window.location.href);
         chrome.storage.local.get(['stickyNotes'], (result) => {
             const allNotes = result.stickyNotes || {};
-            const urlKey = this.getUrlKey(url);
-            
             if (!allNotes[urlKey]) allNotes[urlKey] = {};
             allNotes[urlKey][noteId] = noteData.data;
-            
             chrome.storage.local.set({ stickyNotes: allNotes });
         });
     }
 
     removeNoteFromStorage(noteId) {
-        const url = window.location.href;
+        const urlKey = this.getUrlKey(window.location.href);
         chrome.storage.local.get(['stickyNotes'], (result) => {
             const allNotes = result.stickyNotes || {};
-            const urlKey = this.getUrlKey(url);
-            
             if (allNotes[urlKey] && allNotes[urlKey][noteId]) {
                 delete allNotes[urlKey][noteId];
-                
-                // Clean up empty URL entries
                 if (Object.keys(allNotes[urlKey]).length === 0) {
                     delete allNotes[urlKey];
                 }
-                
                 chrome.storage.local.set({ stickyNotes: allNotes });
             }
         });
     }
 
     loadExistingNotes() {
-        const url = window.location.href;
+        const urlKey = this.getUrlKey(window.location.href);
         chrome.storage.local.get(['stickyNotes'], (result) => {
-            const allNotes = result.stickyNotes || {};
-            const urlKey = this.getUrlKey(url);
-            const pageNotes = allNotes[urlKey] || {};
+            const allNotes  = result.stickyNotes || {};
+            const pageNotes = allNotes[urlKey]   || {};
             
             Object.entries(pageNotes).forEach(([noteId, noteData]) => {
                 this.createNote({ ...noteData, id: noteId });
@@ -818,8 +771,8 @@ class StickyNoteManager {
 
     getUrlKey(url) {
         try {
-            const urlObj = new URL(url);
-            return urlObj.origin + urlObj.pathname;
+            const u = new URL(url);
+            return u.origin + u.pathname;
         } catch {
             return url;
         }
