@@ -1,55 +1,55 @@
-# 💧 Water Alert
+# 💧 Water Alert v3.0
 
-## 👨‍💻 Made by Saurabh Tiwari
+---
 
-### 🧩 Description
-**Water Alert** is your personal hydration coach. Spending hours at the screen often means forgetting to drink water. This extension sends you gentle, customizable reminders to stay hydrated, keeping you healthy and focused.
+## ✨ What's New in v3.0
 
-### 🚀 Features
-- **Smart Reminders**: Set intervals (e.g., every 30 mins, 1 hour).
-- **Notification Popups**: Non-intrusive system notifications.
-- **Progress Tracking**: Log your glasses and see your daily intake.
-- **Custom Sounds**: Choose your alert tone.
+- **Glassmorphism UI** — Dark theme with glass cards, blur effects, and gradient accents
+- **Animated background** — Floating orbs and rising water drops
+- **Progress ring** — Circular progress indicator in the alert popup
+- **Better streak logic** — Resets properly at midnight, tracks goal completion
+- **Overnight quiet hours** — Works correctly across midnight (e.g. 22:00–07:00)
+- **Goal-aware alerts** — No more reminders once you've hit your daily goal
+- **CSP compliant** — No inline scripts or styles, safe for Chrome MV3
 
-### 🛠️ Tech Stack
-- **HTML5**: UI.
-- **CSS3**: Styling.
-- **JavaScript**: Alarms and storage.
-- **Chrome Extension (Manifest V3)**: Alarms API.
+---
 
-### 📂 Folder Structure
+## 🚀 Features
+
+- Set reminder intervals (1–180 min) or enable hourly mode
+- Log 250ml per click from either the popup or alert window
+- Daily goal tracking with visual progress bar + ring
+- Streak counter — earn streaks by hitting your daily goal
+- Quiet hours with overnight span support
+- Floating water drop animations
+
+---
+
+## 📂 Files
+
 ```
-water-alert /
-├── icons/             # Icons
-├── alert.html         # Notification UI
-├── background.js      # Scheduler
-├── popup.html         # Settings
-└── manifest.json      # Config
+water-alert/
+├── icons/            # 16, 48, 128px icons
+├── manifest.json     # MV3 config
+├── background.js     # Alarm scheduler + daily reset
+├── popup.html/js     # Extension popup UI
+├── alert.html/js     # Reminder popup window
+└── style.css         # Shared glassmorphism styles
 ```
 
-### ⚙️ Installation (Developer Mode)
-1.  Clone repo.
-2.  Go to `chrome://extensions`.
-3.  Enable **Developer mode**.
-4.  Load unpacked -> `water-alert `.
+---
 
-### 🧠 How It Works
-1.  **Scheduling**: Uses `chrome.alarms.create` to schedule recurring events.
-2.  **Trigger**: When alarm fires, `background.js` creates a `chrome.notifications` alert or opens a small window.
-3.  **Logging**: User interactions (drinking water) are saved to tracking history.
+## ⚙️ Installation
 
-### 🔐 Permissions Explained
-- **`alarms`**: Critical permission to run the timer in the background.
-- **`notifications`**: To show the hydration alert.
-- **`storage`**: To save your preferences and daily count.
+1. Go to `chrome://extensions`
+2. Enable **Developer mode** (top right)
+3. Click **Load unpacked**
+4. Select this `water-alert` folder
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Reminder Notification](https://via.placeholder.com/600x400?text=Reminder+Notification)
+---
 
-### 🔒 Privacy Policy
-- **Health Data**: Logs are stored locally.
-- **Private**: We do not collect health info.
+## 🔐 Permissions
 
-### 📄 License
-This project is licensed under the **MIT License**.
+- `alarms` — Schedule recurring reminders
+- `storage` — Save your settings and daily progress
+- `windows` — Open the reminder popup window
