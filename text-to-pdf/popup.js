@@ -41,7 +41,12 @@ pdfBtn.addEventListener("click", async () => {
 
   // 1.5 Sanitize HTML (Deep CSP requirement)
   // Ensure no scripts or unsafe attributes are injected
-  const htmlContent = window.DOMPurify ? window.DOMPurify.sanitize(rawHtml) : rawHtml;
+  if (!window.DOMPurify) {
+    alert("Security module not loaded. Please reload extension.");
+    return;
+  }
+
+  const htmlContent = window.DOMPurify.sanitize(rawHtml);
 
   // 2. Render to Hidden Container (for visual fidelity)
   renderContainer.innerHTML = htmlContent;
