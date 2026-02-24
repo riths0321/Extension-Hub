@@ -1,7 +1,5 @@
 # 🖼️ Image Resizer
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **Image Resizer** is a quick utility to resize images for web use. Don't open Photoshop just to shrink a photo. Drag and drop your image, set your target dimensions or percentage, and download the optimized file instantly.
 

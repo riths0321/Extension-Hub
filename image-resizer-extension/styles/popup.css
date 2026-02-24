@@ -190,6 +190,36 @@ h1 {
   margin-bottom: 8px;
 }
 
+/* Dimensions Header */
+.dimensions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dimensions-header label {
+  margin-bottom: 0;
+}
+
+/* Checkbox Label */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
 /* Format Radio */
 .format-options {
   display: flex;
@@ -227,7 +257,7 @@ h1 {
 /* Dimensions */
 .dimensions {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
 }
 
@@ -250,13 +280,16 @@ h1 {
   border-color: var(--primary);
 }
 
-#linkRatioBtn {
-  margin-bottom: 4px;
+.input-wrapper input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
 }
 
-#linkRatioBtn.active {
+.ratio-icon {
   color: var(--primary);
-  background: rgba(79, 70, 229, 0.1);
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
 }
 
 /* Slider */

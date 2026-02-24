@@ -29,12 +29,16 @@ function restoreOptions() {
     });
 }
 
-document.getElementById('defaultQuality').addEventListener('input', (e) => {
-    document.getElementById('qualityVal').textContent = e.target.value + '%';
-});
-
-document.addEventListener('DOMContentLoaded', restoreOptions);
-document.getElementById('saveBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    saveOptions();
+// Add event listeners after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    restoreOptions();
+    
+    document.getElementById('defaultQuality').addEventListener('input', (e) => {
+        document.getElementById('qualityVal').textContent = e.target.value + '%';
+    });
+    
+    document.getElementById('saveBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        saveOptions();
+    });
 });

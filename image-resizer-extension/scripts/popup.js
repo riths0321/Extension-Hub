@@ -3,41 +3,45 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    localizeHtml();
     initializeApp();
 });
 
-function localizeHtml() {
-    // Basic localization for nodes with __MSG_key__ text
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-    let node;
-    while ((node = walker.nextNode())) {
-        const text = node.nodeValue.trim();
-        if (text.startsWith('__MSG_') && text.endsWith('__')) {
-            const key = text.slice(6, -2);
-            node.nodeValue = chrome.i18n.getMessage(key);
-        }
+function localizeElement(id, messageKey) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = chrome.i18n.getMessage(messageKey);
     }
 }
 
 function initializeApp() {
+    // Localize all UI elements
+    localizeElement('dropText', 'dropZoneText');
+    localizeElement('widthLabel', 'widthLabel');
+    localizeElement('heightLabel', 'heightLabel');
+    localizeElement('qualityLabel', 'qualityLabel');
+    
+    const processBtn = document.getElementById('processBtn');
+    if (processBtn) {
+        processBtn.textContent = chrome.i18n.getMessage('processButton');
+    }
+
     const processor = new ImageProcessor();
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const fileInfo = document.getElementById('fileInfo');
     const controls = document.getElementById('controls');
-    const processBtn = document.getElementById('processBtn');
     const widthInput = document.getElementById('widthInput');
     const heightInput = document.getElementById('heightInput');
     const qualityInput = document.getElementById('qualityInput');
     const qualityValue = document.getElementById('qualityValue');
-    const linkRatioBtn = document.getElementById('linkRatioBtn');
+    const lockAspectRatio = document.getElementById('lockAspectRatio');
     const optsBtn = document.getElementById('optsBtn');
+    const removeBtn = document.getElementById('removeBtn');
 
     let currentFile = null;
     let originalBitmap = null;
     let aspectRatio = 1;
-    let isRatioLocked = true;
+    let isUpdating = false; // Prevent infinite loops
 
     // Load saved settings
     loadSettings();
@@ -69,29 +73,36 @@ function initializeApp() {
     });
 
     // Remove File
-    document.getElementById('removeBtn').addEventListener('click', () => {
+    removeBtn.addEventListener('click', () => {
         resetState();
     });
 
-    // Toggle Aspect Ratio
-    linkRatioBtn.addEventListener('click', () => {
-        isRatioLocked = !isRatioLocked;
-        linkRatioBtn.classList.toggle('active', isRatioLocked);
-        if (isRatioLocked && widthInput.value) {
-            heightInput.value = Math.round(widthInput.value / aspectRatio);
+    // Aspect Ratio Lock Toggle
+    lockAspectRatio.addEventListener('change', (e) => {
+        if (e.target.checked && widthInput.value && heightInput.value) {
+            // Recalculate aspect ratio from current values
+            aspectRatio = widthInput.value / heightInput.value;
         }
     });
 
-    // Dimensions Input
+    // Dimensions Input with Aspect Ratio Lock
     widthInput.addEventListener('input', () => {
-        if (isRatioLocked && aspectRatio) {
+        if (isUpdating) return;
+        
+        if (lockAspectRatio.checked && aspectRatio && widthInput.value) {
+            isUpdating = true;
             heightInput.value = Math.round(widthInput.value / aspectRatio);
+            isUpdating = false;
         }
     });
 
     heightInput.addEventListener('input', () => {
-        if (isRatioLocked && aspectRatio) {
+        if (isUpdating) return;
+        
+        if (lockAspectRatio.checked && aspectRatio && heightInput.value) {
+            isUpdating = true;
             widthInput.value = Math.round(heightInput.value * aspectRatio);
+            isUpdating = false;
         }
     });
 
@@ -164,13 +175,20 @@ function initializeApp() {
 
             widthInput.value = originalBitmap.width;
             heightInput.value = originalBitmap.height;
+            
+            // Clean up bitmap after getting dimensions
             originalBitmap.close();
+            originalBitmap = null;
         } catch (e) {
             console.error('Could not read image dimensions', e);
         }
     }
 
     function resetState() {
+        if (originalBitmap) {
+            originalBitmap.close();
+            originalBitmap = null;
+        }
         currentFile = null;
         dropZone.classList.remove('hidden');
         fileInfo.classList.add('hidden');
@@ -179,6 +197,8 @@ function initializeApp() {
         fileInput.value = '';
         widthInput.value = '';
         heightInput.value = '';
+        lockAspectRatio.checked = true;
+        aspectRatio = 1;
     }
 
     function downloadBlob(blob, format) {
@@ -196,7 +216,6 @@ function initializeApp() {
             filename: `${originalName}_resized.${ext}`,
             saveAs: true
         }, () => {
-            // Optional: Cleanup
             setTimeout(() => URL.revokeObjectURL(url), 5000);
         });
     }
