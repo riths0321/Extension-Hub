@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Water Alert",
   "short_name": "Water Alert",
-  "version": "2.2",
-  "description": "Smart hydration reminder that alerts you to drink water at regular intervals.",
+  "version": "3.0",
+  "description": "Smart hydration reminder that helps you stay healthy and hydrated throughout the day.",
 
   "permissions": [
     "storage",
@@ -29,17 +29,9 @@
     "128": "icons/icon128.png"
   },
 
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "alert.html",
-        "alert.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;"
+  },
 
   "minimum_chrome_version": "114"
 }

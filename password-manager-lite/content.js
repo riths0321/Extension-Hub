@@ -1,58 +1,61 @@
-// Auto-fill login forms
+'use strict';
+
 class AutoFill {
   constructor() {
-    this.init();
+    this.bindMessages();
   }
 
-  async init() {
-    // Listen for messages from popup
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  bindMessages() {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       if (message.action === 'getLoginFields') {
-        const fields = this.findLoginFields();
-        sendResponse({ fields });
+        sendResponse({ fields: this.findLoginFields() });
       }
-      return true;
+      if (message.action === 'fillCredentials') {
+        this.fillCredentials(message.username, message.password);
+        sendResponse({ success: true });
+      }
+      if (message.action === 'detectLoginPage') {
+        // Background notified us this might be a login page
+        sendResponse({ isLoginPage: this.hasLoginForm() });
+      }
+      return true; // keep message channel open for async
     });
+  }
+
+  hasLoginForm() {
+    return document.querySelector('input[type="password"]') !== null;
   }
 
   findLoginFields() {
-    const fields = [];
-    
-    // Find all input fields
-    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
-    
-    inputs.forEach(input => {
-      fields.push({
-        type: input.type,
-        name: input.name || input.id || input.className,
-        value: input.value,
-        placeholder: input.placeholder
-      });
-    });
-
-    return fields;
+    return Array.from(
+      document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]')
+    ).map(input => ({
+      type:        input.type,
+      name:        input.name || input.id || input.className,
+      value:       '',
+      placeholder: input.placeholder
+    }));
   }
 
   fillCredentials(username, password) {
-    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
-    
+    const inputs = document.querySelectorAll(
+      'input[type="text"], input[type="email"], input[type="password"]'
+    );
+
     inputs.forEach(input => {
       if (input.type === 'password') {
         input.value = password;
-      } else if (input.type === 'text' || input.type === 'email') {
-        // Try to identify username field
-        const name = (input.name || input.id || '').toLowerCase();
-        if (name.includes('user') || name.includes('email') || name.includes('login')) {
+      } else {
+        const attr = (input.name + input.id + input.placeholder).toLowerCase();
+        if (attr.includes('user') || attr.includes('email') || attr.includes('login')) {
           input.value = username;
         }
       }
-      
-      // Trigger change event
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      input.dispatchEvent(new Event('input',  { bubbles: true }));
       input.dispatchEvent(new Event('change', { bubbles: true }));
     });
   }
 }
 
-// Initialize
 new AutoFill();
