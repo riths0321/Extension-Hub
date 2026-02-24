@@ -8,7 +8,6 @@ imageInput.onchange = () => {
   fileCount.textContent = count > 0 ? `${count} file(s) selected` : "No files selected";
   statusMsg.textContent = "";
 };
-
 convertBtn.onclick = async () => {
   if (!imageInput.files.length) {
     statusMsg.textContent = "Please select images first.";
