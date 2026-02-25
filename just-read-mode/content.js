@@ -1,387 +1,459 @@
+/* ─────────────────────────────────────────────
+   Just Read - content.js
+   CSP-safe reading mode injector
+   ───────────────────────────────────────────── */
+
 class ReadingMode {
     constructor() {
         this.isActive = false;
-        this.originalHTML = null;
-        this.readingModeContainer = null;
+        this.originalBodyHTML = null;
+        this.styleEl = null;
         this.settings = {
             darkMode: false,
             serifFont: false,
             fontSize: 'medium',
             lineHeight: '1.6',
-            autoDarkMode: false
+            autoDarkMode: false,
+            removeImages: false,
+            keepLinks: true,
+            themeColor: '#4f8ef7'
         };
-        
         this.init();
     }
 
     async init() {
-        // Load settings
-        const result = await chrome.storage.sync.get(['darkMode', 'serifFont', 'fontSize', 'lineHeight', 'autoDarkMode']);
+        const result = await chrome.storage.sync.get([
+            'darkMode','serifFont','fontSize','lineHeight','autoDarkMode',
+            'removeImages','keepLinks','themeColor'
+        ]);
         Object.assign(this.settings, result);
 
-        // Listen for messages from popup
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            if (request.action === 'enableReadingMode') {
-                this.enable();
-            } else if (request.action === 'disableReadingMode') {
-                this.disable();
-            } else if (request.action === 'settingsUpdated') {
-                // Reload settings and update if reading mode is active
-                this.loadSettings();
-            }
+            if (request.action === 'enableReadingMode')  this.enable();
+            if (request.action === 'disableReadingMode') this.disable();
+            if (request.action === 'settingsUpdated')    this.refreshSettings();
+            if (request.action === 'toggleReadingMode')  this.isActive ? this.disable() : this.enable();
             sendResponse({ success: true });
             return true;
         });
 
-        // Listen for settings changes
-        chrome.storage.onChanged.addListener((changes, namespace) => {
-            if (namespace === 'sync') {
-                if (changes.darkMode) this.settings.darkMode = changes.darkMode.newValue;
-                if (changes.serifFont) this.settings.serifFont = changes.serifFont.newValue;
-                if (changes.fontSize) this.settings.fontSize = changes.fontSize.newValue;
-                if (changes.lineHeight) this.settings.lineHeight = changes.lineHeight.newValue;
-                if (changes.autoDarkMode) this.settings.autoDarkMode = changes.autoDarkMode.newValue;
-                
-                if (this.isActive) {
-                    this.updateStyles();
-                }
-            }
+        chrome.storage.onChanged.addListener((changes, ns) => {
+            if (ns !== 'sync') return;
+            const keys = ['darkMode','serifFont','fontSize','lineHeight','autoDarkMode','removeImages','keepLinks','themeColor'];
+            keys.forEach(k => { if (changes[k]) this.settings[k] = changes[k].newValue; });
+            if (this.isActive) this.updateStyles();
         });
 
-        // Add keyboard shortcuts
         this.addKeyboardShortcuts();
     }
 
-    async loadSettings() {
-        const result = await chrome.storage.sync.get(['darkMode', 'serifFont', 'fontSize', 'lineHeight', 'autoDarkMode']);
+    async refreshSettings() {
+        const result = await chrome.storage.sync.get([
+            'darkMode','serifFont','fontSize','lineHeight','autoDarkMode',
+            'removeImages','keepLinks','themeColor'
+        ]);
         Object.assign(this.settings, result);
-        if (this.isActive) {
-            this.updateStyles();
-        }
+        if (this.isActive) this.updateStyles();
     }
 
     enable() {
         if (this.isActive) return;
-
         this.isActive = true;
-        this.originalHTML = document.documentElement.outerHTML;
-        
-        this.createReadingMode();
-        this.applyStyles();
-        this.addControls();
-        
-        // Dispatch custom event
-        document.dispatchEvent(new CustomEvent('readingModeEnabled'));
+        this.originalBodyHTML = document.body.innerHTML;
+        this.buildReadingView();
+        this.injectStyles();
     }
 
     disable() {
         if (!this.isActive) return;
-
         this.isActive = false;
-        
-        if (this.originalHTML) {
-            document.documentElement.innerHTML = this.originalHTML;
+
+        if (this.originalBodyHTML !== null) {
+            document.body.innerHTML = this.originalBodyHTML;
         }
-        
-        if (this.readingModeContainer) {
-            document.body.removeChild(this.readingModeContainer);
-            this.readingModeContainer = null;
+
+        if (this.styleEl && this.styleEl.parentNode) {
+            this.styleEl.parentNode.removeChild(this.styleEl);
         }
-        
-        // Dispatch custom event
-        document.dispatchEvent(new CustomEvent('readingModeDisabled'));
+        this.styleEl = null;
     }
 
-    createReadingMode() {
-        // Save original content
-        const articleContent = this.extractArticleContent();
-        
-        // Create reading mode container
-        this.readingModeContainer = document.createElement('div');
-        this.readingModeContainer.id = 'just-read-container';
-        this.readingModeContainer.innerHTML = `
-            <div id="just-read-header">
-                <button id="just-read-close" title="Exit reading mode (ESC)">×</button>
-                <div id="just-read-controls">
-                    <button class="control-btn" data-action="font-smaller">A-</button>
-                    <button class="control-btn" data-action="font-larger">A+</button>
-                    <button class="control-btn" data-action="print">🖨️</button>
-                </div>
+    buildReadingView() {
+        const content = this.extractContent();
+        const isDark = this.isDarkMode();
+
+        const container = document.createElement('div');
+        container.id = 'jr-root';
+
+        const header = document.createElement('div');
+        header.id = 'jr-bar';
+        header.innerHTML = `
+            <div id="jr-brand">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 6C2 4.9 2.9 4 4 4h6c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6z" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M12 6c0-1.1.9-2 2-2h6c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2h-6c-1.1 0-2-.9-2-2V6z" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+                <span>Just Read</span>
             </div>
-            <main id="just-read-content">
-                <article>
-                    ${articleContent}
-                </article>
-            </main>
+            <div id="jr-controls">
+                <button class="jr-btn" data-action="font-smaller" title="Smaller text">A−</button>
+                <button class="jr-btn" data-action="font-larger" title="Larger text">A+</button>
+                <button class="jr-btn" data-action="toggle-dark" title="Toggle dark mode" id="jr-dark-btn">
+                    ${isDark ? '☀️' : '🌙'}
+                </button>
+                <button class="jr-btn" data-action="print" title="Print">🖨</button>
+                <button class="jr-btn jr-close" data-action="close" title="Exit reading mode (Esc)">✕</button>
+            </div>
         `;
-        
-        // Replace body content
+
+        const article = document.createElement('div');
+        article.id = 'jr-content';
+        article.innerHTML = content;
+
+        // Optionally strip images
+        if (this.settings.removeImages) {
+            article.querySelectorAll('img, picture, figure').forEach(el => el.remove());
+        }
+
+        // Optionally disable links
+        if (!this.settings.keepLinks) {
+            article.querySelectorAll('a').forEach(a => {
+                a.removeAttribute('href');
+                a.style.textDecoration = 'none';
+                a.style.color = 'inherit';
+                a.style.cursor = 'default';
+            });
+        }
+
+        container.appendChild(header);
+        container.appendChild(article);
+
         document.body.innerHTML = '';
-        document.body.appendChild(this.readingModeContainer);
-        
-        // Add event listeners to controls
-        this.addControlListeners();
-    }
+        document.body.appendChild(container);
 
-    extractArticleContent() {
-        // Try to find main article content
-        let content = '';
-        
-        // Common article selectors
-        const selectors = [
-            'article',
-            'main',
-            '.post-content',
-            '.article-content',
-            '.entry-content',
-            '.content',
-            '#content',
-            '.story',
-            '.post',
-            '[role="main"]'
-        ];
-        
-        for (const selector of selectors) {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.length > 500) {
-                content = element.innerHTML;
-                break;
-            }
-        }
-        
-        // If no article found, use the whole page body
-        if (!content) {
-            const bodyClone = document.body.cloneNode(true);
-            
-            // Remove common non-content elements
-            const elementsToRemove = bodyClone.querySelectorAll(
-                'nav, header, footer, aside, .sidebar, .ad, .advertisement, iframe, script, style, noscript, .comments, .social-share'
-            );
-            elementsToRemove.forEach(el => el.remove());
-            
-            content = bodyClone.innerHTML;
-        }
-        
-        return content;
-    }
-
-    applyStyles() {
-        const style = document.createElement('style');
-        style.id = 'just-read-styles';
-        style.textContent = this.generateCSS();
-        document.head.appendChild(style);
-    }
-
-    generateCSS() {
-        const fontSizeMap = {
-            small: '16px',
-            medium: '18px',
-            large: '20px',
-            xlarge: '22px'
-        };
-        
-        const lineHeight = this.settings.lineHeight || '1.6';
-        
-        const fontFamily = this.settings.serifFont 
-            ? "'Georgia', 'Times New Roman', serif"
-            : "'-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', sans-serif";
-        
-        const isDark = this.settings.autoDarkMode 
-            ? window.matchMedia('(prefers-color-scheme: dark)').matches
-            : this.settings.darkMode;
-        
-        return `
-            #just-read-container {
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-                line-height: ${lineHeight};
-                font-size: ${fontSizeMap[this.settings.fontSize] || '18px'};
-                font-family: ${fontFamily};
-            }
-            
-            ${isDark ? `
-                body {
-                    background-color: #1a1a1a !important;
-                    color: #e0e0e0 !important;
-                }
-                #just-read-container {
-                    background-color: #2d2d2d;
-                    color: #e0e0e0;
-                }
-                #just-read-header {
-                    background-color: #1a1a1a;
-                    border-bottom: 1px solid #444;
-                }
-                .control-btn {
-                    background-color: #444;
-                    color: #fff;
-                }
-                #just-read-content {
-                    background-color: #2d2d2d;
-                }
-                a {
-                    color: #64b5f6;
-                }
-                h1, h2, h3, h4, h5, h6 {
-                    color: #fff;
-                }
-                code, pre {
-                    background-color: #333;
-                    color: #e0e0e0;
-                }
-                blockquote {
-                    border-left: 4px solid #666;
-                    color: #aaa;
-                }
-            ` : `
-                body {
-                    background-color: #f5f5f5 !important;
-                }
-                #just-read-container {
-                    background-color: white;
-                    color: #333;
-                    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-                }
-                #just-read-header {
-                    background-color: #4285f4;
-                    color: white;
-                }
-                .control-btn {
-                    background-color: #f0f0f0;
-                    color: #333;
-                }
-                a {
-                    color: #4285f4;
-                }
-                code, pre {
-                    background-color: #f5f5f5;
-                }
-                blockquote {
-                    border-left: 4px solid #ddd;
-                    color: #666;
-                }
-            `}
-            
-            #just-read-header {
-                position: sticky;
-                top: 0;
-                z-index: 1000;
-                padding: 10px 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            
-            #just-read-close {
-                background: none;
-                border: none;
-                color: inherit;
-                font-size: 24px;
-                cursor: pointer;
-                padding: 0 10px;
-                opacity: 0.8;
-            }
-            
-            #just-read-close:hover {
-                opacity: 1;
-            }
-            
-            #just-read-controls {
-                display: flex;
-                gap: 5px;
-            }
-            
-            .control-btn {
-                border: none;
-                border-radius: 4px;
-                padding: 5px 10px;
-                cursor: pointer;
-                font-size: 14px;
-            }
-            
-            .control-btn:hover {
-                opacity: 0.8;
-            }
-            
-            #just-read-content {
-                padding: 40px 20px;
-            }
-            
-            #just-read-content img {
-                max-width: 100%;
-                height: auto;
-            }
-            
-            #just-read-content iframe {
-                max-width: 100%;
-            }
-            
-            #just-read-content table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-            }
-            
-            #just-read-content table th,
-            #just-read-content table td {
-                border: 1px solid #ddd;
-                padding: 8px;
-            }
-            
-            #just-read-content blockquote {
-                margin: 20px 0;
-                padding-left: 20px;
-                font-style: italic;
-            }
-            
-            #just-read-content code {
-                padding: 2px 4px;
-                border-radius: 3px;
-                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            }
-            
-            #just-read-content pre {
-                padding: 10px;
-                border-radius: 5px;
-                overflow-x: auto;
-            }
-            
-            @media print {
-                #just-read-header {
-                    display: none !important;
-                }
-            }
-        `;
-    }
-
-    addControls() {
-        // Add close button functionality
-        const closeBtn = document.getElementById('just-read-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.disable());
-        }
-        
-        // Add control buttons functionality
-        document.querySelectorAll('.control-btn').forEach(btn => {
+        // Bind controls
+        document.querySelectorAll('.jr-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // Get the button element (in case emoji/text is clicked)
-                const button = e.currentTarget;
-                const action = button.dataset.action;
-                if (action) {
-                    this.handleControlAction(action);
-                }
+                const action = e.currentTarget.dataset.action;
+                this.handleAction(action);
             });
         });
     }
 
-    handleControlAction(action) {
-        switch(action) {
+    extractContent() {
+        const tempDoc = document.createElement('div');
+        tempDoc.innerHTML = document.body.innerHTML;
+
+        // Remove obvious noise
+        tempDoc.querySelectorAll(
+            'nav, header, footer, aside, .sidebar, .ad, .advertisement, .ads, ' +
+            '[class*="sidebar"], [class*="widget"], [class*="banner"], ' +
+            'iframe, script, style, noscript, .comments, [class*="social"], ' +
+            '[class*="share"], [class*="related"], [class*="newsletter"]'
+        ).forEach(el => el.remove());
+
+        // Try smart selectors
+        const selectors = [
+            'article[class]', 'article',
+            '[role="main"]',
+            '.post-content', '.article-content', '.entry-content',
+            '.article-body', '.story-body', '.content-body',
+            '#article-content', '#main-content', '#content',
+            'main article', 'main .content', 'main'
+        ];
+
+        for (const sel of selectors) {
+            const el = tempDoc.querySelector(sel);
+            if (el && el.textContent.trim().length > 300) {
+                return el.innerHTML;
+            }
+        }
+
+        return tempDoc.innerHTML;
+    }
+
+    isDarkMode() {
+        return this.settings.autoDarkMode
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            : this.settings.darkMode;
+    }
+
+    injectStyles() {
+        this.styleEl = document.createElement('style');
+        this.styleEl.id = 'jr-styles';
+        this.styleEl.textContent = this.buildCSS();
+        document.head.appendChild(this.styleEl);
+    }
+
+    buildCSS() {
+        const fontSizes = { small:'16px', medium:'18px', large:'20px', xlarge:'22px' };
+        const fontSize   = fontSizes[this.settings.fontSize] || '18px';
+        const lineHeight = this.settings.lineHeight || '1.6';
+        const isDark     = this.isDarkMode();
+        const serif      = this.settings.serifFont;
+        const theme      = this.settings.themeColor || '#4f8ef7';
+
+        const fontFamily = serif
+            ? "Georgia, 'Times New Roman', Times, serif"
+            : "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
+
+        const colors = isDark ? {
+            pageBg:    '#0f1117',
+            cardBg:    '#161b27',
+            barBg:     '#111520',
+            barBorder: '#232c3e',
+            text:      '#dde3f0',
+            textMuted: '#7d8aa5',
+            heading:   '#eef2ff',
+            link:      theme,
+            codeBg:    '#1d2438',
+            codeText:  '#c9d1e9',
+            blockBg:   '#131827',
+            blockBorder: theme,
+            btnBg:     '#1d2438',
+            btnColor:  '#c9d1e9',
+            tableBorder: '#232c3e',
+        } : {
+            pageBg:    '#f0f2f5',
+            cardBg:    '#ffffff',
+            barBg:     '#ffffff',
+            barBorder: '#e0e4ed',
+            text:      '#1e2433',
+            textMuted: '#6b7694',
+            heading:   '#0f1525',
+            link:      theme,
+            codeBg:    '#f0f3ff',
+            codeText:  '#3040a0',
+            blockBg:   '#f8f9ff',
+            blockBorder: theme,
+            btnBg:     '#eef0f7',
+            btnColor:  '#4a5168',
+            tableBorder: '#dde1ef',
+        };
+
+        return `
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: ${colors.pageBg} !important;
+            }
+
+            #jr-root {
+                font-family: ${fontFamily};
+                font-size: ${fontSize};
+                line-height: ${lineHeight};
+                color: ${colors.text};
+                background: ${colors.pageBg};
+                min-height: 100vh;
+            }
+
+            /* ── Toolbar ── */
+            #jr-bar {
+                position: sticky;
+                top: 0;
+                z-index: 9999;
+                background: ${colors.barBg};
+                border-bottom: 1px solid ${colors.barBorder};
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 20px;
+                height: 48px;
+                box-shadow: 0 1px 8px rgba(0,0,0,${isDark ? '0.4' : '0.08'});
+            }
+
+            #jr-brand {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                color: ${theme};
+                letter-spacing: -0.2px;
+            }
+
+            #jr-controls {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .jr-btn {
+                background: ${colors.btnBg};
+                color: ${colors.btnColor};
+                border: 1px solid ${isDark ? '#1d2438' : '#e0e4ed'};
+                border-radius: 6px;
+                padding: 4px 10px;
+                font-size: 12px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s;
+                font-family: inherit;
+            }
+
+            .jr-btn:hover {
+                background: ${theme};
+                color: #fff;
+                border-color: ${theme};
+            }
+
+            .jr-close {
+                font-size: 13px;
+                padding: 4px 9px;
+                margin-left: 4px;
+            }
+
+            /* ── Article ── */
+            #jr-content {
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 48px 28px 80px;
+                background: ${colors.cardBg};
+                min-height: calc(100vh - 48px);
+                box-shadow: ${isDark ? 'none' : '0 0 40px rgba(0,0,0,0.06)'};
+            }
+
+            /* Typography */
+            #jr-content h1 {
+                font-size: 2em;
+                font-weight: 700;
+                line-height: 1.2;
+                color: ${colors.heading};
+                margin: 0 0 0.5em;
+                letter-spacing: -0.5px;
+            }
+
+            #jr-content h2 {
+                font-size: 1.5em;
+                font-weight: 600;
+                color: ${colors.heading};
+                margin: 1.6em 0 0.5em;
+                letter-spacing: -0.3px;
+            }
+
+            #jr-content h3, #jr-content h4, #jr-content h5, #jr-content h6 {
+                font-weight: 600;
+                color: ${colors.heading};
+                margin: 1.4em 0 0.4em;
+            }
+
+            #jr-content p {
+                margin: 0 0 1.2em;
+                color: ${colors.text};
+            }
+
+            #jr-content a {
+                color: ${colors.link};
+                text-decoration: underline;
+                text-decoration-thickness: 1px;
+                text-underline-offset: 2px;
+            }
+
+            #jr-content a:hover { opacity: 0.8; }
+
+            #jr-content img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 6px;
+                margin: 12px 0;
+            }
+
+            #jr-content blockquote {
+                margin: 1.5em 0;
+                padding: 16px 20px;
+                background: ${colors.blockBg};
+                border-left: 3px solid ${colors.blockBorder};
+                color: ${colors.textMuted};
+                font-style: italic;
+                border-radius: 0 6px 6px 0;
+            }
+
+            #jr-content code {
+                background: ${colors.codeBg};
+                color: ${colors.codeText};
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 0.88em;
+                font-family: 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace;
+            }
+
+            #jr-content pre {
+                background: ${colors.codeBg};
+                border: 1px solid ${isDark ? '#232c3e' : '#dde1ef'};
+                border-radius: 8px;
+                padding: 16px 20px;
+                overflow-x: auto;
+                margin: 1.5em 0;
+            }
+
+            #jr-content pre code {
+                background: transparent;
+                padding: 0;
+                font-size: 0.9em;
+                color: ${colors.codeText};
+            }
+
+            #jr-content table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 1.5em 0;
+                font-size: 0.92em;
+            }
+
+            #jr-content th, #jr-content td {
+                border: 1px solid ${colors.tableBorder};
+                padding: 10px 14px;
+                text-align: left;
+            }
+
+            #jr-content th {
+                background: ${colors.codeBg};
+                font-weight: 600;
+                color: ${colors.heading};
+            }
+
+            #jr-content ul, #jr-content ol {
+                padding-left: 1.6em;
+                margin: 0.8em 0 1.2em;
+            }
+
+            #jr-content li { margin-bottom: 0.3em; }
+
+            #jr-content hr {
+                border: none;
+                border-top: 1px solid ${colors.tableBorder};
+                margin: 2em 0;
+            }
+
+            @media (max-width: 600px) {
+                #jr-content { padding: 24px 18px 60px; }
+            }
+
+            @media print {
+                #jr-bar { display: none !important; }
+                #jr-content { box-shadow: none; max-width: 100%; padding: 0; }
+            }
+        `;
+    }
+
+    handleAction(action) {
+        switch (action) {
+            case 'close':
+                this.disable();
+                break;
             case 'font-smaller':
                 this.adjustFontSize(-1);
                 break;
             case 'font-larger':
                 this.adjustFontSize(1);
+                break;
+            case 'toggle-dark':
+                this.settings.darkMode = !this.settings.darkMode;
+                chrome.storage.sync.set({ darkMode: this.settings.darkMode });
+                this.updateStyles();
+                // Update emoji on button
+                const btn = document.getElementById('jr-dark-btn');
+                if (btn) btn.textContent = this.isDarkMode() ? '☀️' : '🌙';
                 break;
             case 'print':
                 window.print();
@@ -389,53 +461,18 @@ class ReadingMode {
         }
     }
 
-    adjustFontSize(direction) {
-        const container = document.getElementById('just-read-container');
-        if (!container) return;
-        
-        const currentSize = parseFloat(window.getComputedStyle(container).fontSize);
-        const newSize = currentSize + (direction * 2);
-        container.style.fontSize = `${newSize}px`;
-    }
-
-    toggleDarkMode() {
-        // Toggle dark mode
-        this.settings.darkMode = !this.settings.darkMode;
-        
-        // Save to storage
-        chrome.storage.sync.set({ darkMode: this.settings.darkMode });
-        
-        // Update the visual immediately
-        this.updateStyles();
-        
-        console.log('Dark mode toggled:', this.settings.darkMode);
+    adjustFontSize(dir) {
+        const content = document.getElementById('jr-content');
+        if (!content) return;
+        const current = parseFloat(window.getComputedStyle(content).fontSize);
+        const newSize = Math.max(12, Math.min(28, current + dir * 2));
+        content.style.fontSize = newSize + 'px';
     }
 
     updateStyles() {
-        const styleElement = document.getElementById('just-read-styles');
-        if (styleElement) {
-            styleElement.textContent = this.generateCSS();
+        if (this.styleEl) {
+            this.styleEl.textContent = this.buildCSS();
         }
-    }
-
-    addControlListeners() {
-        // Close button
-        const closeBtn = document.getElementById('just-read-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.disable());
-        }
-        
-        // Control buttons
-        document.querySelectorAll('.control-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Get the button element (in case emoji/text is clicked)
-                const button = e.currentTarget;
-                const action = button.dataset.action;
-                if (action) {
-                    this.handleControlAction(action);
-                }
-            });
-        });
     }
 
     addKeyboardShortcuts() {
@@ -444,14 +481,12 @@ class ReadingMode {
                 e.preventDefault();
                 this.disable();
             }
-            
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
                 e.preventDefault();
                 this.isActive ? this.disable() : this.enable();
             }
-            
             if (this.isActive) {
-                if ((e.ctrlKey || e.metaKey) && e.key === '+') {
+                if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
                     e.preventDefault();
                     this.adjustFontSize(1);
                 }
@@ -464,5 +499,5 @@ class ReadingMode {
     }
 }
 
-// Initialize reading mode
+// Initialize
 const readingMode = new ReadingMode();
