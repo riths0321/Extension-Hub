@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Privacy First Todo Tab",
+  "name": "Todo Tab",
   "short_name": "Todo Tab",
   "version": "1.0",
   "description": "A privacy-first todo list with color-coded labels. Your data stays on your device.",
@@ -10,7 +10,7 @@
   },
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   },
   
   "permissions": ["storage"],
