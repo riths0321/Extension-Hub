@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
   "name": "AgreeSafe Privacy Protector",
-  "version": "1.0.0",
-  "description": "Block hidden website trackers to safeguard your personal data. Browse confidently with privacy protection and control.",
+  "version": "1.1.0",
+  "description": "Block known trackers, manage domain whitelist, and monitor privacy protection in real time.",
   "permissions": [
     "storage",
     "declarativeNetRequest",
     "declarativeNetRequestFeedback",
-    "tabs",
-    "activeTab"
+    "tabs"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -18,6 +17,7 @@
   },
   "action": {
     "default_popup": "popup.html",
+    "default_title": "AgreeSafe Privacy Protector",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -39,5 +39,8 @@
         "path": "rules.json"
       }
     ]
+  },
+  "content_security_policy": {
+     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   }
 }
