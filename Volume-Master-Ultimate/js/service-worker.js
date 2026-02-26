@@ -386,13 +386,19 @@
       });
     });
 
+    const isValidExtensionUrl = (url) => {
+      return typeof url === "string" && /^(https?:|chrome-extension:)/.test(url);
+    };
+
     // Handle installation and updates
     chrome.runtime.onInstalled.addListener(async (details) => {
       const currentVersion = config.getAppVersion();
 
       if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
         // Open install page on first install
-        await chrome.tabs.create({ url: config.INSTALL_URL });
+        if (isValidExtensionUrl(config.INSTALL_URL)) {
+          await chrome.tabs.create({ url: config.INSTALL_URL });
+        }
       }
       else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
         const previousVersion = await storageLocal.get(APP_VERSION_KEY, null);
@@ -415,9 +421,13 @@
             daysSinceInstallation
           ) {
             updateUrl = config.updateUrl(updateUrl, { d: daysSinceInstallation });
-            await chrome.tabs.create({ url: updateUrl });
+            if (isValidExtensionUrl(updateUrl)) {
+              await chrome.tabs.create({ url: updateUrl });
+            }
           } else {
-            await chrome.tabs.create({ url: updateUrl });
+            if (isValidExtensionUrl(updateUrl)) {
+              await chrome.tabs.create({ url: updateUrl });
+            }
           }
         }
       }
@@ -427,7 +437,9 @@
     });
 
     // Set uninstall URL
-    chrome.runtime.setUninstallURL(config.UNINSTALL_URL);
+    if (isValidExtensionUrl(config.UNINSTALL_URL)) {
+      chrome.runtime.setUninstallURL(config.UNINSTALL_URL);
+    }
   }, {
     "./modules/chrome/storage-local.js": 2,
     "./modules/config": 3,

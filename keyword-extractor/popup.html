@@ -1,19 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Keyword Extractor</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <div class="card">
-    <div class="header">🔑 Keyword Extractor</div>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <h1>Keyword Extractor</h1>
+        <p>Analyze page text or your own notes instantly.</p>
+      </div>
+    </header>
 
-    <textarea id="text" placeholder="Paste text here or leave empty to extract from page..."></textarea>
-    <button id="extract">Extract Keywords</button>
+    <section class="controls">
+      <label class="field-label" for="textInput">Input Text (optional)</label>
+      <textarea
+        id="textInput"
+        placeholder="Paste text here. If empty, the extension reads from the current page."
+      ></textarea>
 
-    <div id="results"></div>
-  </div>
+      <div class="toolbar">
+        <button id="readPageBtn" class="btn btn-secondary" type="button">Read Current Page</button>
+        <button id="extractBtn" class="btn btn-primary" type="button">Extract Keywords</button>
+      </div>
+
+      <div class="options">
+        <label for="topCount">Top keywords</label>
+        <select id="topCount">
+          <option value="10">10</option>
+          <option value="15" selected>15</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="result-card" aria-live="polite">
+      <div class="result-head">
+        <h2>Results</h2>
+        <span id="sourceTag" class="source-tag">No data</span>
+      </div>
+      <p id="statusText" class="status">Ready</p>
+      <div id="results" class="results"></div>
+    </section>
+  </main>
 
   <script src="popup.js"></script>
 </body>

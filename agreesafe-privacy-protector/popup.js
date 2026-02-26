@@ -1,213 +1,294 @@
-// Popup JavaScript for AgreeSafe Privacy Protector
-
 let currentDomain = '';
+let currentTabId = null;
+let refreshTimer = null;
 
-// Initialize popup
+const toggleProtectionEl = document.getElementById('toggleProtection');
+const statusTextEl = document.getElementById('statusText');
+const statusPulseEl = document.getElementById('statusPulse');
+const totalBlockedEl = document.getElementById('totalBlocked');
+const sitesProtectedEl = document.getElementById('sitesProtected');
+const currentSiteEl = document.getElementById('currentSite');
+const whitelistBtnEl = document.getElementById('whitelistBtn');
+const whitelistTextEl = document.getElementById('whitelistText');
+const clearStatsEl = document.getElementById('clearStats');
+const trackerListEl = document.getElementById('trackerList');
+const whitelistListEl = document.getElementById('whitelistList');
+const notificationContainer = document.getElementById('notificationContainer');
+
 document.addEventListener('DOMContentLoaded', () => {
-  loadStats();
   setupEventListeners();
-  getCurrentTab();
+  initializePopup();
 });
 
-// Setup event listeners
 function setupEventListeners() {
-  document.getElementById('toggleProtection').addEventListener('change', toggleProtection);
-  document.getElementById('whitelistBtn').addEventListener('click', toggleWhitelist);
-  document.getElementById('clearStats').addEventListener('click', clearStats);
+  toggleProtectionEl.addEventListener('change', onToggleProtection);
+  whitelistBtnEl.addEventListener('click', onToggleWhitelist);
+  clearStatsEl.addEventListener('click', onClearStats);
 }
 
-// Load stats from background
-function loadStats() {
-  chrome.runtime.sendMessage({ action: 'getStats' }, (response) => {
-    if (response) {
-      updateUI(response);
-    }
+async function initializePopup() {
+  await updateCurrentTabContext();
+  await refreshUI();
+
+  refreshTimer = setInterval(() => {
+    updateCurrentTabContext().then(refreshUI);
+  }, 2000);
+}
+
+function sendMessage(message) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(response);
+    });
   });
 }
 
-// Update UI with stats
-function updateUI(data) {
-  const { stats, isEnabled, whitelist } = data;
-  
-  // Update protection status
-  const statusText = document.getElementById('statusText');
-  const toggleSwitch = document.getElementById('toggleProtection');
-  
-  if (isEnabled) {
-    statusText.textContent = 'Active';
-    statusText.classList.remove('disabled');
-    toggleSwitch.checked = true;
-  } else {
-    statusText.textContent = 'Disabled';
-    statusText.classList.add('disabled');
-    toggleSwitch.checked = false;
+async function refreshUI() {
+  try {
+    const data = await sendMessage({
+      action: 'getStats',
+      tabId: currentTabId,
+      currentDomain
+    });
+    renderState(data || {});
+  } catch (error) {
+    showNotification(`Could not load stats: ${error.message}`, 'error');
   }
-  
-  // Calculate total blocked
-  const totalBlocked = Object.values(stats).reduce((sum, count) => sum + count, 0);
-  const sitesProtected = Object.keys(stats).length;
-  
-  document.getElementById('totalBlocked').textContent = totalBlocked.toLocaleString();
-  document.getElementById('sitesProtected').textContent = sitesProtected.toLocaleString();
-  
-  // Update tracker list
-  updateTrackerList(stats);
-  
-  // Update whitelist
-  updateWhitelistUI(whitelist);
 }
 
-// Update tracker list
-function updateTrackerList(stats) {
-  const trackerList = document.getElementById('trackerList');
-  
-  if (Object.keys(stats).length === 0) {
-    trackerList.innerHTML = '<div class="empty-state">No trackers blocked yet</div>';
-    return;
-  }
-  
-  // Sort by count (descending)
-  const sortedTrackers = Object.entries(stats)
+function renderState(data) {
+  const stats = data.siteStats || {};
+  const isEnabled = Boolean(data.isEnabled);
+  const whitelist = Array.isArray(data.whitelist) ? data.whitelist : [];
+
+  toggleProtectionEl.checked = isEnabled;
+  statusTextEl.textContent = isEnabled ? 'Active' : 'Disabled';
+  statusTextEl.className = `status ${isEnabled ? 'active' : 'disabled'}`;
+  statusPulseEl.className = `pulses ${isEnabled ? 'active' : 'disabled'}`;
+
+  const totalBlocked = Number(data.siteBlockedTotal || 0);
+  totalBlockedEl.textContent = totalBlocked.toLocaleString();
+  sitesProtectedEl.textContent = Object.keys(stats).length.toLocaleString();
+
+  renderTrackerList(stats);
+  renderWhitelist(whitelist);
+  updateWhitelistButtonState(whitelist.includes(currentDomain));
+}
+
+function renderTrackerList(stats) {
+  trackerListEl.textContent = '';
+
+  const entries = Object.entries(stats)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10); // Show top 10
-  
-  trackerList.innerHTML = sortedTrackers
-    .map(([domain, count]) => `
-      <div class="tracker-item">
-        <span class="tracker-domain" title="${domain}">${domain}</span>
-        <span class="tracker-count">${count}</span>
-      </div>
-    `)
-    .join('');
-}
+    .slice(0, 10);
 
-// Update whitelist UI
-function updateWhitelistUI(whitelist) {
-  const whitelistList = document.getElementById('whitelistList');
-  
-  if (whitelist.length === 0) {
-    whitelistList.innerHTML = '<div class="empty-state">No whitelisted sites</div>';
+  if (!entries.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state';
+    empty.textContent = 'No trackers blocked yet';
+    trackerListEl.appendChild(empty);
     return;
   }
-  
-  whitelistList.innerHTML = whitelist
-    .map(domain => `
-      <div class="whitelist-item">
-        <span class="tracker-domain" title="${domain}">${domain}</span>
-        <button class="btn-remove" data-domain="${domain}">✕</button>
-      </div>
-    `)
-    .join('');
-  
-  // Add event listeners to remove buttons
-  document.querySelectorAll('.btn-remove').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const domain = e.target.getAttribute('data-domain');
-      removeFromWhitelist(domain);
-    });
-  });
-}
 
-// Get current tab
-function getCurrentTab() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0] && tabs[0].url) {
-      try {
-        const url = new URL(tabs[0].url);
-        currentDomain = url.hostname;
-        document.getElementById('currentSite').textContent = currentDomain;
-        
-        // Check if current site is whitelisted
-        chrome.runtime.sendMessage({ action: 'getStats' }, (response) => {
-          if (response && response.whitelist) {
-            updateWhitelistButton(response.whitelist.includes(currentDomain));
-          }
-        });
-      } catch (e) {
-        document.getElementById('currentSite').textContent = 'Invalid URL';
-      }
-    }
-  });
-}
+  for (const [domain, count] of entries) {
+    const row = document.createElement('div');
+    row.className = 'list-item';
 
-// Update whitelist button
-function updateWhitelistButton(isWhitelisted) {
-  const btn = document.getElementById('whitelistBtn');
-  const text = document.getElementById('whitelistText');
-  
-  if (isWhitelisted) {
-    text.textContent = 'Remove from Whitelist';
-    btn.classList.add('remove');
-  } else {
-    text.textContent = 'Add to Whitelist';
-    btn.classList.remove('remove');
+    const domainEl = document.createElement('span');
+    domainEl.className = 'item-domain';
+    domainEl.textContent = domain;
+    domainEl.title = domain;
+
+    const countEl = document.createElement('span');
+    countEl.className = 'item-count';
+    countEl.textContent = String(count);
+
+    row.append(domainEl, countEl);
+    trackerListEl.appendChild(row);
   }
 }
 
-// Toggle protection
-function toggleProtection() {
-  chrome.runtime.sendMessage({ action: 'toggleEnabled' }, (response) => {
-    if (response) {
-      loadStats();
-    }
-  });
-}
+function renderWhitelist(whitelist) {
+  whitelistListEl.textContent = '';
 
-// Toggle whitelist
-function toggleWhitelist() {
-  if (!currentDomain) return;
-  
-  chrome.runtime.sendMessage({ action: 'getStats' }, (response) => {
-    if (response && response.whitelist) {
-      const isWhitelisted = response.whitelist.includes(currentDomain);
-      
-      if (isWhitelisted) {
-        removeFromWhitelist(currentDomain);
-      } else {
-        addToWhitelist(currentDomain);
-      }
-    }
-  });
-}
+  if (!whitelist.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-state';
+    empty.textContent = 'No whitelisted sites';
+    whitelistListEl.appendChild(empty);
+    return;
+  }
 
-// Add to whitelist
-function addToWhitelist(domain) {
-  chrome.runtime.sendMessage({ 
-    action: 'addToWhitelist', 
-    domain: domain 
-  }, (response) => {
-    if (response) {
-      loadStats();
-      updateWhitelistButton(true);
-    }
-  });
-}
+  for (const domain of whitelist) {
+    const row = document.createElement('div');
+    row.className = 'list-item';
 
-// Remove from whitelist
-function removeFromWhitelist(domain) {
-  chrome.runtime.sendMessage({ 
-    action: 'removeFromWhitelist', 
-    domain: domain 
-  }, (response) => {
-    if (response) {
-      loadStats();
-      if (domain === currentDomain) {
-        updateWhitelistButton(false);
-      }
-    }
-  });
-}
+    const domainEl = document.createElement('span');
+    domainEl.className = 'item-domain';
+    domainEl.textContent = domain;
+    domainEl.title = domain;
 
-// Clear stats
-function clearStats() {
-  if (confirm('Are you sure you want to clear all statistics?')) {
-    chrome.runtime.sendMessage({ action: 'clearStats' }, (response) => {
-      if (response && response.success) {
-        loadStats();
-      }
-    });
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn-remove';
+    removeBtn.type = 'button';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', () => onRemoveWhitelist(domain));
+
+    row.append(domainEl, removeBtn);
+    whitelistListEl.appendChild(row);
   }
 }
 
-// Refresh stats every 2 seconds
-setInterval(loadStats, 2000);
+async function updateCurrentTabContext() {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs && tabs[0];
+
+    if (!tab || !tab.url) {
+      currentTabId = null;
+      currentSiteEl.textContent = 'Unavailable';
+      currentDomain = '';
+      whitelistBtnEl.disabled = true;
+      whitelistTextEl.textContent = 'Unavailable for this tab';
+      return;
+    }
+
+    const parsed = new URL(tab.url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      currentTabId = tab.id ?? null;
+      currentSiteEl.textContent = 'Unsupported page';
+      currentDomain = '';
+      whitelistBtnEl.disabled = true;
+      whitelistTextEl.textContent = 'Unavailable for this page';
+      return;
+    }
+
+    currentTabId = tab.id ?? null;
+    currentDomain = normalizeDomain(parsed.hostname);
+    currentSiteEl.textContent = currentDomain;
+    whitelistBtnEl.disabled = false;
+  } catch (error) {
+    currentTabId = null;
+    currentSiteEl.textContent = 'Unable to read this tab';
+    currentDomain = '';
+    whitelistBtnEl.disabled = true;
+    whitelistTextEl.textContent = 'Unavailable';
+  }
+}
+
+function updateWhitelistButtonState(isWhitelisted) {
+  if (!currentDomain) {
+    return;
+  }
+
+  whitelistTextEl.textContent = isWhitelisted ? 'Remove from Whitelist' : 'Add to Whitelist';
+  whitelistBtnEl.classList.toggle('remove', isWhitelisted);
+}
+
+async function onToggleProtection() {
+  try {
+    const response = await sendMessage({ action: 'toggleEnabled', enabled: toggleProtectionEl.checked });
+    if (!response?.success) {
+      throw new Error(response?.error || 'Unable to update protection');
+    }
+
+    showNotification(response.enabled ? 'Protection enabled' : 'Protection disabled', 'info');
+    await refreshUI();
+  } catch (error) {
+    showNotification(error.message, 'error');
+    await refreshUI();
+  }
+}
+
+async function onToggleWhitelist() {
+  if (!currentDomain) {
+    return;
+  }
+
+  try {
+    const state = await sendMessage({ action: 'getStats' });
+    const whitelist = Array.isArray(state?.whitelist) ? state.whitelist : [];
+    const isWhitelisted = whitelist.includes(currentDomain);
+
+    const action = isWhitelisted ? 'removeFromWhitelist' : 'addToWhitelist';
+    const result = await sendMessage({ action, domain: currentDomain });
+    if (!result?.success) {
+      throw new Error(result?.error || 'Could not update whitelist');
+    }
+
+    showNotification(isWhitelisted ? 'Removed from whitelist' : 'Added to whitelist', 'success');
+    await refreshUI();
+  } catch (error) {
+    showNotification(error.message, 'error');
+  }
+}
+
+async function onRemoveWhitelist(domain) {
+  try {
+    const result = await sendMessage({ action: 'removeFromWhitelist', domain });
+    if (!result?.success) {
+      throw new Error(result?.error || 'Could not remove domain');
+    }
+
+    showNotification('Domain removed from whitelist', 'info');
+    await refreshUI();
+  } catch (error) {
+    showNotification(error.message, 'error');
+  }
+}
+
+async function onClearStats() {
+  const accepted = confirm('Clear blocked tracker history for current site?');
+  if (!accepted) {
+    return;
+  }
+
+  try {
+    if (!currentTabId) {
+      throw new Error('No active tab');
+    }
+
+    const result = await sendMessage({ action: 'clearSiteStats', tabId: currentTabId });
+    if (!result?.success) {
+      throw new Error(result?.error || 'Could not clear current site statistics');
+    }
+
+    showNotification('Current site statistics cleared', 'success');
+    await refreshUI();
+  } catch (error) {
+    showNotification(error.message, 'error');
+  }
+}
+
+function showNotification(message, type = 'info') {
+  const node = document.createElement('div');
+  node.className = `notification ${type}`;
+  node.textContent = message;
+  notificationContainer.appendChild(node);
+
+  setTimeout(() => {
+    node.remove();
+  }, 2200);
+}
+
+window.addEventListener('beforeunload', () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+});
+
+function normalizeDomain(domain) {
+  if (!domain || typeof domain !== 'string') {
+    return '';
+  }
+
+  return domain
+    .trim()
+    .toLowerCase()
+    .replace(/^www\./, '');
+}

@@ -7,77 +7,71 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <img src="icons/icon48.png" alt="AgreeSafe Icon" class="logo">
-      <h1>AgreeSafe</h1>
-    </div>
-    
-    <div class="status-section">
-      <div class="status-card">
-        <div class="status-info">
-          <span class="status-label">Protection Status</span>
-          <span class="status-value" id="statusText">Active</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="toggleProtection" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-    
-    <div class="stats-section">
-      <div class="stat-card">
-        <div class="stat-icon">🔒</div>
-        <div class="stat-content">
-          <div class="stat-number" id="totalBlocked">0</div>
-          <div class="stat-label">Trackers Blocked</div>
+  <main class="app">
+    <header class="header-card">
+      <div class="brand">
+        <img src="icons/icon48.png" alt="AgreeSafe logo" class="logo">
+        <div>
+          <h1>AgreeSafe</h1>
+          <p class="subtitle">Privacy protection for every tab</p>
         </div>
       </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon">🛡️</div>
-        <div class="stat-content">
-          <div class="stat-number" id="sitesProtected">0</div>
-          <div class="stat-label">Sites Protected</div>
-        </div>
+      <label class="toggle-switch" aria-label="Toggle protection">
+        <input type="checkbox" id="toggleProtection" checked>
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <section class="status-card" aria-live="polite">
+      <div>
+        <p class="label">Protection</p>
+        <p id="statusText" class="status active">Active</p>
       </div>
-    </div>
-    
-    <div class="current-site">
-      <h3>Current Site</h3>
-      <div class="site-info">
-        <span class="site-url" id="currentSite">Loading...</span>
-        <button class="btn-whitelist" id="whitelistBtn">
-          <span id="whitelistText">Add to Whitelist</span>
-        </button>
+      <div class="pulses" id="statusPulse" aria-hidden="true"></div>
+    </section>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <p class="stat-label">Trackers Blocked</p>
+        <p class="stat-value" id="totalBlocked">0</p>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Blocked Domains</p>
+        <p class="stat-value" id="sitesProtected">0</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Current Site</h2>
       </div>
-    </div>
-    
-    <div class="tracker-list-section">
-      <div class="section-header">
-        <h3>Recent Blocked Trackers</h3>
-        <button class="btn-clear" id="clearStats">Clear</button>
+      <p class="current-site" id="currentSite">Loading...</p>
+      <button class="btn btn-primary" id="whitelistBtn" type="button">
+        <span id="whitelistText">Add to Whitelist</span>
+      </button>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Blocked on This Site</h2>
+        <button class="btn-link" id="clearStats" type="button">Clear</button>
       </div>
-      <div class="tracker-list" id="trackerList">
-        <div class="empty-state">No trackers blocked yet</div>
+      <div class="list" id="trackerList">
+        <p class="empty-state">No trackers blocked yet</p>
       </div>
-    </div>
-    
-    <div class="whitelist-section">
-      <div class="section-header">
-        <h3>Whitelisted Sites</h3>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Whitelisted Sites</h2>
       </div>
-      <div class="whitelist-list" id="whitelistList">
-        <div class="empty-state">No whitelisted sites</div>
+      <div class="list" id="whitelistList">
+        <p class="empty-state">No whitelisted sites</p>
       </div>
-    </div>
-    
-    <div class="footer">
-      <p>Browse safely with AgreeSafe 🔐</p>
-    </div>
-  </div>
-  
+    </section>
+  </main>
+
+  <div id="notificationContainer" class="notification-container" aria-live="polite"></div>
   <script src="popup.js"></script>
 </body>
 </html>

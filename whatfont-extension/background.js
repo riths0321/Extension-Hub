@@ -1,90 +1,120 @@
-// WhatFont Background Service Worker
-console.log('WhatFont background service worker loaded');
+// WhatFont background service worker
 
-// Keep service worker alive
-let keepAlive;
+const DEFAULTS = {
+  whatFontActive: false,
+  detectionMode: 'hover',
+  detectedFonts: [],
+  showDownload: true,
+  showCSS: true,
+  highlightText: false,
+  panelPosition: 'top-right'
+};
+const tabDetectedFonts = new Map();
 
-function startKeepAlive() {
-  if (keepAlive) return;
-  keepAlive = setInterval(() => {
-    chrome.storage.local.get('keepAlive', () => {});
-  }, 20000);
+function makeFontKey(fontInfo) {
+  return `${fontInfo.family}|${fontInfo.size}|${fontInfo.weight}|${fontInfo.style}|${fontInfo.color}`;
 }
 
-startKeepAlive();
+function addTabFont(tabId, fontInfo) {
+  if (tabId === undefined || tabId === null || !fontInfo || !fontInfo.family) {
+    return;
+  }
 
-// Listen for extension installation
-chrome.runtime.onInstalled.addListener((details) => {
-  console.log('WhatFont installed:', details.reason);
-  
-  // Initialize default settings
-  chrome.storage.local.set({
-    whatFontActive: false,
-    detectionMode: 'hover',
-    detectedFonts: [],
-    showDownload: true,
-    showCSS: true,
-    highlightText: false,
-    panelPosition: 'top-right'
-  });
+  const current = tabDetectedFonts.get(tabId) || [];
+  const key = makeFontKey(fontInfo);
+  const exists = current.some((item) => makeFontKey(item) === key);
+  if (exists) {
+    return;
+  }
+
+  current.push(fontInfo);
+  if (current.length > 120) {
+    current.splice(0, current.length - 120);
+  }
+
+  tabDetectedFonts.set(tabId, current);
+}
+
+chrome.runtime.onInstalled.addListener(async () => {
+  const current = await chrome.storage.local.get(Object.keys(DEFAULTS));
+  const patch = {};
+
+  for (const [key, value] of Object.entries(DEFAULTS)) {
+    if (current[key] === undefined) {
+      patch[key] = value;
+    }
+  }
+
+  if (Object.keys(patch).length) {
+    await chrome.storage.local.set(patch);
+  }
 });
 
-// Handle messages from popup and content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Background received message:', request);
-  
-  switch (request.action) {
-    case 'fontDetected':
-      // Forward font detection to popup if it's open
-      chrome.runtime.sendMessage(request).catch(() => {
-        console.log('Popup not open, storing font detection');
+  if (request.action === 'fontDetected') {
+    // Forward only detections coming from a real page tab to avoid extension-context loops.
+    if (sender?.tab?.id !== undefined && sender?.tab?.id !== null) {
+      const tabId = sender.tab.id;
+      addTabFont(tabId, request.fontInfo);
+      chrome.runtime.sendMessage({ ...request, tabId }).catch(() => {
+        // Popup is not open; ignore.
       });
-      sendResponse({success: true});
-      break;
-      
-    case 'getActiveTab':
-      chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-        sendResponse({tab: tabs[0]});
-      });
-      return true; // Keep channel open for async response
-      
-    case 'ping':
-      sendResponse({status: 'alive'});
-      break;
-      
-    default:
-      sendResponse({success: false, error: 'Unknown action'});
+    }
+
+    sendResponse({ success: true });
+    return false;
   }
-  
+
+  if (request.action === 'getDetectedFontsForTab') {
+    const tabId = request.tabId;
+    const fonts = tabDetectedFonts.get(tabId) || [];
+    sendResponse({ success: true, fonts });
+    return false;
+  }
+
+  if (request.action === 'clearDetectedFontsForTab') {
+    const tabId = request.tabId;
+    if (tabId !== undefined && tabId !== null) {
+      tabDetectedFonts.set(tabId, []);
+    }
+    sendResponse({ success: true });
+    return false;
+  }
+
+  if (request.action === 'ping') {
+    sendResponse({ status: 'alive' });
+    return false;
+  }
+
+  sendResponse({ success: false, error: 'Unknown action' });
   return false;
 });
 
-// Inject content script when tabs are updated
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url) {
-    // Check if URL is accessible
-    if (!tab.url.startsWith('chrome://') && 
-        !tab.url.startsWith('chrome-extension://') &&
-        !tab.url.startsWith('edge://')) {
-      
-      chrome.storage.local.get(['whatFontActive', 'detectionMode'], (data) => {
-        if (data.whatFontActive) {
-          // Re-activate detection on page load
-          chrome.tabs.sendMessage(tabId, {
-            action: 'activateFontDetection',
-            mode: data.detectionMode || 'hover'
-          }).catch((err) => {
-            console.log('Could not activate on tab:', err.message);
-          });
-        }
-      });
-    }
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (typeof changeInfo.url === 'string') {
+    // New navigation: clear previous tab page font cache.
+    tabDetectedFonts.set(tabId, []);
+    // Manual-start UX: never auto-keep detection active across navigations.
+    await chrome.storage.local.set({ whatFontActive: false });
   }
+
+  if (changeInfo.status !== 'complete' || !tab?.url) {
+    return;
+  }
+
+  const url = tab.url;
+  if (
+    url.startsWith('chrome://') ||
+    url.startsWith('edge://') ||
+    url.startsWith('chrome-extension://')
+  ) {
+    return;
+  }
+
+  // Do not auto-activate detection here.
+  // Detection must start only from explicit user action in popup.
 });
 
-// Handle extension icon click
-chrome.action.onClicked.addListener((tab) => {
-  console.log('Extension icon clicked for tab:', tab.id);
+chrome.tabs.onRemoved.addListener((tabId) => {
+  tabDetectedFonts.delete(tabId);
 });
-
-console.log('WhatFont background service worker initialized');

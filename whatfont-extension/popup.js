@@ -1,510 +1,426 @@
-console.log('WhatFont popup loaded');
-
-// DOM Elements
-const elements = {
-    toggleHover: null,
-    startBtn: null,
-    stopBtn: null,
-    clearBtn: null,
-    modeOptions: null,
-    fontsList: null,
-    currentFontSection: null,
-    currentPreview: null,
-    currentDetails: null,
-    detectedSection: null,
-    showDownload: null,
-    showCSS: null,
-    highlightText: null,
-    panelPosition: null
+const KEYS = {
+  active: 'whatFontActive',
+  mode: 'detectionMode',
+  showDownload: 'showDownload',
+  showCSS: 'showCSS',
+  highlightText: 'highlightText',
+  panelPosition: 'panelPosition'
 };
 
-// State
 const state = {
-    isActive: false,
-    detectionMode: 'hover',
-    detectedFonts: [],
-    currentFont: null
+  active: false,
+  mode: 'hover',
+  fonts: [],
+  currentFont: null,
+  settings: {
+    showDownload: true,
+    showCSS: true,
+    highlightText: false,
+    panelPosition: 'top-right'
+  }
 };
 
-// ⭐ CRITICAL FIX: Register message listener IMMEDIATELY (before DOMContentLoaded)
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('🔔 Popup received message:', request.action, request);
-    
-    if (request.action === 'fontDetected') {
-        console.log('✅ Font detected:', request.fontInfo.family);
-        
-        // Add to detected fonts
-        addDetectedFont(request.fontInfo);
-        
-        // Show in UI if elements are ready
-        if (elements.fontsList) {
-            updateFontsList();
-            showCurrentFont(request.fontInfo);
-        }
-        
-        sendResponse({received: true});
+const el = {
+  toggle: document.getElementById('toggleHover'),
+  tabInfo: document.getElementById('tabInfo'),
+  statusBadge: document.getElementById('statusBadge'),
+  modeGroup: document.getElementById('modeGroup'),
+  showDownload: document.getElementById('showDownload'),
+  showCSS: document.getElementById('showCSS'),
+  highlightText: document.getElementById('highlightText'),
+  panelPosition: document.getElementById('panelPosition'),
+  startBtn: document.getElementById('startBtn'),
+  stopBtn: document.getElementById('stopBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  fontsList: document.getElementById('fontsList'),
+  detectedPanel: document.getElementById('detectedPanel'),
+  detailsPanel: document.getElementById('detailsPanel'),
+  backBtn: document.getElementById('backBtn'),
+  currentPreview: document.getElementById('currentPreview'),
+  currentDetails: document.getElementById('currentDetails'),
+  message: document.getElementById('message')
+};
+
+let activeTab = null;
+
+chrome.runtime.onMessage.addListener((request) => {
+  if (
+    request.action === 'fontDetected' &&
+    request.fontInfo &&
+    request.tabId !== undefined &&
+    request.tabId !== null &&
+    request.tabId === activeTab?.id
+  ) {
+    addDetectedFont(request.fontInfo);
+    renderFonts();
+    if (state.currentFont) {
+      showFontDetails(state.currentFont);
     }
-    
-    return false;
+  }
 });
 
-// Initialize popup
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing popup...');
-    
-    // Get all DOM elements
-    initializeElements();
-    
-    // Load saved state
-    loadState();
-    
-    // Setup event listeners
-    setupEventListeners();
-    
-    // Check if content script is ready
-    checkContentScriptStatus();
-    
-    console.log('Popup initialized');
-    console.log('Current detected fonts:', state.detectedFonts.length);
+document.addEventListener('DOMContentLoaded', () => {
+  setupEventListeners();
+  initialize().catch((error) => {
+    setMessage(error.message || 'Initialization failed');
+  });
 });
 
-// Initialize DOM element references
-function initializeElements() {
-    elements.toggleHover = document.getElementById('toggleHover');
-    elements.startBtn = document.getElementById('startBtn');
-    elements.stopBtn = document.getElementById('stopBtn');
-    elements.clearBtn = document.getElementById('clearBtn');
-    elements.modeOptions = document.querySelectorAll('.mode-option');
-    elements.fontsList = document.getElementById('fontsList');
-    elements.currentFontSection = document.getElementById('currentFontSection');
-    elements.currentPreview = document.getElementById('currentPreview');
-    elements.currentDetails = document.getElementById('currentDetails');
-    elements.detectedSection = document.getElementById('detectedSection');
-    elements.showDownload = document.getElementById('showDownload');
-    elements.showCSS = document.getElementById('showCSS');
-    elements.highlightText = document.getElementById('highlightText');
-    elements.panelPosition = document.getElementById('panelPosition');
+async function initialize() {
+  await loadTab();
+  await loadStorage();
+  await ensureContentReady();
+  await chrome.storage.local.set({ [KEYS.active]: false });
+  await sendToTab({ action: 'deactivateFontDetection' });
+  await loadTabDetectedFonts();
+  renderAll();
+  await sendSettingsToTab();
 }
 
-// Load state from storage
-function loadState() {
-    chrome.storage.local.get([
-        'whatFontActive', 
-        'detectionMode', 
-        'detectedFonts',
-        'showDownload',
-        'showCSS',
-        'highlightText',
-        'panelPosition'
-    ], function(data) {
-        console.log('📦 Loaded state from storage:', data);
-        
-        // Set state
-        state.isActive = data.whatFontActive || false;
-        state.detectionMode = data.detectionMode || 'hover';
-        state.detectedFonts = data.detectedFonts || [];
-        
-        console.log('📊 Total fonts in storage:', state.detectedFonts.length);
-        
-        // Update UI
-        elements.toggleHover.checked = state.isActive;
-        setActiveMode(state.detectionMode);
-        updateButtonStates();
-        updateFontsList(); // This will now show fonts
-        
-        // Set settings
-        if (elements.showDownload) elements.showDownload.checked = data.showDownload !== false;
-        if (elements.showCSS) elements.showCSS.checked = data.showCSS !== false;
-        if (elements.highlightText) elements.highlightText.checked = data.highlightText || false;
-        if (elements.panelPosition) elements.panelPosition.value = data.panelPosition || 'top-right';
-    });
-}
-
-// Setup all event listeners
 function setupEventListeners() {
-    // Toggle
-    elements.toggleHover?.addEventListener('change', handleToggleChange);
-    
-    // Buttons
-    elements.startBtn?.addEventListener('click', handleStartClick);
-    elements.stopBtn?.addEventListener('click', handleStopClick);
-    elements.clearBtn?.addEventListener('click', handleClearClick);
-    
-    // Mode options
-    elements.modeOptions?.forEach(option => {
-        option.addEventListener('click', handleModeClick);
-    });
-    
-    // Settings
-    elements.showDownload?.addEventListener('change', saveSettings);
-    elements.showCSS?.addEventListener('change', saveSettings);
-    elements.highlightText?.addEventListener('change', saveSettings);
-    elements.panelPosition?.addEventListener('change', saveSettings);
-}
+  el.toggle.addEventListener('change', onToggle);
 
-// Check if content script is ready
-async function checkContentScriptStatus() {
-    try {
-        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-        if (!tab?.id) {
-            console.log('No active tab');
-            return;
-        }
-        
-        // Check if URL is valid for extension
-        if (tab.url?.startsWith('chrome://') || 
-            tab.url?.startsWith('chrome-extension://') ||
-            tab.url?.startsWith('edge://')) {
-            console.log('⚠️ Cannot work on this page');
-            return;
-        }
-        
-        // Ping content script
-        const response = await sendToContentScript({action: 'ping'});
-        
-        if (response && response.status === 'alive') {
-            console.log('✅ Content script is ready');
-            
-            // If was active, reactivate
-            if (state.isActive) {
-                await sendToContentScript({
-                    action: 'activateFontDetection',
-                    mode: state.detectionMode
-                });
-            }
-        } else {
-            console.log('⚠️ Content script not responding');
-        }
-        
-    } catch (error) {
-        console.log('❌ Content script check failed:', error.message);
-    }
-}
+  el.modeGroup.addEventListener('click', (event) => {
+    const button = event.target.closest('.mode-btn');
+    if (!button) return;
+    onModeChange(button.dataset.mode);
+  });
 
-// Event Handlers
-async function handleToggleChange(e) {
-    state.isActive = e.target.checked;
-    updateButtonStates();
-    saveState();
-    
-    if (state.isActive) {
-        const success = await sendToContentScript({
-            action: 'activateFontDetection',
-            mode: state.detectionMode
-        });
-        
-        if (!success) {
-            alert('⚠️ Please refresh the page first!');
-            e.target.checked = false;
-            state.isActive = false;
-        }
-    } else {
-        await sendToContentScript({
-            action: 'deactivateFontDetection'
-        });
-    }
-}
+  el.startBtn.addEventListener('click', startDetection);
+  el.stopBtn.addEventListener('click', stopDetection);
 
-async function handleStartClick() {
-    state.isActive = true;
-    elements.toggleHover.checked = true;
-    updateButtonStates();
-    saveState();
-    
-    const success = await sendToContentScript({
-        action: 'activateFontDetection',
-        mode: state.detectionMode
-    });
-    
-    if (!success) {
-        alert('⚠️ Please refresh the page first!');
-        state.isActive = false;
-        elements.toggleHover.checked = false;
-        updateButtonStates();
-    }
-}
-
-async function handleStopClick() {
-    state.isActive = false;
-    elements.toggleHover.checked = false;
-    updateButtonStates();
-    saveState();
-    
-    await sendToContentScript({
-        action: 'deactivateFontDetection'
-    });
-}
-
-function handleClearClick() {
-    console.log('🗑️ Clearing all fonts');
-    state.detectedFonts = [];
+  el.clearBtn.addEventListener('click', async () => {
+    state.fonts = [];
     state.currentFont = null;
-    updateFontsList();
-    hideCurrentFont();
-    saveState();
-}
-
-async function handleModeClick(e) {
-    const button = e.currentTarget;
-    state.detectionMode = button.dataset.mode;
-    setActiveMode(state.detectionMode);
-    saveState();
-    
-    console.log('🔄 Mode changed to:', state.detectionMode);
-    
-    if (state.isActive) {
-        await sendToContentScript({
-            action: 'changeDetectionMode',
-            mode: state.detectionMode
-        });
+    if (activeTab?.id !== undefined && activeTab?.id !== null) {
+      await chrome.runtime.sendMessage({ action: 'clearDetectedFontsForTab', tabId: activeTab.id });
     }
+    await sendToTab({ action: 'clearDetectedFonts' });
+    renderFonts();
+    hideFontDetails();
+    setMessage('Cleared detected fonts');
+  });
+
+  el.backBtn.addEventListener('click', hideFontDetails);
+
+  [el.showDownload, el.showCSS, el.highlightText, el.panelPosition].forEach((node) => {
+    node.addEventListener('change', onSettingsChange);
+  });
 }
 
-// Helper Functions
-async function sendToContentScript(message) {
-    try {
-        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
-        
-        if (!tab?.id) {
-            console.log('No active tab');
-            return false;
-        }
-        
-        const response = await chrome.tabs.sendMessage(tab.id, message);
-        console.log('✉️ Message sent:', message.action, '→ Response:', response);
-        return response;
-        
-    } catch (error) {
-        console.log('❌ Failed to send message:', error.message);
-        return false;
-    }
+async function loadTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  activeTab = tab || null;
+
+  if (!activeTab || !activeTab.id) {
+    el.tabInfo.textContent = 'No active tab';
+    return;
+  }
+
+  const title = activeTab.title || activeTab.url || 'Untitled';
+  el.tabInfo.textContent = title;
 }
 
-function setActiveMode(mode) {
-    elements.modeOptions?.forEach(option => {
-        option.classList.toggle('active', option.dataset.mode === mode);
-    });
+async function loadStorage() {
+  const data = await chrome.storage.local.get(Object.values(KEYS));
+
+  // Prevent auto-resume; detection must start only via Start button.
+  state.active = false;
+  state.mode = data[KEYS.mode] || 'hover';
+  state.fonts = [];
+  state.settings = {
+    showDownload: data[KEYS.showDownload] !== false,
+    showCSS: data[KEYS.showCSS] !== false,
+    highlightText: Boolean(data[KEYS.highlightText]),
+    panelPosition: data[KEYS.panelPosition] || 'top-right'
+  };
 }
 
-function updateButtonStates() {
-    if (state.isActive) {
-        elements.startBtn.disabled = true;
-        elements.stopBtn.disabled = false;
-        elements.startBtn.style.opacity = '0.6';
-        elements.stopBtn.style.opacity = '1';
-    } else {
-        elements.startBtn.disabled = false;
-        elements.stopBtn.disabled = true;
-        elements.startBtn.style.opacity = '1';
-        elements.stopBtn.style.opacity = '0.6';
-    }
+async function saveStorage() {
+  await chrome.storage.local.set({
+    [KEYS.active]: state.active,
+    [KEYS.mode]: state.mode,
+    [KEYS.showDownload]: state.settings.showDownload,
+    [KEYS.showCSS]: state.settings.showCSS,
+    [KEYS.highlightText]: state.settings.highlightText,
+    [KEYS.panelPosition]: state.settings.panelPosition
+  });
 }
 
-function saveState() {
-    console.log('💾 Saving state, fonts count:', state.detectedFonts.length);
-    chrome.storage.local.set({
-        whatFontActive: state.isActive,
-        detectionMode: state.detectionMode,
-        detectedFonts: state.detectedFonts
-    }, () => {
-        console.log('✅ State saved to storage');
-    });
+function renderAll() {
+  el.toggle.checked = state.active;
+  setModeButtons();
+
+  el.showDownload.checked = state.settings.showDownload;
+  el.showCSS.checked = state.settings.showCSS;
+  el.highlightText.checked = state.settings.highlightText;
+  el.panelPosition.value = state.settings.panelPosition;
+
+  renderStatus();
+  renderFonts();
 }
 
-function saveSettings() {
-    const settings = {
-        showDownload: elements.showDownload?.checked,
-        showCSS: elements.showCSS?.checked,
-        highlightText: elements.highlightText?.checked,
-        panelPosition: elements.panelPosition?.value
-    };
-    
-    chrome.storage.local.set(settings);
-    
-    // Update content script
-    sendToContentScript({
-        action: 'updateSettings',
-        settings: settings
-    });
+function renderStatus() {
+  el.statusBadge.textContent = state.active ? 'Active' : 'Inactive';
+  el.statusBadge.classList.toggle('active', state.active);
+
+  el.startBtn.disabled = state.active;
+  el.stopBtn.disabled = !state.active;
+}
+
+function setModeButtons() {
+  const buttons = el.modeGroup.querySelectorAll('.mode-btn');
+  buttons.forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.mode === state.mode);
+  });
+}
+
+function renderFonts() {
+  el.fontsList.textContent = '';
+
+  if (!state.fonts.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty';
+    empty.textContent = 'No fonts detected yet';
+    el.fontsList.appendChild(empty);
+    return;
+  }
+
+  const recent = state.fonts.slice(-12).reverse();
+  for (const font of recent) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'font-item';
+
+    const name = document.createElement('div');
+    name.className = 'font-name';
+    name.textContent = font.family;
+
+    const meta = document.createElement('div');
+    meta.className = 'font-meta';
+    meta.textContent = `${font.size} | ${font.weight} | ${font.style}`;
+
+    item.append(name, meta);
+    item.addEventListener('click', () => showFontDetails(font));
+    el.fontsList.appendChild(item);
+  }
+}
+
+function showFontDetails(font) {
+  state.currentFont = font;
+  el.detailsPanel.classList.remove('hidden');
+  el.detectedPanel.classList.add('hidden');
+
+  el.currentPreview.textContent = 'Aa Bb Cc 123';
+  el.currentPreview.style.fontFamily = font.family;
+  el.currentPreview.style.fontWeight = font.weight;
+  el.currentPreview.style.fontStyle = font.style;
+
+  el.currentDetails.textContent = '';
+  addDetail('Font Family', font.family);
+  addDetail('Size', font.size);
+  addDetail('Weight', font.weight);
+  addDetail('Style', font.style);
+  addDetail('Line Height', font.lineHeight || 'normal');
+  addDetail('Color', font.color);
+
+  if (state.settings.showCSS) {
+    addDetail(
+      'CSS',
+      `font-family: ${font.family};\nfont-size: ${font.size};\nfont-weight: ${font.weight};\nfont-style: ${font.style};`
+    );
+  }
+
+  if (state.settings.showDownload) {
+    const query = encodeURIComponent(font.family);
+    addLinkDetail('Find Font', `https://fonts.google.com/?query=${query}`, 'Search on Google Fonts');
+  }
+}
+
+function addDetail(label, value) {
+  const row = document.createElement('div');
+  row.className = 'detail-row';
+
+  const l = document.createElement('div');
+  l.className = 'detail-label';
+  l.textContent = label;
+
+  const v = document.createElement('div');
+  v.className = 'detail-value';
+  v.textContent = String(value);
+
+  row.append(l, v);
+  el.currentDetails.appendChild(row);
+}
+
+function addLinkDetail(label, href, text) {
+  const row = document.createElement('div');
+  row.className = 'detail-row';
+
+  const l = document.createElement('div');
+  l.className = 'detail-label';
+  l.textContent = label;
+
+  const link = document.createElement('a');
+  link.className = 'detail-value';
+  link.href = href;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = text;
+
+  row.append(l, link);
+  el.currentDetails.appendChild(row);
+}
+
+function hideFontDetails() {
+  state.currentFont = null;
+  el.detailsPanel.classList.add('hidden');
+  el.detectedPanel.classList.remove('hidden');
 }
 
 function addDetectedFont(fontInfo) {
-    // Check if already exists (same family, size, weight)
-    const exists = state.detectedFonts.some(f => 
-        f.family === fontInfo.family && 
-        f.size === fontInfo.size && 
-        f.weight === fontInfo.weight
-    );
-    
-    if (!exists) {
-        console.log('➕ Adding new font:', fontInfo.family, fontInfo.size, fontInfo.weight);
-        state.detectedFonts.push(fontInfo);
-        
-        // Keep only last 50 fonts (increased from 20)
-        if (state.detectedFonts.length > 50) {
-            state.detectedFonts.shift();
-        }
-        
-        // Save immediately
-        saveState();
-    } else {
-        console.log('⏭️ Font already exists, skipping');
-    }
+  if (!fontInfo || !fontInfo.family) return;
+
+  const key = `${fontInfo.family}|${fontInfo.size}|${fontInfo.weight}|${fontInfo.style}|${fontInfo.color}`;
+  const exists = state.fonts.some((f) => `${f.family}|${f.size}|${f.weight}|${f.style}|${f.color}` === key);
+  if (exists) return;
+
+  state.fonts.push(fontInfo);
+  if (state.fonts.length > 80) {
+    state.fonts = state.fonts.slice(-80);
+  }
 }
 
-function updateFontsList() {
-    if (!elements.fontsList) {
-        console.log('⚠️ fontsList element not found');
-        return;
-    }
-    
-    console.log('🔄 Updating fonts list, total:', state.detectedFonts.length);
-    
-    elements.fontsList.innerHTML = '';
-    
-    if (state.detectedFonts.length === 0) {
-        elements.fontsList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-font"></i>
-                <p>No fonts detected yet</p>
-                <small>Enable detection and hover over text</small>
-            </div>
-        `;
-        return;
-    }
-    
-    // Show last 10 detected fonts (increased from 5)
-    const recent = state.detectedFonts.slice(-10).reverse();
-    
-    console.log('📝 Showing', recent.length, 'recent fonts');
-    
-    recent.forEach((font, index) => {
-        const item = document.createElement('div');
-        item.className = 'font-item';
-        item.innerHTML = `
-            <div class="font-name">${escapeHtml(font.family)}</div>
-            <div class="font-stats">
-                <span>${escapeHtml(font.size)}</span>
-                <span>${escapeHtml(font.weight)}</span>
-            </div>
-        `;
-        
-        item.addEventListener('click', () => {
-            console.log('👆 Font clicked:', font.family);
-            showCurrentFont(font);
-        });
-        
-        elements.fontsList.appendChild(item);
-    });
+async function onToggle(event) {
+  if (event.target.checked) {
+    await startDetection();
+  } else {
+    await stopDetection();
+  }
 }
 
-function showCurrentFont(font) {
-    console.log('👁️ Showing font details:', font.family);
-    
-    state.currentFont = font;
-    elements.currentFontSection?.classList.remove('hidden');
-    elements.detectedSection?.classList.add('hidden');
-    
-    // Update preview
-    if (elements.currentPreview) {
-        elements.currentPreview.textContent = 'Aa Bb Cc 123';
-        elements.currentPreview.style.fontFamily = font.family;
-        elements.currentPreview.style.fontSize = '32px';
-        elements.currentPreview.style.fontWeight = font.weight;
-        elements.currentPreview.style.fontStyle = font.style;
-    }
-    
-    // Update details
-    if (elements.currentDetails) {
-        elements.currentDetails.innerHTML = `
-            <div class="detail-item">
-                <div class="detail-label">Font Family</div>
-                <div class="detail-value">${escapeHtml(font.family)}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Size</div>
-                <div class="detail-value">${escapeHtml(font.size)}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Weight</div>
-                <div class="detail-value">${escapeHtml(font.weight)}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Style</div>
-                <div class="detail-value">${escapeHtml(font.style)}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Line Height</div>
-                <div class="detail-value">${escapeHtml(font.lineHeight || 'normal')}</div>
-            </div>
-            <div class="detail-item">
-                <div class="detail-label">Color</div>
-                <div class="detail-value">
-                    <span style="display: inline-block; width: 12px; height: 12px; 
-                         background: ${escapeHtml(font.color)}; border-radius: 50%; 
-                         border: 1px solid #ccc; margin-right: 6px;"></span>
-                    ${escapeHtml(font.color)}
-                </div>
-            </div>
-        `;
-        
-        // Add CSS code if enabled
-        if (elements.showCSS?.checked) {
-            const cssItem = document.createElement('div');
-            cssItem.className = 'detail-item';
-            cssItem.style.gridColumn = '1 / -1';
-            cssItem.innerHTML = `
-                <div class="detail-label">CSS Code</div>
-                <div class="detail-value" style="font-family: monospace; font-size: 11px; 
-                     background: #f5f5f5; padding: 8px; border-radius: 4px; margin-top: 4px;">
-                    font-family: ${escapeHtml(font.family)};<br>
-                    font-size: ${escapeHtml(font.size)};<br>
-                    font-weight: ${escapeHtml(font.weight)};<br>
-                    font-style: ${escapeHtml(font.style)};
-                </div>
-            `;
-            elements.currentDetails.appendChild(cssItem);
-        }
-        
-        // Add download link if enabled
-        if (elements.showDownload?.checked) {
-            const downloadItem = document.createElement('div');
-            downloadItem.className = 'detail-item';
-            downloadItem.style.gridColumn = '1 / -1';
-            downloadItem.innerHTML = `
-                <div class="detail-label">Find Font</div>
-                <div class="detail-value">
-                    <a href="https://fonts.google.com/?query=${encodeURIComponent(font.family)}" 
-                       target="_blank" style="color: var(--theme-primary-btn-start); 
-                       text-decoration: none; font-weight: 500;">
-                       🔗 Search on Google Fonts
-                    </a>
-                </div>
-            `;
-            elements.currentDetails.appendChild(downloadItem);
-        }
-    }
+async function onModeChange(mode) {
+  state.mode = mode;
+  setModeButtons();
+  await saveStorage();
+
+  if (state.active) {
+    await sendToTab({ action: 'changeDetectionMode', mode });
+  }
+
+  setMessage(`Mode: ${mode}`);
 }
 
-function hideCurrentFont() {
-    elements.currentFontSection?.classList.add('hidden');
-    elements.detectedSection?.classList.remove('hidden');
+async function onSettingsChange() {
+  state.settings = {
+    showDownload: el.showDownload.checked,
+    showCSS: el.showCSS.checked,
+    highlightText: el.highlightText.checked,
+    panelPosition: el.panelPosition.value
+  };
+
+  await saveStorage();
+  await sendSettingsToTab();
+
+  if (state.currentFont) {
+    showFontDetails(state.currentFont);
+  }
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+async function startDetection() {
+  if (!isTabSupported()) {
+    state.active = false;
+    el.toggle.checked = false;
+    renderStatus();
+    setMessage('This page is restricted. Open a normal website tab.');
+    return;
+  }
+
+  await ensureContentReady();
+
+  const response = await sendToTab({ action: 'activateFontDetection', mode: state.mode });
+  if (!response?.success) {
+    state.active = false;
+    el.toggle.checked = false;
+    renderStatus();
+    setMessage('Unable to activate on this tab. Try refreshing page.');
+    return;
+  }
+
+  state.active = true;
+  el.toggle.checked = true;
+  renderStatus();
+  await saveStorage();
+  await sendSettingsToTab();
+  setMessage('Font detection started');
 }
 
-// Back button functionality
-document.addEventListener('DOMContentLoaded', () => {
-    elements.currentFontSection?.addEventListener('click', (e) => {
-        if (e.target === elements.currentFontSection || 
-            e.target.closest('.section-title')) {
-            hideCurrentFont();
-        }
-    });
-});
+async function stopDetection() {
+  await sendToTab({ action: 'deactivateFontDetection' });
 
-console.log('✅ popup.js loaded and ready');
+  state.active = false;
+  el.toggle.checked = false;
+  renderStatus();
+  await saveStorage();
+  setMessage('Font detection stopped');
+}
+
+async function sendSettingsToTab() {
+  await sendToTab({
+    action: 'updateSettings',
+    settings: { ...state.settings }
+  });
+}
+
+async function loadTabDetectedFonts() {
+  if (activeTab?.id === undefined || activeTab?.id === null) {
+    state.fonts = [];
+    return;
+  }
+
+  const response = await chrome.runtime.sendMessage({
+    action: 'getDetectedFontsForTab',
+    tabId: activeTab.id
+  });
+
+  if (response?.success && Array.isArray(response.fonts)) {
+    state.fonts = response.fonts;
+    return;
+  }
+  state.fonts = [];
+}
+
+function isTabSupported() {
+  const url = activeTab?.url || '';
+  if (!url) return false;
+  return !(
+    url.startsWith('chrome://') ||
+    url.startsWith('edge://') ||
+    url.startsWith('chrome-extension://')
+  );
+}
+
+async function ensureContentReady() {
+  if (!activeTab?.id || !isTabSupported()) {
+    return false;
+  }
+
+  const ping = await sendToTab({ action: 'ping' });
+  return ping?.status === 'alive';
+}
+
+async function sendToTab(message) {
+  if (!activeTab?.id || !isTabSupported()) {
+    return null;
+  }
+
+  try {
+    return await chrome.tabs.sendMessage(activeTab.id, message);
+  } catch {
+    return null;
+  }
+}
+
+function setMessage(message) {
+  el.message.textContent = message;
+}

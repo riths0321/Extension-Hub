@@ -1,261 +1,310 @@
-// Popup script
 let currentTabId = null;
 let recordingStartTime = null;
 let timerInterval = null;
+let statusInterval = null;
+
+const statusEl = document.getElementById('status');
+const statusTextEl = statusEl.querySelector('.status-text');
+const timerEl = document.getElementById('timer');
+const levelFillEl = document.getElementById('levelFill');
+const currentTabEl = document.getElementById('currentTab');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const historyListEl = document.getElementById('historyList');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+const notificationContainer = document.getElementById('notificationContainer');
 
 document.addEventListener('DOMContentLoaded', () => {
-  initExtension();
   setupEventListeners();
+  initExtension();
 });
 
-function initExtension() {
-  loadStatus();
-  loadHistory();
-  getCurrentTab();
-}
-
 function setupEventListeners() {
-  document.getElementById('startBtn').addEventListener('click', startRecording);
-  document.getElementById('stopBtn').addEventListener('click', stopRecording);
-  document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
-}
+  startBtn.addEventListener('click', startRecording);
+  stopBtn.addEventListener('click', stopRecording);
+  clearHistoryBtn.addEventListener('click', clearHistory);
 
-function getCurrentTab() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs && tabs[0]) {
-      currentTabId = tabs[0].id;
-      const tabName = tabs[0].title || tabs[0].url;
-      document.getElementById('currentTab').textContent = 
-        tabName.length > 50 ? tabName.substring(0, 47) + '...' : tabName;
-    } else {
-      document.getElementById('currentTab').textContent = 'No active tab found';
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request.action === 'recordingLevel') {
+      updateLevelMeter(request.level || 0);
+    }
+
+    if (request.action === 'recordingSaved') {
+      showNotification(`Saved: ${request.filename}`, 'success');
+      loadHistory();
+    }
+
+    if (request.action === 'recordingError') {
+      showNotification(request.error || 'Recording error', 'error');
+      refreshStatus();
     }
   });
 }
 
-function loadStatus() {
+function initExtension() {
+  getCurrentTab();
+  loadHistory();
+  refreshStatus();
+
+  statusInterval = setInterval(refreshStatus, 1000);
+}
+
+async function getCurrentTab() {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs && tabs[0];
+
+    if (!tab) {
+      currentTabEl.textContent = 'No active tab found';
+      return;
+    }
+
+    currentTabId = tab.id;
+    const name = tab.title || tab.url || 'Untitled tab';
+    currentTabEl.textContent = name;
+  } catch (error) {
+    currentTabEl.textContent = 'Unable to read tab details';
+    console.error('getCurrentTab failed', error);
+  }
+}
+
+function refreshStatus() {
   chrome.runtime.sendMessage({ action: 'status' }, (response) => {
-    updateUI(response);
+    if (chrome.runtime.lastError) {
+      console.warn('Status fetch failed', chrome.runtime.lastError.message);
+      return;
+    }
+    applyStatus(response || { recording: false, startedAt: null, level: 0 });
   });
 }
 
-function updateUI(status) {
-  const statusElement = document.getElementById('status');
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
-  const timerElement = document.getElementById('timer');
-  
-  if (status && status.recording) {
-    // Recording is active
-    statusElement.className = 'status status-recording';
-    statusElement.querySelector('.status-text').textContent = 'Recording';
+function applyStatus(status) {
+  const isRecording = Boolean(status.recording);
+
+  if (isRecording) {
+    statusEl.classList.add('status-recording');
+    statusTextEl.textContent = 'Recording';
     startBtn.disabled = true;
     stopBtn.disabled = false;
-    
-    // Start timer if not already running
-    if (!timerInterval) {
-      recordingStartTime = Date.now();
+
+    if (status.startedAt && status.startedAt !== recordingStartTime) {
+      recordingStartTime = status.startedAt;
       startTimer();
     }
-  } else {
-    // Not recording
-    statusElement.className = 'status status-ready';
-    statusElement.querySelector('.status-text').textContent = 'Ready';
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    
-    // Stop timer
-    stopTimer();
-    timerElement.textContent = '00:00:00';
+
+    if (!timerInterval && recordingStartTime) {
+      startTimer();
+    }
+
+    updateLevelMeter(status.level || 0);
+    return;
   }
+
+  statusEl.classList.remove('status-recording');
+  statusTextEl.textContent = 'Ready';
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  stopTimer();
+  updateLevelMeter(0);
 }
 
 function startTimer() {
-  stopTimer(); // Clear any existing timer
-  
-  // Set initial time immediately
-  if (recordingStartTime) {
-    updateTimerDisplay();
-  }
-  
-  // Update every second
+  clearTimerInterval();
+  updateTimerDisplay();
   timerInterval = setInterval(updateTimerDisplay, 1000);
 }
 
-function updateTimerDisplay() {
-  if (recordingStartTime) {
-    const elapsed = Date.now() - recordingStartTime;
-    const hours = Math.floor(elapsed / 3600000);
-    const minutes = Math.floor((elapsed % 3600000) / 60000);
-    const seconds = Math.floor((elapsed % 60000) / 1000);
-    
-    document.getElementById('timer').textContent = 
-      `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
+function stopTimer() {
+  clearTimerInterval();
+  recordingStartTime = null;
+  timerEl.textContent = '00:00:00';
 }
 
-function stopTimer() {
+function clearTimerInterval() {
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
-  recordingStartTime = null;
+}
+
+function updateTimerDisplay() {
+  if (!recordingStartTime) {
+    timerEl.textContent = '00:00:00';
+    return;
+  }
+
+  const elapsed = Date.now() - recordingStartTime;
+  const hours = Math.floor(elapsed / 3600000);
+  const minutes = Math.floor((elapsed % 3600000) / 60000);
+  const seconds = Math.floor((elapsed % 60000) / 1000);
+
+  timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes
+    .toString()
+    .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 async function startRecording() {
   if (!currentTabId) {
-    alert('Please refresh the popup or navigate to a tab with audio.');
+    showNotification('No active tab available for recording', 'error');
     return;
   }
-  
-  // Check if the tab has audio playing
+
   try {
     const tab = await chrome.tabs.get(currentTabId);
-    if (tab.audible === false) {
-      const result = confirm('The current tab is not producing audio. Are you sure you want to record?');
-      if (!result) {
+    if (tab && tab.audible === false) {
+      const proceed = confirm('This tab is currently silent. Start recording anyway?');
+      if (!proceed) {
         return;
       }
     }
   } catch (error) {
-    console.warn('Could not check if tab is audible:', error);
+    console.warn('Could not check tab audible state', error);
   }
-  
-  // Update UI immediately
-  document.getElementById('status').className = 'status status-recording';
-  document.getElementById('status').querySelector('.status-text').textContent = 'Starting...';
-  document.getElementById('startBtn').disabled = true;
-  
-  chrome.runtime.sendMessage({ 
-    action: 'start', 
-    tabId: currentTabId 
-  }, (response) => {
-    if (response && response.success) {
-      loadStatus();
-      showNotification('Recording started!', 'success');
-    } else {
-      updateUI({ recording: false });
-      showNotification('Failed to start: ' + (response?.error || 'Unknown error'), 'error');
+
+  startBtn.disabled = true;
+  statusTextEl.textContent = 'Starting...';
+
+  chrome.runtime.sendMessage({ action: 'start', tabId: currentTabId }, (response) => {
+    if (chrome.runtime.lastError) {
+      showNotification(chrome.runtime.lastError.message, 'error');
+      refreshStatus();
+      return;
     }
+
+    if (response && response.success) {
+      showNotification('Recording started', 'success');
+      refreshStatus();
+      return;
+    }
+
+    showNotification(response?.error || 'Unable to start recording', 'error');
+    refreshStatus();
   });
 }
 
 function stopRecording() {
-  document.getElementById('status').querySelector('.status-text').textContent = 'Stopping...';
-  document.getElementById('stopBtn').disabled = true;
-  
+  stopBtn.disabled = true;
+  statusTextEl.textContent = 'Stopping...';
+
   chrome.runtime.sendMessage({ action: 'stop' }, (response) => {
-    if (response && response.success) {
-      updateUI({ recording: false });
-      showNotification('Recording saved!', 'success');
-      setTimeout(loadHistory, 1000); // Wait a bit then refresh history
-    } else {
-      updateUI({ recording: false });
-      showNotification('Failed to stop: ' + (response?.error || 'Unknown error'), 'error');
+    if (chrome.runtime.lastError) {
+      showNotification(chrome.runtime.lastError.message, 'error');
+      refreshStatus();
+      return;
     }
+
+    if (response && response.success) {
+      showNotification('Recording stopped', 'info');
+      refreshStatus();
+      return;
+    }
+
+    showNotification(response?.error || 'Unable to stop recording', 'error');
+    refreshStatus();
   });
 }
 
 function loadHistory() {
   chrome.runtime.sendMessage({ action: 'getHistory' }, (recordings) => {
-    const container = document.getElementById('historyList');
-    
-    if (!recordings || recordings.length === 0) {
-      container.innerHTML = '<div class="empty-history">No recordings yet</div>';
+    if (chrome.runtime.lastError) {
+      showNotification('Could not load recording history', 'error');
       return;
     }
-    
-    container.innerHTML = recordings.map(rec => {
-      const date = new Date(rec.timestamp);
-      const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const sizeMB = (rec.size / 1024 / 1024).toFixed(2);
-      
-      return `
-        <div class="history-item" title="${rec.filename}">
-          <div class="history-filename">${rec.filename}</div>
-          <div class="history-details">
-            <span>${sizeMB} MB</span>
-            <span>${formattedDate}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
+
+    renderHistory(recordings || []);
+  });
+}
+
+function renderHistory(recordings) {
+  historyListEl.textContent = '';
+
+  if (!recordings.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty-history';
+    empty.textContent = 'No recordings yet';
+    historyListEl.appendChild(empty);
+    return;
+  }
+
+  recordings.forEach((recording) => {
+    const item = document.createElement('article');
+    item.className = 'history-item';
+    item.title = recording.filename;
+
+    const file = document.createElement('div');
+    file.className = 'history-filename';
+    file.textContent = recording.filename;
+
+    const meta = document.createElement('div');
+    meta.className = 'history-meta';
+
+    const size = document.createElement('span');
+    size.textContent = formatSize(recording.size || 0);
+
+    const date = document.createElement('span');
+    const timestamp = recording.timestamp ? new Date(recording.timestamp) : new Date();
+    date.textContent = `${timestamp.toLocaleDateString()} ${timestamp.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`;
+
+    meta.append(size, date);
+    item.append(file, meta);
+    historyListEl.appendChild(item);
   });
 }
 
 function clearHistory() {
-  if (confirm('Clear all recording history?')) {
-    chrome.storage.local.set({ recordings: [] }, () => {
-      loadHistory();
-      showNotification('History cleared', 'info');
-    });
+  const accepted = confirm('Clear all recording history?');
+  if (!accepted) {
+    return;
   }
-}
 
-function showNotification(message, type = 'info') {
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    z-index: 10000;
-    animation: slideIn 0.3s ease;
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease';
-    setTimeout(() => notification.remove(), 300);
-  }, 3000);
-
-  // Handle fallback save from background
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'saveRecordingFallback') {
-      console.log('Popup: Handling fallback save for:', request.filename);
-      
-      // Create download link
-      const dataUrl = `data:audio/webm;base64,${request.data}`;
-      const link = document.createElement('a');
-      link.href = dataUrl;
-      link.download = request.filename;
-      link.style.display = 'none';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Show notification
-      showNotification('Recording saved via fallback method', 'success');
-      
-      // Save to history
-      setTimeout(loadHistory, 1000);
+  chrome.runtime.sendMessage({ action: 'clearHistory' }, (response) => {
+    if (chrome.runtime.lastError || !response?.success) {
+      showNotification(response?.error || 'Unable to clear history', 'error');
+      return;
     }
+
+    renderHistory([]);
+    showNotification('History cleared', 'info');
   });
 }
 
-// Add notification styles
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  
-  @keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-  }
-`;
-document.head.appendChild(style);
+function updateLevelMeter(level) {
+  const normalized = Math.max(0, Math.min(1, Number(level) || 0));
+  levelFillEl.style.width = `${Math.round(normalized * 100)}%`;
+}
 
-// Auto-refresh status every 2 seconds
-setInterval(loadStatus, 2000);
+function showNotification(message, type = 'info') {
+  const note = document.createElement('div');
+  note.className = `notification notification-${type}`;
+  note.textContent = message;
+  notificationContainer.appendChild(note);
+
+  setTimeout(() => {
+    note.remove();
+  }, 2400);
+}
+
+function formatSize(bytes) {
+  if (!bytes || bytes <= 0) {
+    return '0 KB';
+  }
+
+  const kb = bytes / 1024;
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB`;
+  }
+
+  return `${(kb / 1024).toFixed(2)} MB`;
+}
+
+window.addEventListener('beforeunload', () => {
+  if (statusInterval) {
+    clearInterval(statusInterval);
+    statusInterval = null;
+  }
+
+  stopTimer();
+});
