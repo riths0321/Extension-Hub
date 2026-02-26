@@ -169,8 +169,8 @@
     <div class="c-equalizer__sliders is-hidden">
 
       <!-- Equalizer - algorithm -->
-      <section style="width: 100%;">
-        <select class="js-audio-equalizer__algorithm" style="width: 100%;">
+      <section class="c-equalizer__block">
+        <select class="js-audio-equalizer__algorithm c-equalizer__control-input">
           <option value="lowpass">Lowpass</option>
           <option value="highpass">Highpass</option>
           <option value="bandpass">Bandpass</option>
@@ -183,21 +183,21 @@
       </section>
 
       <!-- Equalizer - frequency -->
-      <section style="width: 100%; border: 1px solid #e0e0e0; margin-top: .25em; padding: .25em;">
-        <input class="js-audio-equalizer__frequency" style="width: 100%;" type="range" min="0" max="24000" value="440"
+      <section class="c-equalizer__control">
+        <input class="js-audio-equalizer__frequency c-equalizer__control-input" type="range" min="0" max="24000" value="440"
           step="10">
         Frequency: <span class="js-audio-equalizer__frequency-value"></span> Hz
       </section>
 
       <!-- Equalizer - Q -->
-      <section style="width: 100%; border: 1px solid #e0e0e0; margin-top: .25em; padding: .25em;">
-        <input class="js-audio-equalizer__q" style="width: 100%;" type="range" min="0.1" max="20" value="1" step="0.1">
+      <section class="c-equalizer__control">
+        <input class="js-audio-equalizer__q c-equalizer__control-input" type="range" min="0.1" max="20" value="1" step="0.1">
         Q: <span class="js-audio-equalizer__q-value"></span>
       </section>
 
       <!-- Equalizer - gain -->
-      <section style="width: 100%; border: 1px solid #e0e0e0; margin-top: .25em; padding: .25em;">
-        <input class="js-audio-equalizer__gain" style="width: 100%;" type="range" min="-40" max="40" value="0" step="1">
+      <section class="c-equalizer__control">
+        <input class="js-audio-equalizer__gain c-equalizer__control-input" type="range" min="-40" max="40" value="0" step="1">
         Gain: <span class="js-audio-equalizer__gain-value"></span> dB
       </section>
 
@@ -261,14 +261,14 @@
 
 
   <!-- Hidden elements to prevent JS errors -->
-  <div class="js-rating-and-made-by" style="display: none !important;"></div>
-  <div class="js-support" style="display: none !important;">
+  <div class="js-rating-and-made-by u-hidden-legacy"></div>
+  <div class="js-support u-hidden-legacy">
     <input class="js-support__code">
     <button class="js-support__activate"></button>
     <div class="js-support__thankyou"></div>
     <div class="js-support__invalid-code"></div>
   </div>
-  <div class="js-heart" style="display: none !important;"></div>
+  <div class="js-heart u-hidden-legacy"></div>
 
   <script src="../js/popup.js"></script>
 
