@@ -1,29 +1,39 @@
-// Offscreen document for audio recording
 let mediaRecorder = null;
 let audioChunks = [];
 let currentStream = null;
+let audioContext = null;
+let sourceNode = null;
+let monitorGainNode = null;
+let analyserNode = null;
+let levelInterval = null;
+let recordingMimeType = null;
+let stopPromise = null;
+let stopResolver = null;
+let monitorAudioEl = null;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Offscreen received:', request.action);
-  
-  switch(request.action) {
-    case 'startRecording':
-      startRecording(request.streamId).then(sendResponse);
-      return true;
-      
-    case 'stopRecording':
-      stopRecording().then(sendResponse);
-      return true;
+  if (request.action === 'startRecording') {
+    startRecording(request.streamId).then(sendResponse);
+    return true;
   }
+
+  if (request.action === 'stopRecording') {
+    stopRecording().then(sendResponse);
+    return true;
+  }
+
+  return false;
 });
 
 async function startRecording(streamId) {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    return { success: false, error: 'Recorder already running' };
+  }
+
   try {
-    console.log('Starting recording with stream ID:', streamId);
-    
-    // Get the media stream
     currentStream = await navigator.mediaDevices.getUserMedia({
       audio: {
+        suppressLocalAudio: false,
         mandatory: {
           chromeMediaSource: 'tab',
           chromeMediaSourceId: streamId
@@ -31,161 +41,247 @@ async function startRecording(streamId) {
       },
       video: false
     });
-    
-    console.log('Got media stream, audio tracks:', currentStream.getAudioTracks().length);
-    
-    // Check available MIME types - prioritize MP4
-    const mimeType = MediaRecorder.isTypeSupported('audio/mp4') 
-      ? 'audio/mp4' 
-      : MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-        ? 'audio/webm;codecs=opus' 
-        : MediaRecorder.isTypeSupported('audio/webm') 
-          ? 'audio/webm' 
-          : 'audio/webm';
-    
-    if (!mimeType) {
-      throw new Error('No supported audio format found');
-    }
-    
-    console.log('Using MIME type:', mimeType);
-    
-    // Create media recorder
+
+    await setupLiveAudioRouting(currentStream);
+
+    recordingMimeType = pickMimeType();
     mediaRecorder = new MediaRecorder(currentStream, {
-      mimeType: mimeType,
-      audioBitsPerSecond: 128000 // 128 kbps
+      mimeType: recordingMimeType,
+      audioBitsPerSecond: 128000
     });
-    
-    // Reset chunks
+
     audioChunks = [];
-    
-    // Handle data available
+    stopPromise = new Promise((resolve) => {
+      stopResolver = resolve;
+    });
+
     mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
+      if (event.data && event.data.size > 0) {
         audioChunks.push(event.data);
-        console.log('Data chunk received, size:', event.data.size, 'Total chunks:', audioChunks.length);
       }
     };
-    
-    // Handle recording stop
-    mediaRecorder.onstop = saveRecording;
-    
-    // Handle errors
-    mediaRecorder.onerror = (event) => {
-      console.error('MediaRecorder error:', event.error);
+
+    mediaRecorder.onerror = async (event) => {
+      const message = event?.error?.message || 'MediaRecorder error';
+      await chrome.runtime.sendMessage({ action: 'recordingError', error: message });
+      cleanup();
     };
-    
-    // Start recording with 1-second chunks
+
+    mediaRecorder.onstop = async () => {
+      try {
+        await saveRecording();
+      } finally {
+        cleanup();
+        if (stopResolver) {
+          stopResolver();
+          stopResolver = null;
+        }
+      }
+    };
+
     mediaRecorder.start(1000);
-    console.log('MediaRecorder started, state:', mediaRecorder.state);
-    
-    return { success: true };
-    
+
+    return {
+      success: true,
+      mimeType: recordingMimeType
+    };
   } catch (error) {
-    console.error('Start recording failed:', error);
     cleanup();
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to start recording' };
   }
 }
 
 async function stopRecording() {
   try {
-    console.log('Stopping recording...');
-    
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      // Set up promise to wait for recording to complete
-      const stopPromise = new Promise((resolve) => {
-        mediaRecorder.onstop = () => {
-          console.log('MediaRecorder stopped, saving recording');
-          saveRecording();
-          resolve();
-        };
-      });
-      
-      mediaRecorder.stop();
-      
-      // Wait for the recording to be saved
-      await Promise.race([
-        stopPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout waiting for recording to stop')), 5000))
-      ]);
+    if (!mediaRecorder || mediaRecorder.state !== 'recording') {
+      cleanup();
+      return { success: true };
     }
-    
-    cleanup();
-    console.log('Recording stopped successfully');
+
+    mediaRecorder.stop();
+
+    await Promise.race([
+      stopPromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Stop timed out')), 12000))
+    ]);
+
     return { success: true };
-    
   } catch (error) {
-    console.error('Stop recording failed:', error);
     cleanup();
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to stop recording' };
   }
 }
 
-function saveRecording() {
-  try {
-    console.log('Saving recording, chunks:', audioChunks.length);
-    
-    if (audioChunks.length === 0) {
-      console.error('No audio chunks to save');
+async function setupLiveAudioRouting(stream) {
+  // Fallback monitor path to keep captured tab audible in case WebAudio output
+  // is blocked or suspended in an offscreen context.
+  monitorAudioEl = new Audio();
+  monitorAudioEl.autoplay = true;
+  monitorAudioEl.muted = false;
+  monitorAudioEl.volume = 1;
+  monitorAudioEl.srcObject = stream;
+  monitorAudioEl.play().catch(() => {
+    // Ignore if autoplay is blocked; WebAudio route below may still work.
+  });
+
+  audioContext = new AudioContext();
+  sourceNode = audioContext.createMediaStreamSource(stream);
+
+  // Keep tab audio audible while recording by routing captured stream to output.
+  monitorGainNode = audioContext.createGain();
+  monitorGainNode.gain.value = 1;
+
+  analyserNode = audioContext.createAnalyser();
+  analyserNode.fftSize = 512;
+  analyserNode.smoothingTimeConstant = 0.85;
+
+  sourceNode.connect(analyserNode);
+  sourceNode.connect(monitorGainNode);
+  monitorGainNode.connect(audioContext.destination);
+
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
+  }
+
+  const samples = new Uint8Array(analyserNode.frequencyBinCount);
+
+  levelInterval = setInterval(() => {
+    if (!analyserNode) {
       return;
     }
-    
-    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
-    console.log('Blob created, size:', blob.size);
-    
-    // Convert to base64 using Promise-based approach
-    const reader = new FileReader();
-    
-    reader.onload = () => {
-      const base64data = reader.result;
-      console.log('FileReader loaded, result length:', base64data?.length || 0);
-      
-      // Extract only the base64 part
-      const base64Match = base64data.match(/base64,(.*)$/);
-      if (base64Match && base64Match[1]) {
-        const base64Content = base64Match[1];
-        console.log('Sending recording to background, base64 length:', base64Content.length);
-        
-        chrome.runtime.sendMessage({
-          action: 'recordingComplete',
-          data: base64Content
-        }).catch(error => {
-          console.error('Failed to send recording to background:', error);
-        });
-      } else {
-        console.error('Failed to extract base64 data from result');
-      }
-    };
-    
-    reader.onerror = (error) => {
-      console.error('FileReader error:', error);
-    };
-    
-    reader.readAsDataURL(blob);
-    
-  } catch (error) {
-    console.error('Save recording failed:', error);
+
+    analyserNode.getByteFrequencyData(samples);
+    let sum = 0;
+    for (let i = 0; i < samples.length; i += 1) {
+      sum += samples[i];
+    }
+
+    const avg = sum / samples.length;
+    const normalized = Math.max(0, Math.min(1, avg / 255));
+
+    chrome.runtime.sendMessage({
+      action: 'recordingLevel',
+      level: normalized
+    }).catch(() => {
+      // Ignore when service worker is sleeping; it will wake on next message.
+    });
+  }, 180);
+}
+
+function pickMimeType() {
+  const options = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4'
+  ];
+
+  for (const mime of options) {
+    if (MediaRecorder.isTypeSupported(mime)) {
+      return mime;
+    }
   }
+
+  return 'audio/webm';
+}
+
+async function saveRecording() {
+  if (!audioChunks.length) {
+    throw new Error('No audio chunks captured');
+  }
+
+  const blob = new Blob(audioChunks, { type: recordingMimeType || 'audio/webm' });
+  const base64 = await blobToBase64(blob);
+
+  const result = await chrome.runtime.sendMessage({
+    action: 'recordingComplete',
+    data: base64,
+    mimeType: blob.type || recordingMimeType || 'audio/webm'
+  });
+
+  if (!result?.success) {
+    throw new Error(result?.error || 'Could not save recording');
+  }
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const value = String(reader.result || '');
+      const encoded = value.split(',')[1] || '';
+      if (!encoded) {
+        reject(new Error('Failed to encode recording'));
+        return;
+      }
+      resolve(encoded);
+    };
+
+    reader.onerror = () => {
+      reject(reader.error || new Error('FileReader failed'));
+    };
+
+    reader.readAsDataURL(blob);
+  });
 }
 
 function cleanup() {
-  console.log('Cleaning up...');
-  
+  if (levelInterval) {
+    clearInterval(levelInterval);
+    levelInterval = null;
+  }
+
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     try {
       mediaRecorder.stop();
-    } catch (e) {
-      // Ignore
+    } catch (_) {
+      // Ignore stop errors during cleanup.
     }
   }
-  
+
   if (currentStream) {
-    currentStream.getTracks().forEach(track => {
-      track.stop();
-    });
-    currentStream = null;
+    currentStream.getTracks().forEach((track) => track.stop());
   }
-  
+
+  if (sourceNode) {
+    try {
+      sourceNode.disconnect();
+    } catch (_) {}
+  }
+
+  if (monitorGainNode) {
+    try {
+      monitorGainNode.disconnect();
+    } catch (_) {}
+  }
+
+  if (analyserNode) {
+    try {
+      analyserNode.disconnect();
+    } catch (_) {}
+  }
+
+  if (audioContext) {
+    audioContext.close().catch(() => {
+      // Ignore close failures.
+    });
+  }
+  if (monitorAudioEl) {
+    try {
+      monitorAudioEl.pause();
+      monitorAudioEl.srcObject = null;
+    } catch (_) {}
+  }
+
   mediaRecorder = null;
   audioChunks = [];
+  currentStream = null;
+  audioContext = null;
+  sourceNode = null;
+  monitorGainNode = null;
+  analyserNode = null;
+  recordingMimeType = null;
+  stopPromise = null;
+  stopResolver = null;
+  monitorAudioEl = null;
 }

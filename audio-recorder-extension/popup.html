@@ -1,54 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Audio Recorder</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🎙️ Audio Recorder</h1>
-    
-    <div class="status-container">
+  <main class="app">
+    <header class="app-header">
+      <h1>Audio Recorder</h1>
+      <p class="subtitle">Record active tab audio without muting playback</p>
+    </header>
+
+    <section class="status-card" aria-live="polite">
       <div id="status" class="status status-ready">
-        <span class="status-indicator">●</span>
+        <span class="status-dot" aria-hidden="true"></span>
         <span class="status-text">Ready</span>
       </div>
       <div id="timer" class="timer">00:00:00</div>
-    </div>
-    
-    <div class="current-tab">
-      <strong>Current Tab:</strong>
-      <div id="currentTab" class="tab-name">Loading...</div>
-    </div>
-    
-    <div class="buttons">
-      <button id="startBtn" class="btn btn-start">
-        <span class="btn-icon">⏺️</span>
-        <span class="btn-text">Start Recording</span>
-      </button>
-      
-      <button id="stopBtn" class="btn btn-stop" disabled>
-        <span class="btn-icon">⏹️</span>
-        <span class="btn-text">Stop Recording</span>
-      </button>
-    </div>
-    
-    <div class="info">
-      <p>• Make sure audio is playing in the tab</p>
-      <p>• Recording saves as MP4 audio file</p>
-      <p>• Red indicator shows when recording</p>
-    </div>
-    
-    <div class="history-section">
-      <h3>📁 Recent Recordings</h3>
-      <div id="historyList" class="history-list">
-        <div class="empty-history">No recordings yet</div>
+      <div class="level-wrapper" aria-label="Recording level meter">
+        <div class="level-track">
+          <div id="levelFill" class="level-fill"></div>
+        </div>
+        <p class="level-label">Live audio level</p>
       </div>
-      <button id="clearHistoryBtn" class="btn-clear">Clear History</button>
-    </div>
-  </div>
-  
+    </section>
+
+    <section class="tab-card">
+      <p class="card-label">Current tab</p>
+      <p id="currentTab" class="tab-name">Loading...</p>
+    </section>
+
+    <section class="actions">
+      <button id="startBtn" class="btn btn-start" type="button">Start Recording</button>
+      <button id="stopBtn" class="btn btn-stop" type="button" disabled>Stop Recording</button>
+    </section>
+
+    <section class="tips">
+      <p>Keep media playing in the active tab for best results.</p>
+      <p>Audio remains audible while recording is active.</p>
+    </section>
+
+    <section class="history-card">
+      <div class="history-header">
+        <h2>Recent Recordings</h2>
+        <button id="clearHistoryBtn" class="btn-link" type="button">Clear</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <p class="empty-history">No recordings yet</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="notificationContainer" class="notification-container" aria-live="polite"></div>
   <script src="popup.js"></script>
 </body>
 </html>
