@@ -15,10 +15,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     const limit = Number(res.limit || 0);
     if (!limit) return;
 
-    const monthKey = new Date().toISOString().slice(0, 7);
+    const monthKey = getMonthKeyFromDate(new Date());
     const spent = (Array.isArray(res.wallet) ? res.wallet : []).reduce((sum, item) => {
       if (item.type !== "expense") return sum;
-      if (!String(item.time).startsWith(monthKey)) return sum;
+      if (getItemMonthKey(item) !== monthKey) return sum;
       return sum + Number(item.amount || 0);
     }, 0);
 
@@ -39,3 +39,17 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     chrome.storage.local.set({ lastAlertMonth: monthKey }).catch(() => {});
   });
 });
+
+function getItemMonthKey(item) {
+  if (item?.monthKey) return item.monthKey;
+  if (item?.date) return String(item.date).slice(0, 7);
+
+  const dt = new Date(item?.time || Date.now());
+  return getMonthKeyFromDate(dt);
+}
+
+function getMonthKeyFromDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}

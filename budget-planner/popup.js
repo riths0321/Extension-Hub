@@ -4,6 +4,7 @@ const els = {
   totalExpense: document.getElementById("totalExpense"),
   title: document.getElementById("title"),
   amount: document.getElementById("amount"),
+  entryDate: document.getElementById("entryDate"),
   type: document.getElementById("type"),
   category: document.getElementById("category"),
   add: document.getElementById("add"),
@@ -53,6 +54,7 @@ function loadState() {
     wallet = Array.isArray(res.wallet) ? res.wallet : [];
     limit = Number.isFinite(Number(res.limit)) ? Number(res.limit) : 0;
     els.limit.value = limit > 0 ? String(limit) : "";
+    els.entryDate.value = todayDateInputValue();
     render();
   });
 }
@@ -60,6 +62,7 @@ function loadState() {
 function onAddEntry() {
   const title = els.title.value.trim();
   const amount = Number(els.amount.value);
+  const entryDate = els.entryDate.value || todayDateInputValue();
   const type = els.type.value;
   const category = els.category.value;
 
@@ -82,7 +85,9 @@ function onAddEntry() {
     amount: round2(amount),
     type,
     category,
-    time: new Date().toISOString()
+    date: entryDate,
+    monthKey: getMonthKeyFromDateString(entryDate),
+    time: new Date(`${entryDate}T12:00:00`).toISOString()
   });
 
   chrome.storage.local.set({ wallet }).then(() => {
@@ -175,17 +180,17 @@ function onClearHistory() {
 
 function getFilteredWallet() {
   if (!activeFilterMonth) return wallet;
-  return wallet.filter((item) => String(item.time).startsWith(activeFilterMonth));
+  return wallet.filter((item) => getItemMonthKey(item) === activeFilterMonth);
 }
 
 function getCurrentMonthKey() {
-  return new Date().toISOString().slice(0, 7);
+  return getMonthKeyFromDate(new Date());
 }
 
 function getMonthlyExpense(monthKey) {
   return wallet.reduce((sum, item) => {
     if (item.type !== "expense") return sum;
-    if (!String(item.time).startsWith(monthKey)) return sum;
+    if (getItemMonthKey(item) !== monthKey) return sum;
     return sum + Number(item.amount || 0);
   }, 0);
 }
@@ -238,7 +243,7 @@ function renderHistory(list) {
 
     const meta = document.createElement("div");
     meta.className = "history-meta";
-    meta.textContent = new Date(item.time).toLocaleString();
+    meta.textContent = item.date || new Date(item.time).toLocaleDateString();
 
     const amount = document.createElement("div");
     amount.className = `history-amount ${item.type}`;
@@ -281,4 +286,30 @@ function setStatus(message, isError = false) {
 
 function round2(value) {
   return Math.round(value * 100) / 100;
+}
+
+function getItemMonthKey(item) {
+  if (item?.monthKey) return item.monthKey;
+  if (item?.date) return getMonthKeyFromDateString(item.date);
+
+  const dt = new Date(item?.time || Date.now());
+  return getMonthKeyFromDate(dt);
+}
+
+function getMonthKeyFromDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function getMonthKeyFromDateString(dateString) {
+  return String(dateString || "").slice(0, 7);
+}
+
+function todayDateInputValue() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
