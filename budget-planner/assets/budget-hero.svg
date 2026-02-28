@@ -1,0 +1,17 @@
+<svg width="420" height="180" viewBox="0 0 420 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="420" height="180" rx="22" fill="#FCE7BF"/>
+  <circle cx="64" cy="90" r="34" fill="#E0F2D2"/>
+  <circle cx="356" cy="38" r="18" fill="#F9C6A9"/>
+  <rect x="30" y="52" width="136" height="78" rx="14" fill="#FFF9EC" stroke="#DFA255" stroke-width="2"/>
+  <rect x="46" y="68" width="84" height="12" rx="6" fill="#E6EFE0"/>
+  <rect x="46" y="88" width="102" height="12" rx="6" fill="#F7D8BE"/>
+  <circle cx="148" cy="70" r="8" fill="#78A05A"/>
+  <path d="M145 70L148 73L153 66" stroke="#FFF9EC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="205" y="44" width="172" height="94" rx="16" fill="#2C5F45"/>
+  <rect x="223" y="64" width="76" height="10" rx="5" fill="#9ED489"/>
+  <rect x="223" y="82" width="104" height="10" rx="5" fill="#F4D06F"/>
+  <rect x="223" y="100" width="88" height="10" rx="5" fill="#F9C6A9"/>
+  <circle cx="347" cy="93" r="20" fill="#9ED489"/>
+  <text x="340" y="99" fill="#1D3A2A" font-size="18" font-family="Arial, sans-serif">₹</text>
+  <path d="M16 154C60 134 102 162 144 146C184 130 212 168 252 154C298 138 332 168 388 150" stroke="#DFA255" stroke-width="6" stroke-linecap="round"/>
+</svg>
