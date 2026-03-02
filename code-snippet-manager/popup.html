@@ -1,27 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Snippet Manager</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <div class="notification" id="notification"></div>
-        <div class="header">
-            <h1><i class="fas fa-code"></i> Code Snippet Manager</h1>
-            <div class="header-actions">
-                <button id="newSnippet" class="btn-primary">
-                    <i class="fas fa-plus"></i> New Snippet
-                </button>
-                <button id="exportSnippets" class="btn-secondary" title="Export snippets">
-                    <i class="fas fa-download"></i>
-                </button>
-            </div>
-        </div>
+        <div class="notification" id="notification" role="status" aria-live="polite"></div>
 
-        <div class="search-box">
-            <input type="text" id="search" placeholder="Search snippets...">
+        <header class="header">
+            <div>
+                <p class="eyebrow">Developer Toolkit</p>
+                <h1>Code Snippet Manager</h1>
+            </div>
+            <div class="header-actions">
+                <button id="newSnippet" class="btn-primary" type="button">New</button>
+                <button id="exportSnippets" class="btn-secondary" type="button">Export</button>
+                <button id="importSnippets" class="btn-secondary" type="button">Import</button>
+                <input id="importFile" type="file" accept="application/json" class="hidden" />
+            </div>
+        </header>
+
+        <section class="search-box">
+            <input type="text" id="search" placeholder="Search title or code..." />
             <select id="filterLanguage">
                 <option value="">All Languages</option>
                 <option value="javascript">JavaScript</option>
@@ -32,12 +35,13 @@
                 <option value="cpp">C++</option>
                 <option value="php">PHP</option>
                 <option value="sql">SQL</option>
+                <option value="plaintext">Plain Text</option>
             </select>
-        </div>
+        </section>
 
-        <div id="editorView" class="hidden">
+        <section id="editorView" class="hidden">
             <div class="editor-header">
-                <input type="text" id="snippetTitle" placeholder="Snippet Title">
+                <input type="text" id="snippetTitle" placeholder="Snippet title" maxlength="100" />
                 <select id="snippetLanguage">
                     <option value="plaintext">Plain Text</option>
                     <option value="javascript">JavaScript</option>
@@ -52,30 +56,21 @@
             </div>
             <textarea id="snippetCode" placeholder="Paste your code here..."></textarea>
             <div class="editor-actions">
-                <button id="saveSnippet" class="btn-primary">
-                    <i class="fas fa-save"></i> Save
-                </button>
-                <button id="cancelEdit" class="btn-secondary">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-                <button id="insertToPage" class="btn-success">
-                    <i class="fas fa-paper-plane"></i> Insert to Page
-                </button>
+                <button id="saveSnippet" class="btn-primary" type="button">Save</button>
+                <button id="cancelEdit" class="btn-secondary" type="button">Cancel</button>
+                <button id="insertToPage" class="btn-success" type="button">Insert to Page</button>
             </div>
-        </div>
+        </section>
 
-        <div id="snippetsList">
-            <!-- Snippets will be loaded here -->
-        </div>
+        <main id="snippetsList"></main>
 
-        <div id="noSnippets" class="hidden">
-            <i class="fas fa-code fa-3x"></i>
-            <p>No snippets saved yet</p>
-            <button id="createFirstSnippet" class="btn-primary">
-                Create Your First Snippet
-            </button>
-        </div>
+        <section id="noSnippets" class="hidden">
+            <div class="empty-illustration">&lt;/&gt;</div>
+            <p>No snippets saved yet.</p>
+            <button id="createFirstSnippet" class="btn-primary" type="button">Create First Snippet</button>
+        </section>
     </div>
+
     <script src="storage-manager.js"></script>
     <script src="popup.js"></script>
 </body>

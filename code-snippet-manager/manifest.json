@@ -27,6 +27,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; style-src 'self' https://cdnjs.cloudflare.com;"
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   }
 }

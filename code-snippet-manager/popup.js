@@ -1,413 +1,419 @@
-document.addEventListener('DOMContentLoaded', function() {
-    let snippets = [];
-    let currentEditId = null;
-    let hasChanges = false;
-
-    const elements = {
-        newSnippet: document.getElementById('newSnippet'),
-        editorView: document.getElementById('editorView'),
-        snippetsList: document.getElementById('snippetsList'),
-        noSnippets: document.getElementById('noSnippets'),
-        saveSnippet: document.getElementById('saveSnippet'),
-        cancelEdit: document.getElementById('cancelEdit'),
-        search: document.getElementById('search'),
-        filterLanguage: document.getElementById('filterLanguage'),
-        snippetTitle: document.getElementById('snippetTitle'),
-        snippetLanguage: document.getElementById('snippetLanguage'),
-        snippetCode: document.getElementById('snippetCode'),
-        createFirstSnippet: document.getElementById('createFirstSnippet'),
-        insertToPage: document.getElementById('insertToPage'),
-        notification: document.getElementById('notification'),
-        exportSnippets: document.getElementById('exportSnippets')
+document.addEventListener("DOMContentLoaded", () => {
+    const state = {
+        snippets: [],
+        currentEditId: null,
+        hasChanges: false
     };
 
-    // Initialize
-    loadSnippets();
+    const el = {
+        newSnippet: document.getElementById("newSnippet"),
+        editorView: document.getElementById("editorView"),
+        snippetsList: document.getElementById("snippetsList"),
+        noSnippets: document.getElementById("noSnippets"),
+        saveSnippet: document.getElementById("saveSnippet"),
+        cancelEdit: document.getElementById("cancelEdit"),
+        search: document.getElementById("search"),
+        filterLanguage: document.getElementById("filterLanguage"),
+        snippetTitle: document.getElementById("snippetTitle"),
+        snippetLanguage: document.getElementById("snippetLanguage"),
+        snippetCode: document.getElementById("snippetCode"),
+        createFirstSnippet: document.getElementById("createFirstSnippet"),
+        insertToPage: document.getElementById("insertToPage"),
+        notification: document.getElementById("notification"),
+        exportSnippets: document.getElementById("exportSnippets"),
+        importSnippets: document.getElementById("importSnippets"),
+        importFile: document.getElementById("importFile")
+    };
 
-    // Event Listeners
-    elements.newSnippet.addEventListener('click', () => showEditor());
-    elements.createFirstSnippet.addEventListener('click', () => showEditor());
-    elements.saveSnippet.addEventListener('click', saveSnippet);
-    elements.cancelEdit.addEventListener('click', cancelEdit);
-    elements.search.addEventListener('input', filterSnippets);
-    elements.filterLanguage.addEventListener('change', filterSnippets);
-    elements.insertToPage.addEventListener('click', insertToPage);
-    if (elements.exportSnippets) elements.exportSnippets.addEventListener('click', exportSnippets);
+    init().catch((error) => {
+        showNotification(`Initialization failed: ${error.message}`, "error");
+    });
 
-    // Track changes for better UX
-    elements.snippetTitle.addEventListener('input', () => { hasChanges = true; });
-    elements.snippetCode.addEventListener('input', () => { hasChanges = true; });
-    elements.snippetLanguage.addEventListener('change', () => { hasChanges = true; });
+    async function init() {
+        bindEvents();
+        await loadSnippets();
+    }
 
-    /**
-     * Load snippets from storage with proper error handling
-     */
+    function bindEvents() {
+        el.newSnippet.addEventListener("click", () => showEditor());
+        el.createFirstSnippet.addEventListener("click", () => showEditor());
+        el.saveSnippet.addEventListener("click", onSaveSnippet);
+        el.cancelEdit.addEventListener("click", onCancelEdit);
+        el.search.addEventListener("input", renderSnippets);
+        el.filterLanguage.addEventListener("change", renderSnippets);
+        el.insertToPage.addEventListener("click", onInsertFromEditor);
+        el.exportSnippets.addEventListener("click", onExportSnippets);
+        el.importSnippets.addEventListener("click", () => el.importFile.click());
+        el.importFile.addEventListener("change", onImportSnippets);
+
+        [el.snippetTitle, el.snippetCode, el.snippetLanguage].forEach((node) => {
+            node.addEventListener("input", () => {
+                state.hasChanges = true;
+            });
+            node.addEventListener("change", () => {
+                state.hasChanges = true;
+            });
+        });
+    }
+
     async function loadSnippets() {
-        try {
-            const result = await storageManager.loadSnippets();
-            
-            if (!result.success) {
-                showNotification(`Error loading snippets: ${result.error}`, 'error');
-                snippets = [];
-            } else {
-                snippets = result.snippets || [];
-                if (result.source === 'local') {
-                    showNotification('Loaded from backup storage', 'info');
-                }
-            }
-            
-            renderSnippets();
-            updateUI();
-        } catch (error) {
-            console.error('Load error:', error);
-            showNotification('Failed to load snippets', 'error');
-            snippets = [];
-            updateUI();
-        }
-    }
+        const result = await storageManager.loadSnippets();
 
-    /**
-     * Show editor for creating or editing a snippet
-     */
-    function showEditor(snippet = null) {
-        elements.editorView.classList.remove('hidden');
-        elements.snippetsList.classList.add('hidden');
-        elements.noSnippets.classList.add('hidden');
-        hasChanges = false;
-        
-        if (snippet) {
-            elements.snippetTitle.value = snippet.title || '';
-            elements.snippetLanguage.value = snippet.language || 'javascript';
-            elements.snippetCode.value = snippet.code || '';
-            currentEditId = snippet.id;
-            elements.saveSnippet.innerHTML = '<i class="fas fa-save"></i> Update';
+        if (!result.success) {
+            state.snippets = [];
+            showNotification(`Error loading snippets: ${result.error}`, "error");
         } else {
-            elements.snippetTitle.value = '';
-            elements.snippetLanguage.value = 'javascript';
-            elements.snippetCode.value = '';
-            currentEditId = null;
-            elements.saveSnippet.innerHTML = '<i class="fas fa-save"></i> Save';
+            state.snippets = normalizeSnippets(result.snippets || []);
+            if (result.source === "local") {
+                showNotification("Loaded local backup snippets", "info");
+            }
         }
-        
-        elements.snippetTitle.focus();
+
+        renderSnippets();
+        updateLayoutState();
     }
 
-    /**
-     * Save snippet with proper validation and error handling
-     */
-    async function saveSnippet() {
-        const title = elements.snippetTitle.value.trim();
-        const language = elements.snippetLanguage.value;
-        const code = elements.snippetCode.value.trim();
+    function normalizeSnippets(snippets) {
+        return snippets
+            .filter((item) => item && typeof item === "object")
+            .map((item) => ({
+                id: String(item.id || Date.now().toString()),
+                title: String(item.title || "").trim(),
+                language: String(item.language || "plaintext").trim(),
+                code: String(item.code || ""),
+                date: item.date || new Date().toISOString(),
+                updatedAt: item.updatedAt || item.date || new Date().toISOString()
+            }))
+            .filter((item) => item.title && item.code);
+    }
 
-        // Validation
-        const snippet = { title, language, code };
-        const validation = storageManager.validateSnippet(snippet);
-        
-        if (!validation.valid) {
-            showNotification(validation.error, 'error');
+    function getFilteredSnippets() {
+        const term = el.search.value.trim().toLowerCase();
+        const language = el.filterLanguage.value;
+
+        return state.snippets.filter((snippet) => {
+            const matchesTerm =
+                !term ||
+                snippet.title.toLowerCase().includes(term) ||
+                snippet.code.toLowerCase().includes(term);
+            const matchesLang = !language || snippet.language === language;
+            return matchesTerm && matchesLang;
+        });
+    }
+
+    function renderSnippets() {
+        el.snippetsList.textContent = "";
+        const list = getFilteredSnippets();
+
+        if (!list.length) {
+            const empty = document.createElement("div");
+            empty.className = "snippet-item";
+
+            const title = document.createElement("div");
+            title.className = "snippet-title";
+            title.textContent = state.snippets.length ? "No snippets found for this filter." : "No snippets yet.";
+
+            const date = document.createElement("div");
+            date.className = "snippet-date";
+            date.textContent = state.snippets.length ? "Try changing search/filter." : "Create your first snippet to begin.";
+
+            empty.append(title, date);
+            el.snippetsList.appendChild(empty);
+            updateLayoutState();
             return;
         }
 
-        // Disable button during save
-        elements.saveSnippet.disabled = true;
-        const originalText = elements.saveSnippet.innerHTML;
-        elements.saveSnippet.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        const sorted = [...list].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        sorted.forEach((snippet) => {
+            el.snippetsList.appendChild(buildSnippetCard(snippet));
+        });
 
-        try {
-            if (currentEditId) {
-                // Update existing snippet
-                const index = snippets.findIndex(s => s.id === currentEditId);
-                if (index !== -1) {
-                    snippets[index] = {
-                        id: currentEditId,
-                        title,
-                        language,
-                        code,
-                        date: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    };
-                }
-            } else {
-                // Add new snippet
-                const newSnippet = {
-                    id: Date.now().toString(),
+        updateLayoutState();
+    }
+
+    function buildSnippetCard(snippet) {
+        const card = document.createElement("article");
+        card.className = "snippet-item";
+
+        const header = document.createElement("div");
+        header.className = "snippet-header";
+
+        const titleSection = document.createElement("div");
+        titleSection.className = "snippet-title-section";
+
+        const title = document.createElement("div");
+        title.className = "snippet-title";
+        title.textContent = snippet.title;
+
+        const date = document.createElement("div");
+        date.className = "snippet-date";
+        date.textContent = formatDate(snippet.updatedAt || snippet.date);
+
+        titleSection.append(title, date);
+
+        const lang = document.createElement("div");
+        lang.className = "snippet-language";
+        lang.textContent = snippet.language;
+
+        header.append(titleSection, lang);
+
+        const pre = document.createElement("pre");
+        pre.className = "snippet-code";
+        pre.textContent = snippet.code;
+
+        const actions = document.createElement("div");
+        actions.className = "snippet-actions";
+
+        const editBtn = makeButton("Edit", "btn-primary", () => showEditor(snippet));
+        const insertBtn = makeButton("Insert", "btn-success", () => insertSnippetToPage(snippet));
+        const copyBtn = makeButton("Copy", "btn-warning", () => copyToClipboard(snippet.code));
+        const deleteBtn = makeButton("Delete", "btn-danger", () => onDeleteSnippet(snippet.id));
+
+        actions.append(editBtn, insertBtn, copyBtn, deleteBtn);
+        card.append(header, pre, actions);
+        return card;
+    }
+
+    function makeButton(label, className, onClick) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = className;
+        button.textContent = label;
+        button.addEventListener("click", onClick);
+        return button;
+    }
+
+    function showEditor(snippet = null) {
+        state.hasChanges = false;
+        el.editorView.classList.remove("hidden");
+        el.snippetsList.classList.add("hidden");
+        el.noSnippets.classList.add("hidden");
+
+        if (snippet) {
+            el.snippetTitle.value = snippet.title;
+            el.snippetLanguage.value = snippet.language || "javascript";
+            el.snippetCode.value = snippet.code;
+            state.currentEditId = snippet.id;
+            el.saveSnippet.textContent = "Update";
+        } else {
+            el.snippetTitle.value = "";
+            el.snippetLanguage.value = "javascript";
+            el.snippetCode.value = "";
+            state.currentEditId = null;
+            el.saveSnippet.textContent = "Save";
+        }
+
+        el.snippetTitle.focus();
+    }
+
+    async function onSaveSnippet() {
+        const title = el.snippetTitle.value.trim();
+        const language = el.snippetLanguage.value;
+        const code = el.snippetCode.value.trim();
+
+        const validation = storageManager.validateSnippet({ title, language, code });
+        if (!validation.valid) {
+            showNotification(validation.error, "error");
+            return;
+        }
+
+        const now = new Date().toISOString();
+        if (state.currentEditId) {
+            const idx = state.snippets.findIndex((s) => s.id === state.currentEditId);
+            if (idx >= 0) {
+                state.snippets[idx] = {
+                    ...state.snippets[idx],
                     title,
                     language,
                     code,
-                    date: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
+                    updatedAt: now
                 };
-                snippets.push(newSnippet);
             }
-
-            // Save to storage
-            const saveResult = await storageManager.saveSnippets(snippets);
-            
-            if (!saveResult.success) {
-                showNotification(`Save failed: ${saveResult.error}`, 'error');
-                return;
-            }
-
-            showNotification(currentEditId ? 'Snippet updated successfully!' : 'Snippet saved successfully!', 'success');
-            hasChanges = false;
-            
-            // Reload and show list
-            await loadSnippets();
-            cancelEdit();
-        } catch (error) {
-            console.error('Save error:', error);
-            showNotification(`Error saving snippet: ${error.message}`, 'error');
-        } finally {
-            // Re-enable button
-            elements.saveSnippet.disabled = false;
-            elements.saveSnippet.innerHTML = originalText;
+        } else {
+            state.snippets.push({
+                id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+                title,
+                language,
+                code,
+                date: now,
+                updatedAt: now
+            });
         }
+
+        await persistSnippets(state.currentEditId ? "Snippet updated" : "Snippet saved");
+        onCancelEdit(true);
     }
 
-    /**
-     * Cancel editing and return to list view
-     */
-    function cancelEdit() {
-        if (hasChanges) {
-            if (!confirm('You have unsaved changes. Are you sure you want to discard them?')) {
-                return;
-            }
-        }
-        
-        elements.editorView.classList.add('hidden');
-        elements.snippetsList.classList.remove('hidden');
-        currentEditId = null;
-        hasChanges = false;
-        updateUI();
+    async function onDeleteSnippet(id) {
+        const confirmed = window.confirm("Delete this snippet?");
+        if (!confirmed) return;
+
+        state.snippets = state.snippets.filter((s) => s.id !== id);
+        await persistSnippets("Snippet deleted");
     }
 
-    /**
-     * Render snippets with proper syntax highlighting
-     */
-    function renderSnippets() {
-        elements.snippetsList.innerHTML = '';
-        
-        let filteredSnippets = snippets;
-        
-        // Apply search filter
-        const searchTerm = elements.search.value.toLowerCase();
-        if (searchTerm) {
-            filteredSnippets = filteredSnippets.filter(snippet =>
-                snippet.title.toLowerCase().includes(searchTerm) ||
-                snippet.code.toLowerCase().includes(searchTerm)
-            );
-        }
-        
-        // Apply language filter
-        const languageFilter = elements.filterLanguage.value;
-        if (languageFilter) {
-            filteredSnippets = filteredSnippets.filter(snippet =>
-                snippet.language === languageFilter
-            );
-        }
-        
-        if (filteredSnippets.length === 0) {
-            elements.snippetsList.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #a0aec0;">
-                    <i class="fas fa-search fa-2x"></i>
-                    <p>No snippets found</p>
-                </div>
-            `;
+    async function persistSnippets(successMessage) {
+        const saveResult = await storageManager.saveSnippets(state.snippets);
+        if (!saveResult.success) {
+            showNotification(`Save failed: ${saveResult.error}`, "error");
             return;
         }
-        
-        filteredSnippets.forEach(snippet => {
-            const date = new Date(snippet.date);
-            const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            
-            const snippetElement = document.createElement('div');
-            snippetElement.className = 'snippet-item';
-            snippetElement.innerHTML = `
-                <div class="snippet-header">
-                    <div class="snippet-title-section">
-                        <div class="snippet-title">${escapeHtml(snippet.title)}</div>
-                        <div class="snippet-date">${dateStr}</div>
-                    </div>
-                    <div class="snippet-language">${snippet.language}</div>
-                </div>
-                <pre class="snippet-code"><code class="language-${snippet.language}">${escapeHtml(snippet.code)}</code></pre>
-                <div class="snippet-actions">
-                    <button class="btn-primary edit-btn" data-id="${snippet.id}" title="Edit snippet">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn-success insert-btn" data-id="${snippet.id}" title="Insert to page">
-                        <i class="fas fa-copy"></i> Copy
-                    </button>
-                    <button class="btn-warning copy-clipboard-btn" data-id="${snippet.id}" title="Copy to clipboard">
-                        <i class="fas fa-clipboard"></i>
-                    </button>
-                    <button class="btn-danger delete-btn" data-id="${snippet.id}" title="Delete snippet">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            elements.snippetsList.appendChild(snippetElement);
-            
-            // Highlight code (hljs removed due to CSP restrictions in Manifest V3)
-            // Code is displayed with basic CSS styling instead
-        });
-        
-        // Add event listeners to buttons
-        document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.closest('.edit-btn').dataset.id;
-                const snippet = snippets.find(s => s.id === id);
-                if (snippet) showEditor(snippet);
-            });
-        });
-        
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = e.target.closest('.delete-btn').dataset.id;
-                if (confirm('Are you sure you want to delete this snippet?')) {
-                    try {
-                        const result = await storageManager.deleteSnippet(id, snippets);
-                        if (result.success) {
-                            snippets = snippets.filter(s => s.id !== id);
-                            await loadSnippets();
-                            showNotification('Snippet deleted successfully', 'success');
-                        } else {
-                            showNotification('Failed to delete snippet', 'error');
-                        }
-                    } catch (error) {
-                        showNotification('Error deleting snippet', 'error');
-                    }
-                }
-            });
-        });
-        
-        document.querySelectorAll('.insert-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.closest('.insert-btn').dataset.id;
-                const snippet = snippets.find(s => s.id === id);
-                if (snippet) insertSnippetToPage(snippet);
-            });
-        });
-
-        document.querySelectorAll('.copy-clipboard-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.closest('.copy-clipboard-btn').dataset.id;
-                const snippet = snippets.find(s => s.id === id);
-                if (snippet) {
-                    navigator.clipboard.writeText(snippet.code).then(() => {
-                        showNotification('Code copied to clipboard!', 'success');
-                    }).catch(() => {
-                        showNotification('Failed to copy to clipboard', 'error');
-                    });
-                }
-            });
-        });
-    }
-
-    /**
-     * Filter snippets based on search and language
-     */
-    function filterSnippets() {
+        if (saveResult.warning) {
+            showNotification(saveResult.warning, "info");
+        } else {
+            showNotification(successMessage, "success");
+        }
+        state.hasChanges = false;
         renderSnippets();
     }
 
-    /**
-     * Update UI visibility
-     */
-    function updateUI() {
-        if (snippets.length === 0 && elements.editorView.classList.contains('hidden')) {
-            elements.noSnippets.classList.remove('hidden');
-            elements.snippetsList.classList.add('hidden');
+    function onCancelEdit(skipConfirm = false) {
+        if (!skipConfirm && state.hasChanges) {
+            const shouldDiscard = window.confirm("Discard unsaved changes?");
+            if (!shouldDiscard) return;
+        }
+
+        state.currentEditId = null;
+        state.hasChanges = false;
+        el.editorView.classList.add("hidden");
+        el.snippetsList.classList.remove("hidden");
+        updateLayoutState();
+    }
+
+    function updateLayoutState() {
+        const listIsVisible = el.editorView.classList.contains("hidden");
+        if (!listIsVisible) return;
+
+        const hasAny = state.snippets.length > 0;
+        if (hasAny) {
+            el.noSnippets.classList.add("hidden");
+            el.snippetsList.classList.remove("hidden");
         } else {
-            elements.noSnippets.classList.add('hidden');
-            if (elements.editorView.classList.contains('hidden')) {
-                elements.snippetsList.classList.remove('hidden');
-            }
+            el.snippetsList.classList.add("hidden");
+            el.noSnippets.classList.remove("hidden");
         }
     }
 
-    /**
-     * Insert snippet to page
-     */
-    function insertSnippetToPage(snippet) {
-        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-            if (!tabs || tabs.length === 0) {
-                showNotification('No active tab found', 'error');
-                return;
-            }
-
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: 'insertCode',
-                code: snippet.code,
-                language: snippet.language
-            }, function(response) {
-                if (chrome.runtime.lastError) {
-                    showNotification('Cannot insert on this page. Try a different page.', 'error');
-                } else {
-                    showNotification('Code inserted successfully!', 'success');
-                    setTimeout(() => window.close(), 1000);
-                }
-            });
-        });
-    }
-
-    /**
-     * Insert snippet from editor view
-     */
-    function insertToPage() {
-        const snippet = {
-            code: elements.snippetCode.value,
-            language: elements.snippetLanguage.value
-        };
-        insertSnippetToPage(snippet);
-    }
-
-    /**
-     * Export snippets as JSON
-     */
-    function exportSnippets() {
-        if (snippets.length === 0) {
-            showNotification('No snippets to export', 'info');
+    async function insertSnippetToPage(snippet) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab?.id) {
+            showNotification("No active tab found", "error");
             return;
         }
 
         try {
-            const dataStr = JSON.stringify(snippets, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `code-snippets-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            showNotification('Snippets exported successfully!', 'success');
-        } catch (error) {
-            showNotification('Failed to export snippets', 'error');
+            await chrome.tabs.sendMessage(tab.id, {
+                action: "insertCode",
+                code: snippet.code,
+                language: snippet.language
+            });
+            showNotification("Code inserted to page", "success");
+            setTimeout(() => window.close(), 700);
+        } catch {
+            showNotification("Cannot insert on this page", "error");
         }
     }
 
-    /**
-     * Show notification message
-     */
-    function showNotification(message, type = 'info') {
-        elements.notification.textContent = message;
-        elements.notification.className = `notification show ${type}`;
-        
-        setTimeout(() => {
-            elements.notification.classList.remove('show');
-        }, 3000);
+    function onInsertFromEditor() {
+        const code = el.snippetCode.value;
+        if (!code.trim()) {
+            showNotification("Add code before inserting", "error");
+            return;
+        }
+        insertSnippetToPage({
+            code,
+            language: el.snippetLanguage.value
+        });
     }
 
-    /**
-     * Escape HTML to prevent XSS
-     */
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    function onExportSnippets() {
+        if (!state.snippets.length) {
+            showNotification("No snippets to export", "info");
+            return;
+        }
+
+        const blob = new Blob([JSON.stringify(state.snippets, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `snippets-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showNotification("Snippets exported", "success");
+    }
+
+    async function onImportSnippets(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            if (!Array.isArray(parsed)) {
+                showNotification("Invalid import file format", "error");
+                return;
+            }
+
+            const imported = normalizeSnippets(parsed);
+            if (!imported.length) {
+                showNotification("No valid snippets found in file", "error");
+                return;
+            }
+
+            const merged = mergeById(state.snippets, imported);
+            state.snippets = merged;
+            await persistSnippets(`Imported ${imported.length} snippets`);
+        } catch (error) {
+            showNotification(`Import failed: ${error.message}`, "error");
+        } finally {
+            el.importFile.value = "";
+        }
+    }
+
+    function mergeById(existing, incoming) {
+        const map = new Map();
+        existing.forEach((item) => map.set(item.id, item));
+        incoming.forEach((item) => {
+            const id = item.id || `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+            map.set(id, { ...item, id });
+        });
+        return Array.from(map.values());
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            const ok = document.execCommand("copy");
+            document.body.removeChild(ta);
+            if (!ok) {
+                showNotification("Copy failed", "error");
+                return;
+            }
+        }
+        showNotification("Copied to clipboard", "success");
+    }
+
+    function showNotification(message, type = "info") {
+        el.notification.textContent = message;
+        el.notification.className = `notification show ${type}`;
+        window.setTimeout(() => {
+            el.notification.classList.remove("show");
+        }, 2600);
+    }
+
+    function formatDate(isoString) {
+        const d = new Date(isoString);
+        if (Number.isNaN(d.getTime())) return "Unknown date";
+        return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     }
 });
