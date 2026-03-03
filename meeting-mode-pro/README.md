@@ -85,10 +85,6 @@ meeting-mode-pro/
 ├── popup.html             # Extension popup UI
 ├── popup.js               # Popup functionality
 ├── styles.css             # Popup styles
-├── meeting-sidebar.html   # Sidebar UI
-├── meeting-sidebar.js     # Sidebar functionality
-├── sidebar-styles.css     # Sidebar styles
-├── privacy-policy.html    # Privacy policy
 ├── icons/                 # Extension icons
 │   ├── icon16.png
 │   ├── icon32.png

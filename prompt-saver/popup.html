@@ -2,44 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prompt Saver</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <div class="card">
+  <div class="workspace">
     <header class="header">
-      <span class="emoji">💡</span>
       <div>
-        <div class="title">Prompt Saver</div>
-        <div class="subtitle">Save & reuse your best prompts</div>
+        <p class="eyebrow">Prompt Workspace</p>
+        <h1>Prompt Saver</h1>
+      </div>
+      <div class="header-meta">
+        <span id="countBadge" class="count-badge">0 prompts</span>
       </div>
     </header>
 
-    <main class="section-input">
-      <div class="field">
-        <label for="prompt">Prompt</label>
-        <textarea id="prompt" placeholder="Write or paste your prompt here..."></textarea>
+    <section class="editor-panel">
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" placeholder="Write or paste your prompt..."></textarea>
+
+      <div class="row">
+        <div class="field">
+          <label for="category">Category</label>
+          <input id="category" placeholder="e.g. Coding, Marketing..." list="cat-suggestions" />
+          <datalist id="cat-suggestions">
+            <option value="Coding"></option>
+            <option value="Marketing"></option>
+            <option value="Email"></option>
+            <option value="Personal"></option>
+          </datalist>
+        </div>
+        <div class="field">
+          <label for="search">Search</label>
+          <input id="search" type="search" placeholder="Search saved prompts..." />
+        </div>
       </div>
 
-      <div class="field">
-        <label for="category">Category</label>
-        <input id="category" placeholder="e.g. Marketing, Coding, Email..." list="cat-suggestions" />
-        <datalist id="cat-suggestions">
-          <option value="Marketing"></option>
-          <option value="Coding"></option>
-          <option value="Personal"></option>
-        </datalist>
+      <div class="actions">
+        <button id="save" class="btn-primary" type="button">Save Prompt</button>
+        <button id="cancelEdit" class="btn-secondary hidden" type="button">Cancel Edit</button>
+        <button id="clearAll" class="btn-danger" type="button">Clear All</button>
       </div>
-
-      <button id="save" class="primary-btn">💾 Save Prompt</button>
-    </main>
-
-    <section class="section-list">
-      <div class="search-wrapper">
-        <input id="search" type="search" placeholder="🔍 Search prompts..." />
-      </div>
-      <div id="list" class="list"></div>
     </section>
+
+    <main id="list" class="list"></main>
+    <p id="status" class="status" aria-live="polite"></p>
   </div>
 
   <script src="popup.js"></script>

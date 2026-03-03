@@ -5,14 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meeting Mode Pro</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            transition: all 0.2s ease;
-        }
-    </style>
 </head>
 <body>
     <!-- Animated Background -->
@@ -54,7 +46,7 @@
         <section class="quick-toggle-section">
             <div class="toggle-header">
                 <h3>⚡ Quick Actions</h3>
-                <div class="shortcut-hint">Ctrl+Shift+M</div>
+                <div class="shortcut-hint">Ctrl+Shift+M / Cmd+Shift+M</div>
             </div>
             <div class="toggle-container">
                 <label class="toggle-switch">
@@ -158,37 +150,22 @@
             </div>
         </section>
 
-        <!-- 👇 NEW: Add this Privacy & Legal Section -->
-        <section class="legal-section" style="
-            margin-top: var(--space-md);
-            padding-top: var(--space-md);
-            border-top: 1px solid var(--gray-200);
-        ">
-            <div class="legal-links" style="
-                display: flex;
-                justify-content: center;
-                gap: var(--space-lg);
-            ">
-                <button class="legal-link" id="privacyPolicyBtn" style="
-                    background: none;
-                    border: none;
-                    color: var(--gray-500);
-                    font-size: 11px;
-                    cursor: pointer;
-                    text-decoration: underline;
-                    padding: 4px;
-                ">
-                    🔒 Privacy Policy
-                </button>
-            </div>
-        </section>
     </div>
 
     <!-- Modals -->
     <div class="modal" id="agendaModal">
         <div class="modal-content">
             <h3>📋 Meeting Agenda</h3>
-            <textarea id="agendaText" placeholder="Add meeting agenda items..."></textarea>
+            <p class="agenda-help">Use one line per agenda item.</p>
+            <textarea id="agendaText" placeholder="Introductions&#10;Project updates&#10;Decisions needed&#10;Action items"></textarea>
+            <div class="agenda-meta">
+                <span id="agendaCount">0 items</span>
+                <div class="agenda-meta-actions">
+                    <button class="text-link-btn" id="agendaTemplateBtn">Insert Template</button>
+                    <button class="text-link-btn danger" id="clearAgendaBtn">Clear</button>
+                </div>
+            </div>
+            <div class="agenda-preview" id="agendaPreview"></div>
             <div class="modal-actions">
                 <button class="modal-btn secondary" id="cancelAgenda">Cancel</button>
                 <button class="modal-btn primary" id="saveAgenda">Save</button>

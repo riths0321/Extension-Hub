@@ -225,49 +225,77 @@ class MeetingContentScript {
         // Create sidebar container
         const sidebar = document.createElement('div');
         sidebar.id = 'meeting-mode-sidebar';
-        sidebar.innerHTML = `
-            <div class="sidebar-header">
-                <h3>🎯 Meeting Tools</h3>
-                <button class="close-sidebar" title="Close sidebar">×</button>
-            </div>
-            <div class="sidebar-content">
-                <div class="timer-section">
-                    <div class="timer-display">00:00</div>
-                    <div class="timer-controls">
-                        <button class="timer-btn start">Start</button>
-                        <button class="timer-btn pause">Pause</button>
-                        <button class="timer-btn reset">Reset</button>
-                    </div>
-                </div>
-                <div class="agenda-section">
-                    <h4>📋 Agenda</h4>
-                    <textarea class="agenda-input" placeholder="Meeting notes..."></textarea>
-                    <button class="save-agenda">Save</button>
-                </div>
-                <div class="quick-actions">
-                    <button class="action-btn" data-action="clean-url">
-                        🔗 Clean URL
-                    </button>
-                    <button class="action-btn" data-action="extract-actions">
-                        📝 Extract Actions
-                    </button>
-                    <button class="action-btn" data-action="screenshot">
-                        📸 Screenshot
-                    </button>
-                </div>
-                <div class="status-indicator">
-                    <div class="status-dot"></div>
-                    Meeting Mode Active
-                </div>
-            </div>
-        `;
+        const header = document.createElement('div');
+        header.className = 'sidebar-header';
+        const headerTitle = document.createElement('h3');
+        headerTitle.textContent = '🎯 Meeting Tools';
+        const closeButton = document.createElement('button');
+        closeButton.className = 'close-sidebar';
+        closeButton.title = 'Close sidebar';
+        closeButton.textContent = '×';
+        header.append(headerTitle, closeButton);
+
+        const content = document.createElement('div');
+        content.className = 'sidebar-content';
+
+        const timerSection = document.createElement('div');
+        timerSection.className = 'timer-section';
+        const timerDisplay = document.createElement('div');
+        timerDisplay.className = 'timer-display';
+        timerDisplay.textContent = '00:00';
+        const timerControls = document.createElement('div');
+        timerControls.className = 'timer-controls';
+        const startBtn = document.createElement('button');
+        startBtn.className = 'timer-btn start';
+        startBtn.textContent = 'Start';
+        const pauseBtn = document.createElement('button');
+        pauseBtn.className = 'timer-btn pause';
+        pauseBtn.textContent = 'Pause';
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'timer-btn reset';
+        resetBtn.textContent = 'Reset';
+        timerControls.append(startBtn, pauseBtn, resetBtn);
+        timerSection.append(timerDisplay, timerControls);
+
+        const agendaSection = document.createElement('div');
+        agendaSection.className = 'agenda-section';
+        const agendaTitle = document.createElement('h4');
+        agendaTitle.textContent = '📋 Agenda';
+        const agendaInput = document.createElement('textarea');
+        agendaInput.className = 'agenda-input';
+        agendaInput.placeholder = 'Meeting notes...';
+        const saveAgendaBtn = document.createElement('button');
+        saveAgendaBtn.className = 'save-agenda';
+        saveAgendaBtn.textContent = 'Save';
+        agendaSection.append(agendaTitle, agendaInput, saveAgendaBtn);
+
+        const quickActions = document.createElement('div');
+        quickActions.className = 'quick-actions';
+        const cleanBtn = document.createElement('button');
+        cleanBtn.className = 'action-btn';
+        cleanBtn.dataset.action = 'clean-url';
+        cleanBtn.textContent = '🔗 Clean URL';
+        const extractBtn = document.createElement('button');
+        extractBtn.className = 'action-btn';
+        extractBtn.dataset.action = 'extract-actions';
+        extractBtn.textContent = '📝 Extract Actions';
+        const shotBtn = document.createElement('button');
+        shotBtn.className = 'action-btn';
+        shotBtn.dataset.action = 'screenshot';
+        shotBtn.textContent = '📸 Screenshot';
+        quickActions.append(cleanBtn, extractBtn, shotBtn);
+
+        const status = document.createElement('div');
+        status.className = 'status-indicator';
+        const statusDot = document.createElement('div');
+        statusDot.className = 'status-dot';
+        const statusText = document.createTextNode('Meeting Mode Active');
+        status.append(statusDot, statusText);
+
+        content.append(timerSection, agendaSection, quickActions, status);
+        sidebar.append(header, content);
         
-        // Add styles
-        const style = document.createElement('link');
-        style.rel = 'stylesheet';
-        style.href = chrome.runtime.getURL('sidebar-styles.css');
-        
-        document.head.appendChild(style);
+        this.injectSidebarStyles();
         document.body.appendChild(sidebar);
         
         // Add event listeners
@@ -353,24 +381,124 @@ class MeetingContentScript {
         if (sidebar) {
             sidebar.remove();
         }
-        
-        // Remove styles
-        const styles = document.querySelectorAll('link[href*="sidebar-styles.css"]');
-        styles.forEach(style => style.remove());
+
+        const styleNode = document.getElementById('meeting-mode-sidebar-style');
+        if (styleNode) {
+            styleNode.remove();
+        }
         
         this.sidebarInjected = false;
+    }
+
+    injectSidebarStyles() {
+        if (document.getElementById('meeting-mode-sidebar-style')) return;
+
+        const style = document.createElement('style');
+        style.id = 'meeting-mode-sidebar-style';
+        style.textContent = `
+            #meeting-mode-sidebar {
+                position: fixed;
+                top: 70px;
+                right: 16px;
+                width: 300px;
+                max-height: calc(100vh - 90px);
+                overflow: auto;
+                z-index: 999999;
+                background: #ffffff;
+                border: 1px solid #dbe4f0;
+                border-radius: 12px;
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                color: #1f2937;
+            }
+            #meeting-mode-sidebar .sidebar-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 12px;
+                border-bottom: 1px solid #e5e7eb;
+                background: #f8fafc;
+            }
+            #meeting-mode-sidebar .sidebar-content { padding: 10px 12px; display: grid; gap: 10px; }
+            #meeting-mode-sidebar textarea,
+            #meeting-mode-sidebar button {
+                font: inherit;
+            }
+            #meeting-mode-sidebar .agenda-input {
+                width: 100%;
+                min-height: 70px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                padding: 8px;
+                resize: vertical;
+            }
+            #meeting-mode-sidebar .timer-display {
+                font-size: 20px;
+                font-weight: 700;
+                text-align: center;
+                margin-bottom: 6px;
+                color: #1d4ed8;
+            }
+            #meeting-mode-sidebar .timer-controls,
+            #meeting-mode-sidebar .quick-actions {
+                display: flex;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            #meeting-mode-sidebar .timer-btn,
+            #meeting-mode-sidebar .action-btn,
+            #meeting-mode-sidebar .save-agenda {
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                padding: 6px 8px;
+                background: #f9fafb;
+                cursor: pointer;
+            }
+            #meeting-mode-sidebar .save-agenda {
+                background: #dbeafe;
+                border-color: #93c5fd;
+            }
+            #meeting-mode-sidebar .close-sidebar {
+                border: none;
+                background: transparent;
+                font-size: 20px;
+                line-height: 1;
+                cursor: pointer;
+            }
+            #meeting-mode-sidebar .status-indicator {
+                font-size: 12px;
+                color: #475569;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            #meeting-mode-sidebar .status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #10b981;
+            }
+        `;
+        document.documentElement.appendChild(style);
     }
 
     addMeetingIndicator() {
         const indicator = document.createElement('div');
         indicator.id = 'meeting-mode-indicator';
-        indicator.innerHTML = `
-            <div class="indicator-content">
-                <span class="indicator-icon">🎯</span>
-                <span class="indicator-text">Meeting Mode Active</span>
-                <button class="indicator-close" title="Deactivate">×</button>
-            </div>
-        `;
+        const indicatorContent = document.createElement('div');
+        indicatorContent.className = 'indicator-content';
+        const icon = document.createElement('span');
+        icon.className = 'indicator-icon';
+        icon.textContent = '🎯';
+        const text = document.createElement('span');
+        text.className = 'indicator-text';
+        text.textContent = 'Meeting Mode Active';
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'indicator-close';
+        closeBtn.title = 'Deactivate';
+        closeBtn.textContent = '×';
+        indicatorContent.append(icon, text, closeBtn);
+        indicator.appendChild(indicatorContent);
         
         // Add styles inline
         indicator.style.cssText = `
@@ -595,11 +723,14 @@ class MeetingContentScript {
         
         const warning = document.createElement('div');
         warning.className = 'meeting-mode-personal-warning';
-        warning.innerHTML = `
-            <strong>⚠️ Personal Content Detected</strong>
-            <p>This content is hidden during meetings. It will be restored when Meeting Mode is turned off.</p>
-            <button class="dismiss-warning">Dismiss</button>
-        `;
+        const strong = document.createElement('strong');
+        strong.textContent = '⚠️ Personal Content Detected';
+        const p = document.createElement('p');
+        p.textContent = 'This content is hidden during meetings. It will be restored when Meeting Mode is turned off.';
+        const dismissBtn = document.createElement('button');
+        dismissBtn.className = 'dismiss-warning';
+        dismissBtn.textContent = 'Dismiss';
+        warning.append(strong, p, dismissBtn);
         
         // Position near the element
         const rect = element.getBoundingClientRect();
