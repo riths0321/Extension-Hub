@@ -224,12 +224,24 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    const LEGACY_PSEUDO_ELEMENTS = new Set([
+        ':before',
+        ':after',
+        ':first-line',
+        ':first-letter',
+        ':selection',
+        ':placeholder',
+        ':marker',
+        ':backdrop'
+    ]);
+
     // Parse selector into parts
     function parseSelector(selector) {
         const parts = [];
         let buffer = '';
         let inAttribute = false;
         let inPseudo = false;
+        let pseudoParenDepth = 0;
         let inString = false;
         let stringChar = '';
         
@@ -266,7 +278,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     idValue += selector[j];
                     j++;
                 }
-                parts.push({ type: 'id', value: `#${idValue}` });
+                if (idValue) {
+                    parts.push({ type: 'id', value: `#${idValue}` });
+                }
                 i = j - 1;
                 continue;
             }
@@ -283,7 +297,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     classValue += selector[j];
                     j++;
                 }
-                parts.push({ type: 'class', value: `.${classValue}` });
+                if (classValue) {
+                    parts.push({ type: 'class', value: `.${classValue}` });
+                }
                 i = j - 1;
                 continue;
             }
@@ -319,6 +335,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (inPseudo) {
+                if (char === '(') {
+                    pseudoParenDepth++;
+                    buffer += char;
+                    continue;
+                }
+
+                if (char === ')' && pseudoParenDepth > 0) {
+                    pseudoParenDepth--;
+                    buffer += char;
+                    continue;
+                }
+
                 // Check if it's a pseudo-element (::)
                 if (char === ':' && nextChar === ':') {
                     buffer += '::';
@@ -327,13 +355,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // End of pseudo selector
-                if (char === ' ' || char === ',' || char === '>' || char === '+' || char === '~' || 
-                    char === '[' || char === '.' || char === '#') {
+                if (pseudoParenDepth === 0 && (char === ' ' || char === ',' || char === '>' || char === '+' || char === '~' || 
+                    char === '[' || char === '.' || char === '#')) {
                     inPseudo = false;
                     
                     // Determine if it's pseudo-class or pseudo-element
                     const pseudoValue = buffer.trim();
-                    if (pseudoValue.startsWith('::')) {
+                    if (pseudoValue.startsWith('::') || LEGACY_PSEUDO_ELEMENTS.has(pseudoValue.toLowerCase())) {
                         parts.push({ type: 'pseudo-element', value: pseudoValue });
                     } else {
                         parts.push({ type: 'pseudo-class', value: pseudoValue });
@@ -385,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (buffer) {
             // Check if it's a pseudo selector that wasn't processed
             if (buffer.startsWith(':')) {
-                if (buffer.startsWith('::')) {
+                if (buffer.startsWith('::') || LEGACY_PSEUDO_ELEMENTS.has(buffer.toLowerCase())) {
                     parts.push({ type: 'pseudo-element', value: buffer });
                 } else {
                     parts.push({ type: 'pseudo-class', value: buffer });
@@ -618,6 +646,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set selector texts
         elements.comparisonSelector1.textContent = spec1.selector;
         elements.comparisonSelector2.textContent = spec2.selector;
+        elements.comparisonSelector1.classList.remove('winner', 'loser', 'draw');
+        elements.comparisonSelector2.classList.remove('winner', 'loser', 'draw');
         
         // Apply winner/loser styles
         if (result.winner === 1) {
@@ -802,5 +832,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initial guide setup
-    toggleGuide(); // Start with guide collapsed
+    elements.guideDetails.style.display = 'none';
+    elements.toggleGuideBtn.textContent = 'Show Details';
+    isGuideExpanded = false;
 });
