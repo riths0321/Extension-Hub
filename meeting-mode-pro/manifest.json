@@ -37,16 +37,6 @@
       "all_frames": false
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "meeting-sidebar.html",
-        "sidebar-styles.css",
-        "assets/*"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ],
   "commands": {
     "toggle-meeting-mode": {
       "suggested_key": {
@@ -61,5 +51,8 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   }
 }
