@@ -11,32 +11,37 @@
     <header class="hero">
       <p class="kicker">Application Toolkit</p>
       <h1>Cover Letter Studio</h1>
-      <p class="subline">Upload resume + paste job description, then auto-generate a tailored letter.</p>
+      <p class="subline">Choose your flow: upload resume file + JD or fill full details manually.</p>
     </header>
 
-    <section class="card" aria-label="Quick intake">
-      <h2>Quick Intake</h2>
+    <section class="card mode-card" aria-label="Generation mode">
+      <h2>Choose Mode</h2>
+      <div class="mode-switch" role="tablist" aria-label="Cover letter mode">
+        <button id="modeUpload" class="mode-btn active" type="button" data-mode="upload" role="tab" aria-selected="true">
+          Upload Resume + JD
+        </button>
+        <button id="modeManual" class="mode-btn" type="button" data-mode="manual" role="tab" aria-selected="false">
+          Manual Form Fill
+        </button>
+      </div>
+    </section>
+
+    <section id="uploadModeSection" class="card mode-section" aria-label="Upload workflow">
+      <h2>Upload Workflow</h2>
       <div class="uploader-row">
-        <label class="file-label" for="resumeFile">Resume File (.txt/.md)</label>
-        <input id="resumeFile" class="file-input" type="file" accept=".txt,.md,.rtf,.json,text/plain,text/markdown" />
+        <label class="file-label" for="resumeFile">Resume File (PDF, DOC, DOCX, TXT)</label>
+        <input id="resumeFile" class="file-input" type="file" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.json" />
       </div>
       <p id="resumeMeta" class="helper-text">No resume file selected.</p>
 
       <label>
-        Resume Text
-        <textarea id="resumeText" rows="4" placeholder="Paste resume text here (recommended for PDF/DOCX resumes)..."></textarea>
+        Job Description *
+        <textarea id="jobDescriptionUpload" rows="6" placeholder="Paste full job description here..."></textarea>
       </label>
-
-      <label>
-        Job Description
-        <textarea id="jobDescription" rows="5" placeholder="Paste full JD here..."></textarea>
-      </label>
-
-      <button id="analyze" class="btn btn-accent" type="button">Analyze Resume + JD</button>
     </section>
 
-    <section class="card" aria-label="Profile details">
-      <h2>Your Details</h2>
+    <section id="manualModeSection" class="card mode-section hidden" aria-label="Manual workflow">
+      <h2>Manual Workflow</h2>
       <div class="grid two-col">
         <label>
           Full Name *
@@ -58,10 +63,7 @@
           <input id="job" type="text" placeholder="Frontend Developer" />
         </label>
       </div>
-    </section>
 
-    <section class="card" aria-label="Company details">
-      <h2>Target Company</h2>
       <div class="grid two-col">
         <label>
           Company *
@@ -72,6 +74,7 @@
           <input id="manager" type="text" placeholder="Hiring Manager" />
         </label>
       </div>
+
       <label>
         Company Address
         <input id="address" type="text" placeholder="City, State" />
@@ -80,10 +83,6 @@
         Subject
         <input id="subject" type="text" placeholder="Application for Frontend Developer" />
       </label>
-    </section>
-
-    <section class="card" aria-label="Experience details">
-      <h2>Content Inputs</h2>
       <label>
         Experience
         <textarea id="experience" rows="3" placeholder="3+ years building responsive products..."></textarea>
@@ -92,9 +91,14 @@
         Skills
         <textarea id="skills" rows="3" placeholder="React, TypeScript, accessibility, performance..."></textarea>
       </label>
+      <label>
+        Job Description (optional)
+        <textarea id="jobDescriptionManual" rows="4" placeholder="Paste JD for better tailoring..."></textarea>
+      </label>
     </section>
 
     <section class="actions">
+      <button id="analyze" class="btn btn-accent" type="button">Analyze Inputs</button>
       <button id="generate" class="btn btn-primary" type="button">Generate Letter</button>
       <button id="copy" class="btn btn-secondary" type="button" disabled>Copy</button>
       <button id="download" class="btn btn-secondary" type="button" disabled>Download .txt</button>
