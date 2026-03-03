@@ -1,172 +1,191 @@
-const searchForm = document.getElementById('searchForm');
-const searchInput = document.getElementById('searchInput');
-const resultContainer = document.getElementById('result');
-const wordContent = document.getElementById('wordContent');
-const loadingState = document.getElementById('loading');
-const emptyState = document.querySelector('.empty-state');
-const errorState = document.getElementById('error');
-const clearBtn = document.getElementById('clearBtn');
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+const wordContent = document.getElementById("wordContent");
+const loadingState = document.getElementById("loading");
+const emptyState = document.getElementById("emptyState");
+const errorState = document.getElementById("error");
+const clearBtn = document.getElementById("clearBtn");
+const statusText = document.getElementById("statusText");
 
-// Helper to toggle visibility
-const setView = (view) => {
-    // Hide all
-    wordContent.classList.add('displayNone');
-    loadingState.classList.add('displayNone');
-    emptyState.classList.add('displayNone');
-    errorState.classList.add('displayNone');
+let currentController = null;
 
-    // Show requested
-    if (view === 'loading') loadingState.classList.remove('displayNone');
-    else if (view === 'result') wordContent.classList.remove('displayNone');
-    else if (view === 'empty') emptyState.classList.remove('displayNone');
-    else if (view === 'error') errorState.classList.remove('displayNone');
-};
+setView("empty");
 
-searchForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+searchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
     const term = searchInput.value.trim();
-    if (!term) return;
+    if (!term) {
+        setStatus("Type a word first.", true);
+        return;
+    }
 
-    setView('loading');
-    fetchDictionary(term);
+    lookup(term).catch((error) => {
+        renderError(term, error.message || "Lookup failed.");
+    });
 });
 
-async function fetchDictionary(term) {
-    // Check if it's a sentence (more than one word)
-    if (term.includes(' ')) {
-        await fetchSentenceTranslation(term);
-    } else {
-        await fetchWordData(term);
+clearBtn.addEventListener("click", () => {
+    if (currentController) {
+        currentController.abort();
+        currentController = null;
     }
+    searchInput.value = "";
+    wordContent.textContent = "";
+    setView("empty");
+    setStatus("Cleared");
+    searchInput.focus();
+});
+
+async function lookup(term) {
+    if (currentController) {
+        currentController.abort();
+    }
+    currentController = new AbortController();
+    const { signal } = currentController;
+
+    setView("loading");
+    setStatus("Searching...");
+
+    if (term.includes(" ")) {
+        const translation = await fetchTranslation(term, signal);
+        renderSentence(term, translation);
+        setStatus("Sentence translated.");
+        return;
+    }
+
+    const [entry, translation] = await Promise.all([
+        fetchDictionaryEntry(term, signal),
+        fetchTranslation(term, signal).catch(() => "")
+    ]);
+
+    renderWord(entry, translation);
+    setStatus("Word found.");
 }
 
-async function fetchSentenceTranslation(term) {
-    try {
-        const response = await fetch(`https://api.mymemory.translated.net/get?q=${term}&langpair=en|hi`);
-        const data = await response.json();
+async function fetchDictionaryEntry(term, signal) {
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(term)}`, {
+        signal
+    });
 
-        if (data.responseData && data.responseData.translatedText) {
-            renderSentence(term, data.responseData.translatedText);
-        } else {
-            throw new Error('Translation not found');
-        }
-    } catch (err) {
-        console.error(err);
-        renderError(term);
+    if (!response.ok) {
+        throw new Error("Word not found.");
     }
+
+    const data = await response.json();
+    if (!Array.isArray(data) || !data[0]) {
+        throw new Error("No dictionary entry.");
+    }
+    return data[0];
 }
 
-async function fetchWordData(term) {
-    try {
-        const [dictResponse, transResponse] = await Promise.allSettled([
-            fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${term}`),
-            fetch(`https://api.mymemory.translated.net/get?q=${term}&langpair=en|hi`)
-        ]);
+async function fetchTranslation(term, signal) {
+    const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(term)}&langpair=en|hi`,
+        { signal }
+    );
 
-        let dictData = null;
-        let translation = '';
-
-        // Handle Dictionary API Response
-        if (dictResponse.status === 'fulfilled' && dictResponse.value.ok) {
-            const data = await dictResponse.value.json();
-            dictData = data[0];
-        } else {
-            // If dictionary fails but we have translation, we can still show something?
-            // For now, if dictionary fails, we treat it as an error for single words as per original requirement,
-            // or we could fallback to just translation. Let's stick to strict dictionary focus for single words unless requested otherwise.
-            throw new Error('Word not found');
-        }
-
-        // Handle Translation API Response
-        if (transResponse.status === 'fulfilled' && transResponse.value.ok) {
-            const data = await transResponse.value.json();
-            if (data.responseData && data.responseData.translatedText) {
-                const translatedText = data.responseData.translatedText;
-                if (translatedText.toLowerCase() !== term.toLowerCase()) {
-                    translation = translatedText;
-                }
-            }
-        }
-
-        renderResult(dictData, translation);
-
-    } catch (err) {
-        console.error(err);
-        renderError(term);
+    if (!response.ok) {
+        throw new Error("Translation unavailable.");
     }
+
+    const data = await response.json();
+    const translated = data?.responseData?.translatedText || "";
+    return translated.toLowerCase() === term.toLowerCase() ? "" : translated;
 }
 
 function renderSentence(term, translation) {
-    const html = `
-        <div class="word-header">
-            <h2>${term}</h2>
-            <span class="hindi-translation" style="margin-top: 12px; font-size: 1.4rem;">${translation}</span>
-        </div>
-        <div class="meanings">
-             <div class="meaning-group">
-                <span class="part-of-speech">Translation</span>
-                <p style="color: var(--text-secondary); line-height: 1.5;">${translation}</p>
-            </div>
-        </div>
-    `;
-    wordContent.innerHTML = html;
-    setView('result');
+    wordContent.textContent = "";
+
+    const header = createElement("div", "word-header");
+    header.appendChild(createElement("h2", "", term));
+    header.appendChild(createElement("span", "hindi-translation", translation || "No translation available."));
+
+    const group = createElement("div", "meaning-group");
+    group.appendChild(createElement("span", "part-of-speech", "Translation"));
+    group.appendChild(createElement("p", "", translation || "Translation not available right now."));
+
+    wordContent.append(header, group);
+    setView("result");
 }
 
+function renderWord(entry, translation) {
+    wordContent.textContent = "";
 
-function renderResult(entry, translation) {
-    const { word, phonetics, meanings } = entry;
+    const word = entry.word || searchInput.value.trim();
+    const phonetic = Array.isArray(entry.phonetics)
+        ? (entry.phonetics.find((p) => p?.text)?.text || "")
+        : "";
 
-    // Find first phonetic with text
-    const phoneticText = phonetics.find(p => p.text)?.text || '';
+    const header = createElement("div", "word-header");
+    header.appendChild(createElement("h2", "", word));
+    if (phonetic) header.appendChild(createElement("span", "phonetic", phonetic));
+    if (translation) header.appendChild(createElement("span", "hindi-translation", translation));
+    wordContent.appendChild(header);
 
-    let meaningsHtml = '';
+    const meanings = Array.isArray(entry.meanings) ? entry.meanings : [];
+    if (!meanings.length) {
+        const fallback = createElement("div", "meaning-group");
+        fallback.appendChild(createElement("span", "part-of-speech", "Definition"));
+        fallback.appendChild(createElement("p", "", "No definitions available."));
+        wordContent.appendChild(fallback);
+    } else {
+        meanings.forEach((meaning) => {
+            const group = createElement("div", "meaning-group");
+            group.appendChild(createElement("span", "part-of-speech", meaning.partOfSpeech || "Meaning"));
 
-    meanings.forEach(meaning => {
-        const definitionsHtml = meaning.definitions.map(def => `
-            <li>
-                ${def.definition}
-                ${def.example ? `<span class="example">"${def.example}"</span>` : ''}
-            </li>
-        `).join('');
+            const list = createElement("ul", "definition-list");
+            const defs = Array.isArray(meaning.definitions) ? meaning.definitions : [];
 
-        meaningsHtml += `
-            <div class="meaning-group">
-                <span class="part-of-speech">${meaning.partOfSpeech}</span>
-                <ul class="definition-list">
-                    ${definitionsHtml}
-                </ul>
-            </div>
-        `;
-    });
+            defs.slice(0, 6).forEach((def) => {
+                const item = createElement("li", "", def.definition || "");
+                if (def.example) {
+                    item.appendChild(createElement("span", "example", `"${def.example}"`));
+                }
+                list.appendChild(item);
+            });
 
-    const html = `
-        <div class="word-header">
-            <h2>${word}</h2>
-            ${phoneticText ? `<span class="phonetic">${phoneticText}</span>` : ''}
-            ${translation ? `<span class="hindi-translation">${translation}</span>` : ''}
-        </div>
-        <div class="meanings">
-            ${meaningsHtml}
-        </div>
-    `;
+            if (!defs.length) {
+                list.appendChild(createElement("li", "", "No definition entries."));
+            }
 
-    wordContent.innerHTML = html;
-    setView('result');
+            group.appendChild(list);
+            wordContent.appendChild(group);
+        });
+    }
+
+    setView("result");
 }
 
-function renderError(term) {
-    errorState.innerHTML = `
-        <p><strong>Oh no!</strong></p>
-        <p>We couldn't find definitions for "<em>${term}</em>".</p>
-    `;
-    setView('error');
+function renderError(term, reason) {
+    errorState.textContent = "";
+    errorState.appendChild(createElement("p", "", `Could not find result for "${term}".`));
+    if (reason) {
+        errorState.appendChild(createElement("p", "", reason));
+    }
+    setView("error");
+    setStatus("Lookup failed.", true);
 }
 
-clearBtn.addEventListener('click', () => {
-    searchInput.value = '';
-    searchInput.focus();
-    setView('empty');
-    wordContent.innerHTML = '';
-});
+function setView(view) {
+    wordContent.classList.add("displayNone");
+    loadingState.classList.add("displayNone");
+    emptyState.classList.add("displayNone");
+    errorState.classList.add("displayNone");
 
+    if (view === "result") wordContent.classList.remove("displayNone");
+    if (view === "loading") loadingState.classList.remove("displayNone");
+    if (view === "empty") emptyState.classList.remove("displayNone");
+    if (view === "error") errorState.classList.remove("displayNone");
+}
+
+function setStatus(message, isError = false) {
+    statusText.textContent = message || "";
+    statusText.style.color = isError ? "#8f2c3b" : "#5e7362";
+}
+
+function createElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (typeof text === "string") element.textContent = text;
+    return element;
+}
