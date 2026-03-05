@@ -1,17 +1,10 @@
 {
   "manifest_version": 3,
   "name": "JobShield: Job Scam Detector",
-  "version": "1.0.0",
-  "default_locale": "en",
-  "description": "Real-time detection of fake and scam job postings",
-  "permissions": [
-    "activeTab",
-    "storage",
-    "scripting"
-  ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "version": "1.1.0",
+  "description": "Analyze job postings for potential scam indicators in real time.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "JobShield",
@@ -22,17 +15,12 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
@@ -41,17 +29,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "icons/*"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   }
 }
