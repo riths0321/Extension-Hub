@@ -17,27 +17,19 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   
-  "host_permissions": [
-    "<all_urls>"
-  ],
-  
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content/mandala-canvas.js"],
-      "css": ["content/mandala-canvas.css"]
-    }
-  ],
-  
-  "web_accessible_resources": [
-    {
-      "resources": ["content/*"],
-      "matches": ["<all_urls>"]
-    }
-  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "options_page": "options.html",
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
   
   "icons": {
     "16": "assets/icon16.png",
