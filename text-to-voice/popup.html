@@ -2,64 +2,77 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Text to Voice</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="app card">
-      <h3 style="font-size: 20px; margin-bottom: 8px; letter-spacing: 1px">
-        🔊 <span style="color: #38bdf8">Text to Voice</span>
-      </h3>
+    <main class="app card">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Voice Studio</p>
+          <h1>Text to Voice</h1>
+          <p class="subtitle">Natural browser speech with quick tuning for pace, pitch, and voice selection.</p>
+        </div>
+        <div class="hero-wave" aria-hidden="true"></div>
+      </header>
 
-      <textarea
-        id="text"
-        placeholder="Type or paste text here..."
-        style="margin-bottom: 8px"
-      ></textarea>
+      <section class="status-card">
+        <div class="status-row">
+          <span class="status-dot" id="statusDot"></span>
+          <div>
+            <p class="status-label">Playback Status</p>
+            <strong id="statusText">Ready to speak</strong>
+          </div>
+        </div>
+        <div class="status-meta">
+          <span id="charCount">0 chars</span>
+          <span id="voiceCount">0 voices</span>
+        </div>
+      </section>
 
-      <div class="row-group">
-        <div class="row-label">
-          <span style="font-size: 16px">🎤</span>
-          <label for="voice">Voice</label>
+      <label class="field" for="text">
+        <span class="field-title">Text Input</span>
+        <textarea id="text" placeholder="Type or paste text here..."></textarea>
+      </label>
+
+      <label class="field" for="voice">
+        <div class="field-row">
+          <span class="field-title">Voice</span>
+          <span class="field-value" id="voiceLabel">Loading...</span>
         </div>
         <select id="voice"></select>
-      </div>
+      </label>
 
-      <div class="row-group">
-        <div class="row-label">
-          <span style="font-size: 16px">🚀</span>
-          <label for="rate">Speed</label>
-          <span
-            id="rateVal"
-            style="margin-left: auto; font-size: 12px; color: #38bdf8"
-            >1.0x</span
-          >
+      <div class="field">
+        <div class="field-row">
+          <label class="field-title" for="rate">Speed</label>
+          <span class="field-value" id="rateVal">1.0x</span>
         </div>
         <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1" />
       </div>
 
-      <div class="row-group">
-        <div class="row-label">
-          <span style="font-size: 16px">🎵</span>
-          <label for="pitch">Pitch</label>
-          <span
-            id="pitchVal"
-            style="margin-left: auto; font-size: 12px; color: #38bdf8"
-            >1.0</span
-          >
+      <div class="field">
+        <div class="field-row">
+          <label class="field-title" for="pitch">Pitch</label>
+          <span class="field-value" id="pitchVal">1.0</span>
         </div>
         <input type="range" id="pitch" min="0" max="2" step="0.1" value="1" />
       </div>
 
-      <div class="buttons">
-        <button id="speak" class="primary">
-          <span style="font-size: 16px">▶️</span> Speak
-        </button>
-        <button id="stop" class="secondary">
-          <span style="font-size: 16px">⏹️</span> Stop
-        </button>
+      <div class="preset-row">
+        <button class="preset-btn" type="button" data-preset="clear">Clear</button>
+        <button class="preset-btn" type="button" data-preset="demo">Demo</button>
+        <button class="preset-btn" type="button" data-preset="fast">Fast</button>
+        <button class="preset-btn" type="button" data-preset="calm">Calm</button>
       </div>
-    </div>
+
+      <div class="buttons">
+        <button id="speak" class="primary" type="button">Speak</button>
+        <button id="pause" class="secondary" type="button">Pause</button>
+        <button id="stop" class="secondary" type="button">Stop</button>
+      </div>
+    </main>
 
     <script src="popup.js"></script>
   </body>

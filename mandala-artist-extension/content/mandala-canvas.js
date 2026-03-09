@@ -9,11 +9,14 @@ class MandalaArtist {
     this.brushColor = '#ff6b6b';
     this.shadowEnabled = true;
     this.shadowBlur = 10;
-    this.shadowColor = 'rgba(0,0,0,0.3)';
+    this.shadowColor = '#000000';
     this.mirrorEnabled = true;
     this.zoomLevel = 1;
     this.history = [];
     this.historyIndex = -1;
+    this.selectedPattern = "";
+    this.randomColors = false;
+    this.pendingCenterSelection = false;
     
     this.init();
   }
@@ -28,7 +31,8 @@ class MandalaArtist {
   setupCanvas() {
     this.canvas = new fabric.Canvas('mandalaCanvas', {
       isDrawingMode: true,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      preserveObjectStacking: true
     });
     
     this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
@@ -38,14 +42,19 @@ class MandalaArtist {
     // Adjust canvas size
     this.updateCanvasSize();
     window.addEventListener('resize', () => this.updateCanvasSize());
+    this.applyBrushSettings();
   }
   
   updateCanvasSize() {
     const container = document.querySelector('.canvas-container');
+    if (!container) return;
+
     this.canvas.setWidth(container.clientWidth);
     this.canvas.setHeight(container.clientHeight);
+    this.canvas.calcOffset();
     this.canvas.renderAll();
     this.drawSymmetryLines();
+    this.updateCenterIndicator();
   }
   
   setupEventListeners() {
@@ -60,6 +69,12 @@ class MandalaArtist {
     document.getElementById('brushColorPicker').addEventListener('change', (e) => {
       this.brushColor = e.target.value;
       this.canvas.freeDrawingBrush.color = this.brushColor;
+      this.saveSettings();
+    });
+
+    document.getElementById('backgroundColor').addEventListener('change', (e) => {
+      this.canvas.backgroundColor = e.target.value;
+      this.canvas.renderAll();
       this.saveSettings();
     });
     
@@ -185,6 +200,29 @@ class MandalaArtist {
       this.saveSettings();
     });
     
+    this.canvas.on('mouse:down', (e) => {
+      if (!this.pendingCenterSelection) {
+        return;
+      }
+
+      const pointer = this.canvas.getPointer(e.e);
+      this.centerX = pointer.x / this.canvas.width;
+      this.centerY = pointer.y / this.canvas.height;
+
+      document.getElementById('centerX').value = Math.round(this.centerX * 100);
+      document.getElementById('centerY').value = Math.round(this.centerY * 100);
+
+      this.pendingCenterSelection = false;
+      document.body.classList.remove('pick-center-mode');
+      const hint = document.getElementById('canvasHint');
+      if (hint) {
+        hint.textContent = 'Draw on one segment and the symmetry engine mirrors the rest.';
+      }
+      this.updateCenterIndicator();
+      this.drawSymmetryLines();
+      this.saveSettings();
+    });
+
     // Listen for drawing events
     this.canvas.on('path:created', (e) => {
       this.handleDrawing(e.path);
@@ -193,69 +231,48 @@ class MandalaArtist {
   }
   
   handleDrawing(path) {
-    if (!this.mirrorEnabled) return;
-    
+    this.applyPathStyle(path);
+
+    if (!this.mirrorEnabled) {
+      this.canvas.renderAll();
+      return;
+    }
+
     const centerX = this.centerX * this.canvas.width;
     const centerY = this.centerY * this.canvas.height;
-    const angleStep = (2 * Math.PI) / this.symmetry;
-    
-    // Get original path data
-    const originalPath = new fabric.Path(path.path, {
-      stroke: path.stroke,
-      strokeWidth: path.strokeWidth,
-      fill: '',
-      strokeLineCap: path.strokeLineCap,
-      strokeLineJoin: path.strokeLineJoin
-    });
-    
-    // Create symmetrical paths
+    const angleStep = 360 / this.symmetry;
+    const originalCenter = path.getCenterPoint();
+
     for (let i = 1; i < this.symmetry; i++) {
-      const angle = angleStep * i;
-      const rotatedPath = this.rotatePath(originalPath, centerX, centerY, angle);
-      this.canvas.add(rotatedPath);
-    }
-  }
-  
-  rotatePath(path, centerX, centerY, angle) {
-    const rotatedPath = new fabric.Path(path.path, {
-      stroke: this.randomColors ? this.getRandomColor() : path.stroke,
-      strokeWidth: path.strokeWidth,
-      fill: '',
-      strokeLineCap: path.strokeLineCap,
-      strokeLineJoin: path.strokeLineJoin
-    });
-    
-    // Apply shadow if enabled
-    if (this.shadowEnabled) {
-      rotatedPath.set({
-        shadow: new fabric.Shadow({
-          color: this.shadowColor,
-          blur: this.shadowBlur,
-          offsetX: 0,
-          offsetY: 0
-        })
+      const rotatedPoint = fabric.util.rotatePoint(
+        new fabric.Point(originalCenter.x, originalCenter.y),
+        new fabric.Point(centerX, centerY),
+        fabric.util.degreesToRadians(angleStep * i)
+      );
+
+      const mirroredPath = new fabric.Path(path.path, {
+        fill: '',
+        stroke: this.randomColors ? this.getRandomColor() : path.stroke,
+        strokeWidth: path.strokeWidth,
+        strokeLineCap: path.strokeLineCap,
+        strokeLineJoin: path.strokeLineJoin,
+        selectable: false,
+        evented: false
       });
+
+      mirroredPath.rotate((path.angle || 0) + angleStep * i);
+      mirroredPath.setPositionByOrigin(rotatedPoint, 'center', 'center');
+      this.applyPathStyle(mirroredPath);
+      this.canvas.add(mirroredPath);
     }
-    
-    // Rotate around center
-    rotatedPath.rotate((angle * 180) / Math.PI);
-    
-    // Calculate position
-    const originalBbox = path.getBoundingRect();
-    const rotatedBbox = rotatedPath.getBoundingRect();
-    
-    rotatedPath.set({
-      left: centerX - rotatedBbox.width / 2,
-      top: centerY - rotatedBbox.height / 2
-    });
-    
-    return rotatedPath;
+
+    this.canvas.requestRenderAll();
   }
   
   drawSymmetryLines() {
-    // Clear existing lines
+    // Clear existing guide objects.
     this.canvas.getObjects().forEach(obj => {
-      if (obj.type === 'line') {
+      if (obj.isGuide) {
         this.canvas.remove(obj);
       }
     });
@@ -275,7 +292,9 @@ class MandalaArtist {
         stroke: 'rgba(102, 126, 234, 0.3)',
         strokeWidth: 1,
         selectable: false,
-        evented: false
+        evented: false,
+        isGuide: true,
+        excludeFromExport: true
       });
       
       this.canvas.add(line);
@@ -291,7 +310,9 @@ class MandalaArtist {
       stroke: '#ff4757',
       strokeWidth: 2,
       selectable: false,
-      evented: false
+      evented: false,
+      isGuide: true,
+      excludeFromExport: true
     });
     
     this.canvas.add(circle);
@@ -301,30 +322,18 @@ class MandalaArtist {
   updateCenterIndicator() {
     const indicator = document.getElementById('centerIndicator');
     if (indicator) {
-      const container = document.querySelector('.canvas-container');
       indicator.style.left = `${this.centerX * 100}%`;
       indicator.style.top = `${this.centerY * 100}%`;
     }
   }
   
   enableCenterAtTouch() {
-    this.canvas.on('mouse:down', (e) => {
-      const pointer = this.canvas.getPointer(e.e);
-      this.centerX = pointer.x / this.canvas.width;
-      this.centerY = pointer.y / this.canvas.height;
-      
-      document.getElementById('centerX').value = this.centerX * 100;
-      document.getElementById('centerY').value = this.centerY * 100;
-      
-      this.updateCenterIndicator();
-      this.drawSymmetryLines();
-      this.saveSettings();
-      
-      // Remove listener after one use
-      this.canvas.off('mouse:down');
-    });
-    
-    alert('Click anywhere on the canvas to set the center point');
+    this.pendingCenterSelection = true;
+    document.body.classList.add('pick-center-mode');
+    const hint = document.getElementById('canvasHint');
+    if (hint) {
+      hint.textContent = 'Click once on the canvas to place the symmetry center.';
+    }
   }
   
   setBrushType(type) {
@@ -344,14 +353,13 @@ class MandalaArtist {
         break;
     }
     
-    this.canvas.freeDrawingBrush.width = this.brushSize;
-    this.canvas.freeDrawingBrush.color = this.brushColor;
+    this.applyBrushSettings();
   }
   
   updateShadowSettings() {
     if (this.shadowEnabled) {
       this.canvas.getObjects().forEach(obj => {
-        if (obj.type === 'path') {
+        if (!obj.isGuide) {
           obj.set({
             shadow: new fabric.Shadow({
               color: this.shadowColor,
@@ -364,20 +372,57 @@ class MandalaArtist {
       });
     } else {
       this.canvas.getObjects().forEach(obj => {
-        if (obj.type === 'path') {
+        if (!obj.isGuide) {
           obj.set({ shadow: null });
         }
       });
     }
     this.canvas.renderAll();
   }
+
+  applyBrushSettings() {
+    if (!this.canvas || !this.canvas.freeDrawingBrush) return;
+
+    this.canvas.freeDrawingBrush.width = this.brushSize;
+    this.canvas.freeDrawingBrush.color = this.brushColor;
+    this.canvas.freeDrawingBrush.shadow = this.shadowEnabled
+      ? new fabric.Shadow({
+          color: this.shadowColor,
+          blur: this.shadowBlur,
+          offsetX: 0,
+          offsetY: 0
+        })
+      : null;
+  }
+
+  applyPathStyle(path) {
+    if (!path) return;
+
+    path.set({
+      selectable: false,
+      evented: false
+    });
+
+    if (this.shadowEnabled) {
+      path.set({
+        shadow: new fabric.Shadow({
+          color: this.shadowColor,
+          blur: this.shadowBlur,
+          offsetX: 0,
+          offsetY: 0
+        })
+      });
+    } else {
+      path.set({ shadow: null });
+    }
+  }
   
   setRandomShadow() {
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
-    this.shadowColor = colors[Math.floor(Math.random() * colors.length)] + '80';
+    this.shadowColor = colors[Math.floor(Math.random() * colors.length)];
     this.shadowBlur = Math.floor(Math.random() * 30) + 5;
     
-    document.getElementById('shadowColor').value = this.shadowColor.replace('80', '');
+    document.getElementById('shadowColor').value = this.shadowColor;
     document.getElementById('shadowBlur').value = this.shadowBlur;
     document.getElementById('shadowBlurValue').textContent = this.shadowBlur;
     
@@ -492,13 +537,14 @@ class MandalaArtist {
   clearCanvas() {
     if (confirm('Are you sure you want to clear the canvas?')) {
       this.canvas.clear();
+      this.canvas.backgroundColor = document.getElementById('backgroundColor').value;
       this.drawSymmetryLines();
       this.saveHistory();
     }
   }
   
   saveHistory() {
-    const json = this.canvas.toJSON();
+    const json = this.canvas.toJSON(['isGuide', 'excludeFromExport']);
     this.history = this.history.slice(0, this.historyIndex + 1);
     this.history.push(json);
     this.historyIndex++;
@@ -508,6 +554,7 @@ class MandalaArtist {
     if (this.historyIndex > 0) {
       this.historyIndex--;
       this.canvas.loadFromJSON(this.history[this.historyIndex], () => {
+        this.canvas.backgroundColor = document.getElementById('backgroundColor').value;
         this.canvas.renderAll();
         this.drawSymmetryLines();
       });
@@ -518,6 +565,7 @@ class MandalaArtist {
     if (this.historyIndex < this.history.length - 1) {
       this.historyIndex++;
       this.canvas.loadFromJSON(this.history[this.historyIndex], () => {
+        this.canvas.backgroundColor = document.getElementById('backgroundColor').value;
         this.canvas.renderAll();
         this.drawSymmetryLines();
       });
@@ -583,7 +631,6 @@ class MandalaArtist {
       if (data.brushColor) {
         this.brushColor = data.brushColor;
         document.getElementById('brushColorPicker').value = this.brushColor;
-        this.canvas.freeDrawingBrush.color = this.brushColor;
       }
       
       if (data.backgroundColor) {
@@ -603,17 +650,17 @@ class MandalaArtist {
       }
       
       if (data.shadowBlur) {
-        this.shadowBlur = data.shadowBlur;
+        this.shadowBlur = parseInt(data.shadowBlur);
         document.getElementById('shadowBlur').value = this.shadowBlur;
         document.getElementById('shadowBlurValue').textContent = this.shadowBlur;
       }
       
-      if (data.canvasCenterX) {
+      if (data.canvasCenterX !== undefined) {
         this.centerX = parseFloat(data.canvasCenterX);
         document.getElementById('centerX').value = this.centerX * 100;
       }
       
-      if (data.canvasCenterY) {
+      if (data.canvasCenterY !== undefined) {
         this.centerY = parseFloat(data.canvasCenterY);
         document.getElementById('centerY').value = this.centerY * 100;
       }
@@ -633,9 +680,11 @@ class MandalaArtist {
         document.getElementById('randomColors').checked = this.randomColors;
       }
       
+      this.applyBrushSettings();
       this.updateCenterIndicator();
       this.drawSymmetryLines();
       this.updateShadowSettings();
+      this.saveHistory();
     });
   }
   
@@ -784,9 +833,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const mandalaArtist = new MandalaArtist();
   
   // Handle messages from popup
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'applyPattern') {
-      mandalaArtist.applyPredefinedPattern(request.pattern.pattern);
+      mandalaArtist.applyPredefinedPattern(request.pattern);
     }
   });
 });
