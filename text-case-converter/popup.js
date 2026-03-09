@@ -1,518 +1,390 @@
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Popup loaded');
-    
-    // Elements
-    const statusIndicator = document.getElementById('status-indicator');
-    const statusText = document.getElementById('status-text');
-    const textPreview = document.getElementById('text-preview');
-    const textOutput = document.getElementById('text-output');
-    const sourceInfo = document.getElementById('source-info');
-    const textItems = document.getElementById('text-items');
-    const manualText = document.getElementById('manual-text');
-    
-    // Buttons
-    const modeTabs = document.querySelectorAll('.mode-tab');
-    const scanBtn = document.getElementById('scan-btn');
-    const getSelectionBtn = document.getElementById('get-selection-btn');
-    const useTextBtn = document.getElementById('use-text-btn');
-    const caseButtons = document.querySelectorAll('.case-btn');
-    const applyBtn = document.getElementById('apply-btn');
-    const copyBtn = document.getElementById('copy-btn');
-    const clearBtn = document.getElementById('clear-btn');
-    
-    // State
-    let currentText = '';
-    let currentSource = '';
-    let convertedText = '';
-    let activeTabId = null;
-    let activeTabUrl = '';
-    let scannedTexts = [];
-    
-    // Update status
-    function updateStatus(type, message) {
-        console.log('Status:', type, '-', message);
-        
-        const colors = {
-            idle: '#FBBF24',
-            scanning: '#38BDF8',
-            success: '#4ADE80',
-            error: '#EF4444',
-            listening: '#8B5CF6',
-            warning: '#F59E0B'
-        };
-        
-        statusIndicator.style.background = colors[type] || colors.idle;
-        statusText.textContent = message;
-        
-        if (type === 'scanning') {
-            statusIndicator.style.animation = 'pulse 1s infinite';
-        } else {
-            statusIndicator.style.animation = 'none';
-        }
+document.addEventListener("DOMContentLoaded", () => {
+  const statusIndicator = document.getElementById("status-indicator");
+  const statusText = document.getElementById("status-text");
+  const sourcePill = document.getElementById("source-pill");
+  const charCount = document.getElementById("char-count");
+  const resultCount = document.getElementById("result-count");
+  const scanCount = document.getElementById("scan-count");
+  const textPreview = document.getElementById("text-preview");
+  const textOutput = document.getElementById("text-output");
+  const sourceInfo = document.getElementById("source-info");
+  const textItems = document.getElementById("text-items");
+  const manualText = document.getElementById("manual-text");
+  const autoScanToggle = document.getElementById("auto-scan-toggle");
+
+  const modeTabs = Array.from(document.querySelectorAll(".mode-tab"));
+  const caseButtons = Array.from(document.querySelectorAll(".case-btn"));
+  const scanBtn = document.getElementById("scan-btn");
+  const getSelectionBtn = document.getElementById("get-selection-btn");
+  const useTextBtn = document.getElementById("use-text-btn");
+  const applyBtn = document.getElementById("apply-btn");
+  const copyBtn = document.getElementById("copy-btn");
+  const clearBtn = document.getElementById("clear-btn");
+
+  const state = {
+    currentText: "",
+    currentSource: "",
+    convertedText: "",
+    activeTabId: null,
+    scannedTexts: [],
+    autoDetect: true
+  };
+
+  const statusColors = {
+    idle: "#fbbf24",
+    scanning: "#38bdf8",
+    success: "#4ade80",
+    error: "#fb7185",
+    listening: "#c084fc",
+    warning: "#f59e0b"
+  };
+
+  chrome.storage.local.get(["textCaseAutoDetect"], (result) => {
+    state.autoDetect = result.textCaseAutoDetect ?? true;
+    autoScanToggle.checked = state.autoDetect;
+  });
+
+  autoScanToggle.addEventListener("change", () => {
+    state.autoDetect = autoScanToggle.checked;
+    chrome.storage.local.set({ textCaseAutoDetect: state.autoDetect });
+  });
+
+  modeTabs.forEach((tab) => {
+    tab.addEventListener("click", () => switchMode(tab.dataset.mode));
+  });
+
+  scanBtn.addEventListener("click", handleScanPage);
+  getSelectionBtn.addEventListener("click", handleGetSelection);
+  useTextBtn.addEventListener("click", () => {
+    const text = manualText.value.trim();
+    if (!text) {
+      updateStatus("error", "Enter some text first.");
+      manualText.focus();
+      return;
     }
 
-    // Send message to content script with proper error handling
-    async function sendToContentScript(tabId, message) {
-        return new Promise((resolve) => {
-            console.log('Sending to tab', tabId, ':', message.action);
-            
-            chrome.tabs.sendMessage(tabId, message, (response) => {
-                if (chrome.runtime.lastError) {
-                    console.error('Error sending message:', chrome.runtime.lastError.message);
-                    resolve({ 
-                        success: false, 
-                        error: chrome.runtime.lastError.message 
-                    });
-                } else {
-                    console.log('Response received:', response);
-                    resolve(response || { success: false });
-                }
-            });
-        });
+    setCurrentText(text, "Manual input");
+  });
+
+  manualText.addEventListener("keydown", (event) => {
+    if (event.ctrlKey && event.key === "Enter") {
+      event.preventDefault();
+      useTextBtn.click();
+    }
+  });
+
+  caseButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!state.currentText) {
+        updateStatus("error", "No text to convert.");
+        return;
+      }
+
+      const converter = caseConverters[button.dataset.case];
+      state.convertedText = converter(state.currentText);
+      renderOutput(state.convertedText, true);
+      setActiveCase(button.dataset.case);
+      refreshApplyAvailability();
+      resultCount.textContent = `${state.convertedText.length} chars`;
+      updateStatus("success", `${button.textContent} ready.`);
+    });
+  });
+
+  applyBtn.addEventListener("click", async () => {
+    if (!state.convertedText) {
+      updateStatus("error", "Convert text before applying.");
+      return;
     }
 
-    // Test connection to content script
-    async function testConnection(tabId) {
-        console.log('Testing connection to tab:', tabId);
-        
-        try {
-            const response = await sendToContentScript(tabId, { action: "ping" });
-            console.log('Ping response:', response);
-            return response && response.alive === true;
-        } catch (error) {
-            console.error('Connection test failed:', error);
-            return false;
-        }
+    if (!state.activeTabId) {
+      updateStatus("error", "No target page available.");
+      return;
     }
 
-    // Display text for conversion
-    function displayTextForConversion(text, source = 'Manual input') {
-        console.log('Displaying text for conversion:', text.substring(0, 50) + '...');
-        
-        currentText = text;
-        currentSource = source;
-        
-        // Update preview
-        const displayText = text.length > 300 ? text.substring(0, 300) + '...' : text;
-        textPreview.textContent = displayText;
-        
-        // Update source info
-        sourceInfo.textContent = `From: ${source} • ${text.length} characters`;
-        
-        // Enable apply button
-        applyBtn.disabled = false;
-        applyBtn.innerHTML = `<span class="btn-icon">✓</span> Apply to Original`;
-        
-        updateStatus('success', `Text ready (${text.length} chars)`);
-        
-        // Scroll to conversion area
-        setTimeout(() => {
-            document.querySelector('.conversion-area').scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }, 100);
+    updateStatus("scanning", "Applying changes...");
+    const response = await sendToContentScript(state.activeTabId, {
+      action: "applyText",
+      text: state.convertedText
+    });
+
+    if (response?.success) {
+      state.currentText = state.convertedText;
+      renderPreview(state.currentText);
+      renderOutput("Applied to original page.", false, "success");
+      updateStatus("success", "Text applied.");
+      refreshApplyAvailability();
+    } else {
+      renderOutput(response?.message || "Could not apply to the page. Copy instead.", false, "warning");
+      updateStatus("warning", "Auto-apply failed.");
+    }
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    const textToCopy = state.convertedText || state.currentText;
+    if (!textToCopy) {
+      updateStatus("error", "Nothing to copy.");
+      return;
     }
 
-    // Switch mode
-    modeTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const mode = this.dataset.mode;
-            
-            // Update tabs
-            modeTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update mode content
-            document.querySelectorAll('.mode-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`${mode}-mode`).classList.add('active');
-            
-            // Mode-specific setup
-            if (mode === 'manual') {
-                manualText.focus();
-                updateStatus('idle', 'Type or paste text below');
-            } else if (mode === 'selection') {
-                updateStatus('listening', 'Select text on page, then click button');
-            } else if (mode === 'scan') {
-                updateStatus('idle', 'Click Scan to find all page text');
-            }
-        });
-    });
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      renderOutput("Copied to clipboard.", false, "success");
+      updateStatus("success", "Copied.");
+    } catch (_error) {
+      updateStatus("error", "Clipboard copy failed.");
+    }
+  });
 
-    // SCAN PAGE - Main fix here!
-    scanBtn.addEventListener('click', async function() {
-        console.log('=== SCAN BUTTON CLICKED ===');
-        updateStatus('scanning', 'Scanning page for text...');
-        
-        try {
-            // Get current tab
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            console.log('Active tab:', tab.id, tab.url);
-            
-            activeTabId = tab.id;
-            activeTabUrl = tab.url;
-            
-            // Test connection first
-            const isConnected = await testConnection(tab.id);
-            console.log('Content script connected:', isConnected);
-            
-            if (!isConnected) {
-                updateStatus('error', 'Cannot access page content. Try refreshing the page.');
-                textItems.innerHTML = `
-                    <div class="no-text">
-                        <strong>Cannot access page content.</strong><br>
-                        Try:<br>
-                        1. Refresh the page<br>
-                        2. Try Manual or Selection mode<br>
-                        3. Or type text below
-                    </div>
-                `;
-                return;
-            }
-            
-            // Send scan request
-            const response = await sendToContentScript(tab.id, { action: "scanPage" });
-            console.log('Scan response:', response);
-            
-            if (response && response.success && response.data) {
-                // Handle the response data
-                if (response.data.items && response.data.items.length > 0) {
-                    scannedTexts = response.data.items;
-                    displayScanResults(scannedTexts);
-                    updateStatus('success', `Found ${scannedTexts.length} text items`);
-                    
-                    // Auto-select first item
-                    if (scannedTexts.length > 0) {
-                        setTimeout(() => {
-                            selectTextItem(0);
-                        }, 200);
-                    }
-                } else if (response.data.text) {
-                    // Single text item
-                    scannedTexts = [response.data];
-                    displayScanResults(scannedTexts);
-                    updateStatus('success', `Found text (${response.data.text.length} chars)`);
-                    
-                    setTimeout(() => {
-                        selectTextItem(0);
-                    }, 200);
-                } else {
-                    updateStatus('warning', 'No text found on page');
-                    textItems.innerHTML = '<div class="no-text">No text found on this page</div>';
-                }
-            } else {
-                updateStatus('warning', 'Scan completed but no text found');
-                textItems.innerHTML = '<div class="no-text">No text found on this page</div>';
-            }
-            
-        } catch (error) {
-            console.error('Scan error:', error);
-            updateStatus('error', 'Scan failed: ' + error.message);
-            textItems.innerHTML = `<div class="no-text">Error: ${error.message}</div>`;
-        }
-    });
+  clearBtn.addEventListener("click", resetState);
 
-    // Display scan results
-    function displayScanResults(texts) {
-        console.log('Displaying scan results:', texts.length, 'items');
-        textItems.innerHTML = '';
-        
-        if (texts.length === 0) {
-            textItems.innerHTML = '<div class="no-text">No text found</div>';
-            return;
-        }
-        
-        texts.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'text-item';
-            div.dataset.index = index;
-            
-            const preview = item.text.length > 80 
-                ? item.text.substring(0, 80) + '...' 
-                : item.text;
-            
-            div.innerHTML = `
-                <div class="preview">${preview}</div>
-                <div class="source">${item.source} • ${item.text.length} chars</div>
-            `;
-            
-            div.addEventListener('click', () => selectTextItem(index));
-            textItems.appendChild(div);
-        });
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request.action !== "textSelected" || !state.autoDetect || !request.text) {
+      return;
     }
 
-    // Select text item from scan results
-    function selectTextItem(index) {
-        console.log('Selecting text item', index);
-        
-        // Update UI
-        document.querySelectorAll('.text-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        
-        const itemElement = document.querySelector(`.text-item[data-index="${index}"]`);
-        if (itemElement) {
-            itemElement.classList.add('active');
-        }
-        
-        // Display for conversion
-        const item = scannedTexts[index];
-        if (item) {
-            displayTextForConversion(item.text, item.source);
-        }
+    getActiveTab().then((tab) => {
+      if (tab?.id) {
+        state.activeTabId = tab.id;
+      }
+    });
+
+    switchMode("selection");
+    setCurrentText(request.text, request.source || "Page selection");
+    updateStatus("success", "Selection detected.");
+  });
+
+  switchMode("manual");
+  manualText.value = "Try converting this sample text into title case, camel case, or kebab case.";
+  updateStatus("idle", "Choose a mode to begin.");
+
+  async function handleScanPage() {
+    updateStatus("scanning", "Scanning page...");
+    const tab = await getActiveTab();
+    if (!tab?.id) {
+      updateStatus("error", "No active tab found.");
+      return;
     }
 
-    // GET SELECTED TEXT
-    getSelectionBtn.addEventListener('click', async function() {
-        console.log('=== GET SELECTION BUTTON CLICKED ===');
-        updateStatus('scanning', 'Getting selected text...');
-        
-        try {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            activeTabId = tab.id;
-            
-            const response = await sendToContentScript(tab.id, { 
-                action: "getCurrentSelection" 
-            });
-            
-            console.log('Selection response:', response);
-            
-            if (response && response.success && response.text) {
-                displayTextForConversion(response.text, response.source || 'Selected Text');
-                updateStatus('success', `Selected text loaded (${response.text.length} chars)`);
-            } else {
-                updateStatus('error', 'No text selected on page');
-                alert('Please select some text on the page first, then click this button.');
-            }
-        } catch (error) {
-            console.error('Selection error:', error);
-            updateStatus('error', 'Failed to get selection');
-            alert('Error: ' + error.message);
-        }
-    });
+    state.activeTabId = tab.id;
+    const response = await sendToContentScript(tab.id, { action: "scanPage" });
 
-    // USE MANUAL TEXT
-    useTextBtn.addEventListener('click', function() {
-        const text = manualText.value.trim();
-        if (!text) {
-            updateStatus('error', 'Please enter some text');
-            manualText.focus();
-            return;
-        }
-        
-        displayTextForConversion(text, 'Manual Input');
-    });
-
-    // Listen for auto-selection from content script
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        console.log('Popup received message:', request.action);
-        
-        if (request.action === "textSelected") {
-            // Switch to selection mode if not already
-            const selectionTab = document.querySelector('.mode-tab[data-mode="selection"]');
-            if (!selectionTab.classList.contains('active')) {
-                selectionTab.click();
-            }
-            
-            // Display the selected text
-            displayTextForConversion(request.text, request.source || 'Auto-detected');
-            updateStatus('success', `Auto-detected selection (${request.text.length} chars)`);
-        }
-        
-        return true;
-    });
-
-    // CASE CONVERSION FUNCTIONS
-    const caseConverters = {
-        upper: (text) => text.toUpperCase(),
-        lower: (text) => text.toLowerCase(),
-        title: (text) => text.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()),
-        sentence: (text) => {
-            return text.toLowerCase().replace(/(^\s*\w|[.!?]\s+\w)/g, match => match.toUpperCase());
-        },
-        camel: (text) => text.toLowerCase().replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => 
-            index === 0 ? word.toLowerCase() : word.toUpperCase()).replace(/\s+/g, ''),
-        pascal: (text) => text.replace(/(?:^\w|[A-Z]|\b\w)/g, (word) => word.toUpperCase()).replace(/\s+/g, ''),
-        snake: (text) => text.toLowerCase().replace(/\s+/g, '_').replace(/[^\w_]/g, ''),
-        kebab: (text) => text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-    };
-
-    // Case button handlers
-    caseButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            if (!currentText) {
-                updateStatus('error', 'No text to convert');
-                return;
-            }
-
-            const caseType = this.dataset.case;
-            convertedText = caseConverters[caseType](currentText);
-            
-            // Display converted text
-            const displayText = convertedText.length > 500 
-                ? convertedText.substring(0, 500) + '...' 
-                : convertedText;
-            textOutput.textContent = displayText;
-            
-            // Highlight active button
-            caseButtons.forEach(btn => {
-                btn.style.opacity = '0.7';
-                btn.style.background = '';
-            });
-            this.style.opacity = '1';
-            this.style.background = 'var(--primary-btn-end)';
-            
-            updateStatus('success', `Converted to ${this.textContent}`);
-            
-            // Enable apply button
-            applyBtn.disabled = false;
-        });
-    });
-
-    // APPLY CONVERTED TEXT
-    applyBtn.addEventListener('click', async function() {
-        if (!convertedText) {
-            updateStatus('error', 'Nothing to apply - convert text first');
-            return;
-        }
-        
-        if (!activeTabId) {
-            updateStatus('error', 'No active page to apply to');
-            return;
-        }
-        
-        updateStatus('scanning', 'Applying changes to page...');
-        
-        try {
-            const response = await sendToContentScript(activeTabId, {
-                action: "applyText",
-                text: convertedText
-            });
-            
-            console.log('Apply response:', response);
-            
-            if (response && response.success) {
-                updateStatus('success', '✓ Text applied successfully!');
-                
-                // Update current text to converted text
-                currentText = convertedText;
-                textPreview.textContent = convertedText.length > 300 
-                    ? convertedText.substring(0, 300) + '...' 
-                    : convertedText;
-                
-                // Show success message
-                textOutput.innerHTML = `
-                    <div style="color: #4ADE80; padding: 10px; background: rgba(74, 222, 128, 0.2); border-radius: 6px;">
-                        ✓ Successfully applied to page!<br>
-                        <small>The text has been updated on the original page.</small>
-                    </div>
-                `;
-            } else {
-                updateStatus('warning', 'Could not auto-apply to page');
-                textOutput.innerHTML = `
-                    <div style="color: #FBBF24; padding: 10px; background: rgba(251, 191, 36, 0.2); border-radius: 6px;">
-                        ⚠️ Could not auto-apply.<br>
-                        <small>Use Copy button below, then paste manually.</small>
-                    </div>
-                `;
-            }
-        } catch (error) {
-            console.error('Apply error:', error);
-            updateStatus('error', 'Failed to apply: ' + error.message);
-            textOutput.innerHTML = `
-                <div style="color: #EF4444; padding: 10px; background: rgba(239, 68, 68, 0.2); border-radius: 6px;">
-                    ❌ Error applying changes.<br>
-                    <small>Use Copy button instead.</small>
-                </div>
-            `;
-        }
-    });
-
-    // COPY TO CLIPBOARD
-    copyBtn.addEventListener('click', function() {
-        const textToCopy = convertedText || currentText;
-        if (!textToCopy) {
-            updateStatus('error', 'No text to copy');
-            return;
-        }
-        
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            // Visual feedback
-            const originalHTML = copyBtn.innerHTML;
-            copyBtn.innerHTML = '<span class="btn-icon">✓</span> Copied!';
-            copyBtn.style.background = '#4ADE80';
-            
-            updateStatus('success', '✓ Copied to clipboard!');
-            
-            // Show success in output
-            textOutput.innerHTML = `
-                <div style="color: #4ADE80; padding: 10px; background: rgba(74, 222, 128, 0.2); border-radius: 6px;">
-                    ✓ Copied to clipboard!<br>
-                    <small>Paste with Ctrl+V anywhere.</small>
-                </div>
-            `;
-            
-            // Reset button after 2 seconds
-            setTimeout(() => {
-                copyBtn.innerHTML = originalHTML;
-                copyBtn.style.background = '';
-            }, 2000);
-        }).catch(err => {
-            updateStatus('error', 'Copy failed: ' + err.message);
-            console.error('Copy error:', err);
-        });
-    });
-
-    // CLEAR ALL
-    clearBtn.addEventListener('click', function() {
-        currentText = '';
-        convertedText = '';
-        currentSource = '';
-        scannedTexts = [];
-        
-        textPreview.textContent = 'No text selected. Choose a mode above.';
-        textOutput.textContent = 'Converted text will appear here...';
-        sourceInfo.textContent = '';
-        textItems.innerHTML = '<div class="no-text">No text found yet. Click Scan above.</div>';
-        manualText.value = '';
-        
-        // Reset case buttons
-        caseButtons.forEach(btn => {
-            btn.style.opacity = '1';
-            btn.style.background = '';
-        });
-        
-        // Disable apply button
-        applyBtn.disabled = true;
-        
-        updateStatus('idle', 'Cleared all. Ready for new text.');
-    });
-
-    // Initialize
-    updateStatus('idle', 'Choose a mode to begin');
-    
-    // Auto-focus manual text
-    setTimeout(() => {
-        if (manualText) {
-            manualText.focus();
-            // Add sample text for testing
-            if (!manualText.value) {
-                manualText.value = "Try converting this sample text. Select UPPERCASE, lowercase, or other options above!";
-            }
-        }
-    }, 300);
-    
-    // Add keyboard shortcut for manual text (Ctrl+Enter to use)
-    if (manualText) {
-        manualText.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                useTextBtn.click();
-            }
-        });
+    if (!response?.success || !response.data?.items?.length) {
+      state.scannedTexts = [];
+      renderScanResults([]);
+      renderOutput(response?.message || "No useful text found on this page.", false, "warning");
+      updateStatus("warning", "No useful text found.");
+      return;
     }
-    
-    console.log('Popup initialized successfully');
+
+    state.scannedTexts = response.data.items;
+    renderScanResults(state.scannedTexts);
+    scanCount.textContent = `${state.scannedTexts.length} items`;
+    updateStatus("success", `Found ${state.scannedTexts.length} text items.`);
+    selectScanItem(0);
+  }
+
+  async function handleGetSelection() {
+    updateStatus("scanning", "Fetching selection...");
+    const tab = await getActiveTab();
+    if (!tab?.id) {
+      updateStatus("error", "No active tab found.");
+      return;
+    }
+
+    state.activeTabId = tab.id;
+    const response = await sendToContentScript(tab.id, { action: "getCurrentSelection" });
+    if (!response?.success || !response.text) {
+      renderOutput(response?.message || "No selected text available.", false, "warning");
+      updateStatus("warning", "No text selected on the page.");
+      return;
+    }
+
+    setCurrentText(response.text, response.source || "Selected text");
+    updateStatus("success", "Selection loaded.");
+  }
+
+  function switchMode(mode) {
+    modeTabs.forEach((tab) => {
+      tab.classList.toggle("active", tab.dataset.mode === mode);
+    });
+
+    document.querySelectorAll(".mode-content").forEach((content) => {
+      content.classList.toggle("active", content.id === `${mode}-mode`);
+    });
+
+    if (mode === "selection") {
+      updateStatus("listening", "Select text on the page, then fetch it.");
+    } else if (mode === "scan") {
+      updateStatus("idle", "Scan the page to capture text blocks.");
+    } else {
+      updateStatus("idle", "Use manual text input.");
+      manualText.focus();
+    }
+  }
+
+  function setCurrentText(text, source) {
+    state.currentText = text;
+    state.currentSource = source;
+    state.convertedText = "";
+    sourcePill.textContent = source;
+    charCount.textContent = `${text.length} chars`;
+    sourceInfo.textContent = source;
+    renderPreview(text);
+    renderOutput("Converted text will appear here.", false);
+    setActiveCase("");
+    refreshApplyAvailability();
+    resultCount.textContent = "0 chars";
+  }
+
+  function renderPreview(text) {
+    textPreview.textContent = text;
+  }
+
+  function renderOutput(text, isResult, tone = "") {
+    textOutput.textContent = text;
+    textOutput.classList.toggle("output", isResult);
+    textOutput.classList.toggle("tone-success", tone === "success");
+    textOutput.classList.toggle("tone-warning", tone === "warning");
+    textOutput.classList.toggle("tone-error", tone === "error");
+  }
+
+  function renderScanResults(items) {
+    textItems.textContent = "";
+    if (!items.length) {
+      scanCount.textContent = "0 items";
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "No text found yet. Run a scan first.";
+      textItems.appendChild(empty);
+      return;
+    }
+
+    items.forEach((item, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "text-item";
+      button.dataset.index = String(index);
+
+      const title = document.createElement("div");
+      title.className = "text-item-title";
+      title.textContent = truncateText(item.text, 90);
+
+      const meta = document.createElement("div");
+      meta.className = "text-item-meta";
+      meta.textContent = `${item.source} • ${item.text.length} chars`;
+
+      button.appendChild(title);
+      button.appendChild(meta);
+      button.addEventListener("click", () => selectScanItem(index));
+      textItems.appendChild(button);
+    });
+  }
+
+  function selectScanItem(index) {
+    const item = state.scannedTexts[index];
+    if (!item) {
+      return;
+    }
+
+    textItems.querySelectorAll(".text-item").forEach((element) => {
+      element.classList.toggle("active", element.dataset.index === String(index));
+    });
+
+    setCurrentText(item.text, item.source);
+  }
+
+  function setActiveCase(caseType) {
+    caseButtons.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.case === caseType);
+    });
+  }
+
+  function updateStatus(type, message) {
+    statusIndicator.style.background = statusColors[type] || statusColors.idle;
+    statusIndicator.style.animation = type === "scanning" ? "pulse 1s infinite" : "none";
+    statusText.textContent = message;
+  }
+
+  function resetState() {
+    state.currentText = "";
+    state.currentSource = "";
+    state.convertedText = "";
+    state.scannedTexts = [];
+    renderPreview("No text selected. Choose a mode above.");
+    renderOutput("Converted text will appear here.", false);
+    sourceInfo.textContent = "No source";
+    sourcePill.textContent = "Idle";
+    charCount.textContent = "0 chars";
+    resultCount.textContent = "0 chars";
+    scanCount.textContent = "0 items";
+    manualText.value = "";
+    renderScanResults([]);
+    setActiveCase("");
+    refreshApplyAvailability();
+    updateStatus("idle", "Cleared. Ready for new text.");
+  }
+
+  async function getActiveTab() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab;
+  }
+
+  function sendToContentScript(tabId, message) {
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(tabId, message, (response) => {
+        if (chrome.runtime.lastError) {
+          resolve({
+            success: false,
+            message: "Page access unavailable here. Try a normal website tab."
+          });
+          return;
+        }
+
+        resolve(response || { success: false });
+      });
+    });
+  }
+
+  function truncateText(text, maxLength) {
+    return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+  }
+
+  function refreshApplyAvailability() {
+    const canApply =
+      Boolean(state.convertedText) &&
+      Boolean(state.activeTabId) &&
+      state.currentSource !== "Manual input";
+    applyBtn.disabled = !canApply;
+  }
+
+  function splitWords(text) {
+    return text
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/[_-]+/g, " ")
+      .replace(/[^\w\s]/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  const caseConverters = {
+    upper: (text) => text.toUpperCase(),
+    lower: (text) => text.toLowerCase(),
+    title: (text) => splitWords(text).map(capitalize).join(" "),
+    sentence: (text) =>
+      text
+        .toLowerCase()
+        .replace(/(^\s*[a-z])|([.!?]\s+[a-z])/g, (match) => match.toUpperCase()),
+    camel: (text) => {
+      const words = splitWords(text).map((word) => word.toLowerCase());
+      return words.map((word, index) => (index === 0 ? word : capitalize(word))).join("");
+    },
+    pascal: (text) => splitWords(text).map((word) => capitalize(word.toLowerCase())).join(""),
+    snake: (text) => splitWords(text).map((word) => word.toLowerCase()).join("_"),
+    kebab: (text) => splitWords(text).map((word) => word.toLowerCase()).join("-")
+  };
+
+  function capitalize(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
 });
