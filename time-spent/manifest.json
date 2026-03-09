@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Time Spent Tracker",
   "version": "1.0",
-  "description": "Track how much time you spend on each website",
-  "permissions": ["storage", "tabs", "idle", "alarms"],
+  "description": "Track active browsing time per website and alert when a custom time limit is reached.",
+  "permissions": ["storage", "tabs", "idle", "alarms", "notifications"],
 
   "background": {
     "service_worker": "background.js"
@@ -13,7 +13,6 @@
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icons16.png",
-      "32": "icons/icons32.png",
       "48": "icons/icons48.png",
       "128": "icons/icons128.png"
     }
@@ -21,8 +20,10 @@
 
   "icons": {
     "16": "icons/icons16.png",
-    "32": "icons/icons32.png",
     "48": "icons/icons48.png",
     "128": "icons/icons128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
