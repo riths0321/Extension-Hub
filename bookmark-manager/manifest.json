@@ -2,14 +2,12 @@
   "manifest_version": 3,
   "name": "Bookmark Manager",
   "version": "1.0",
-  "description": "Manage bookmarks and tab sessions locally with search and cleanup tools.",
-
+  "description": "Manage bookmarks and tab sessions locally with search, quick save, and cleanup tools.",
   "permissions": [
     "tabs",
     "bookmarks",
     "storage"
   ],
-
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -18,10 +16,12 @@
       "128": "icons/icon128.png"
     }
   },
-
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

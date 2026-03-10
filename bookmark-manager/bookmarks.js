@@ -1,94 +1,117 @@
-/* ===========================
-   Helpers
-=========================== */
-
-// Get currently active tab
-function getActiveTab(callback) {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs && tabs.length) callback(tabs[0]);
-  });
-}
-
-// Delegates to showStatus defined in popup.js (window.showStatus)
 function notify(message, type = "success") {
   if (typeof window.showStatus === "function") {
     window.showStatus(message, type);
   }
 }
 
-/* ===========================
-   Add Bookmark (via overlay confirm)
-   Triggered by hidden #addBookmark button
-=========================== */
+function getActiveTab(callback) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs && tabs.length) {
+      callback(tabs[0]);
+    }
+  });
+}
 
-document.getElementById("addBookmark").addEventListener("click", () => {
-  const categoryInput = document.getElementById("category");
-  const category = categoryInput ? categoryInput.value.trim() || "Unsorted" : "Unsorted";
+document.getElementById("confirmAddBookmark").addEventListener("click", () => {
+  const category = document.getElementById("category").value.trim() || "Unsorted";
 
   getActiveTab((tab) => {
-    if (!tab || !tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://")) {
+    if (!tab?.url || tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://")) {
       notify("Cannot bookmark this page", "error");
       return;
     }
 
-    // Prevent duplicate URLs
     chrome.bookmarks.search({ url: tab.url }, (existing) => {
       if (chrome.runtime.lastError) {
-        notify("Error checking bookmarks", "error");
+        notify("Bookmark check failed", "error");
         return;
       }
+
       if (existing && existing.length) {
         notify("Already bookmarked", "error");
         return;
       }
 
-      // Find or create category folder
-      chrome.bookmarks.search({ title: category }, (results) => {
-        if (chrome.runtime.lastError) {
-          notify("Error accessing bookmarks", "error");
+      resolveFolderId(category, (folderId) => {
+        if (!folderId) {
+          notify("Failed to resolve folder", "error");
           return;
         }
 
-        // Only match actual folders (nodes without a URL)
-        const folder = (results || []).find(r => !r.url);
-
-        const createBookmark = (parentId) => {
-          chrome.bookmarks.create(
-            {
-              parentId,
-              title: tab.title || tab.url,
-              url: tab.url
-            },
-            () => {
-              if (chrome.runtime.lastError) {
-                notify("Failed to save bookmark", "error");
-              } else {
-                notify("Bookmark saved ✓");
-              }
-            }
-          );
-        };
-
-        if (folder) {
-          createBookmark(folder.id);
-        } else {
-          chrome.bookmarks.create({ title: category }, (newFolder) => {
-            if (chrome.runtime.lastError || !newFolder) {
-              notify("Failed to create folder", "error");
+        chrome.bookmarks.create(
+          {
+            parentId: folderId,
+            title: tab.title || tab.url,
+            url: tab.url
+          },
+          () => {
+            if (chrome.runtime.lastError) {
+              notify("Failed to save bookmark", "error");
               return;
             }
-            createBookmark(newFolder.id);
-          });
-        }
+            notify("Bookmark saved", "success");
+            window.closeBookmarkOverlay?.();
+            window.refreshOverview?.();
+          }
+        );
       });
     });
   });
 });
 
-/* ===========================
-   Remove Duplicate Bookmarks
-   (URL-based dedup — title can vary, URL is the truth)
-=========================== */
+function resolveFolderId(category, callback) {
+  chrome.bookmarks.getTree((tree) => {
+    if (chrome.runtime.lastError || !tree?.length) {
+      callback(null);
+      return;
+    }
+
+    const bookmarkRoot = tree[0];
+    const preferredRoot =
+      bookmarkRoot.children?.find((node) => node.id === "2") ||
+      bookmarkRoot.children?.find((node) => node.id === "1") ||
+      bookmarkRoot;
+
+    const existingFolder = findFolderByTitle(bookmarkRoot.children || [], category);
+    if (existingFolder) {
+      callback(existingFolder.id);
+      return;
+    }
+
+    chrome.bookmarks.create(
+      {
+        parentId: preferredRoot.id,
+        title: category
+      },
+      (newFolder) => {
+        if (chrome.runtime.lastError || !newFolder) {
+          callback(null);
+          return;
+        }
+        callback(newFolder.id);
+      }
+    );
+  });
+}
+
+function findFolderByTitle(nodes, title) {
+  const normalizedTitle = title.trim().toLowerCase();
+
+  for (const node of nodes) {
+    if (!node.url && node.title.trim().toLowerCase() === normalizedTitle) {
+      return node;
+    }
+
+    if (node.children?.length) {
+      const match = findFolderByTitle(node.children, title);
+      if (match) {
+        return match;
+      }
+    }
+  }
+
+  return null;
+}
 
 document.getElementById("removeDuplicates").addEventListener("click", () => {
   chrome.bookmarks.getTree((tree) => {
@@ -97,12 +120,14 @@ document.getElementById("removeDuplicates").addEventListener("click", () => {
       return;
     }
 
-    const seenUrls = new Map(); // url → first-seen node id
+    const seenUrls = new Map();
     const toRemove = [];
 
     function walk(nodes) {
       nodes.forEach((node) => {
-        if (node.children) walk(node.children);
+        if (node.children) {
+          walk(node.children);
+        }
         if (node.url) {
           if (seenUrls.has(node.url)) {
             toRemove.push(node.id);
@@ -120,44 +145,39 @@ document.getElementById("removeDuplicates").addEventListener("click", () => {
       return;
     }
 
-    // Remove one by one, count completions
     let removed = 0;
     let pending = toRemove.length;
 
     toRemove.forEach((id) => {
       chrome.bookmarks.remove(id, () => {
-        if (!chrome.runtime.lastError) removed++;
-        if (--pending === 0) {
+        if (!chrome.runtime.lastError) {
+          removed += 1;
+        }
+        pending -= 1;
+        if (pending === 0) {
           notify(`Removed ${removed} duplicate(s)`);
+          window.refreshOverview?.();
         }
       });
     });
   });
 });
 
-/* ===========================
-   Delete Empty Bookmark Folders
-   Post-order walk — collect IDs first, remove after
-=========================== */
-
 document.getElementById("cleanFolders").addEventListener("click", () => {
   chrome.bookmarks.getTree((tree) => {
     if (chrome.runtime.lastError) {
-      notify("Error reading bookmarks", "error");
+      notify("Error reading folders", "error");
       return;
     }
 
-    // Root-level nodes (id "0", "1", "2") are system roots — never remove them
-    const SYSTEM_IDS = new Set(["0", "1", "2"]);
+    const systemIds = new Set(["0", "1", "2"]);
     const toDelete = [];
 
     function walk(nodes) {
       nodes.forEach((node) => {
         if (node.children) {
-          walk(node.children); // depth-first
-
-          // Empty folder and not a system root
-          if (node.children.length === 0 && !node.url && !SYSTEM_IDS.has(node.id)) {
+          walk(node.children);
+          if (!node.url && node.children.length === 0 && !systemIds.has(node.id)) {
             toDelete.push(node.id);
           }
         }
@@ -176,9 +196,13 @@ document.getElementById("cleanFolders").addEventListener("click", () => {
 
     toDelete.forEach((id) => {
       chrome.bookmarks.remove(id, () => {
-        if (!chrome.runtime.lastError) deleted++;
-        if (--pending === 0) {
+        if (!chrome.runtime.lastError) {
+          deleted += 1;
+        }
+        pending -= 1;
+        if (pending === 0) {
           notify(`Deleted ${deleted} empty folder(s)`);
+          window.refreshOverview?.();
         }
       });
     });
