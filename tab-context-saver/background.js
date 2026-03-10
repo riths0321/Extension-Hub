@@ -1,274 +1,242 @@
-// Background Service Worker for Tab Context Saver
+const STORAGE_KEYS = {
+  sessions: "sessions",
+  settings: "settings"
+};
 
-// Listen for installation
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Tab Context Saver installed successfully!');
-  
-  // Initialize storage with better structure
-  chrome.storage.local.get(['sessions', 'settings'], (result) => {
-    const defaultData = {
-      sessions: [],
-      settings: {
-        autoSave: true,
-        maxSessions: 50,
-        preservePinned: true
-      }
-    };
-    
-    if (!result.sessions) {
-      chrome.storage.local.set(defaultData);
-    }
-  });
+const DEFAULT_SETTINGS = {
+  autoSave: true,
+  preservePinned: true,
+  maxSessions: 50,
+  confirmRestore: true
+};
+
+chrome.runtime.onInstalled.addListener(async () => {
+  await ensureDefaults();
 });
 
-// Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  const handlers = {
-    'saveSession': handleSaveSession,
-    'restoreSession': handleRestoreSession,
-    'deleteSession': handleDeleteSession,
-    'getSettings': handleGetSettings,
-    'updateSettings': handleUpdateSettings
-  };
-  
-  if (handlers[request.action]) {
-    // Pass the appropriate data based on the action
-    if (request.action === 'restoreSession') {
-      handlers[request.action](request.sessionId, sendResponse);
-    } else if (request.action === 'deleteSession') {
-      handlers[request.action](request.sessionId, sendResponse);
-    } else {
-      handlers[request.action](request.data, sendResponse);
+chrome.runtime.onStartup.addListener(async () => {
+  await ensureDefaults();
+});
+
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  handleRequest(request)
+    .then((response) => sendResponse(response))
+    .catch((error) => sendResponse({ success: false, error: error.message }));
+  return true;
+});
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === "save_session") {
+    await saveSession({
+      mode: "custom",
+      name: `Quick save ${formatTimeLabel()}`
+    });
+  }
+
+  if (command === "restore_last") {
+    const data = await chrome.storage.local.get([STORAGE_KEYS.sessions]);
+    const sessions = Array.isArray(data[STORAGE_KEYS.sessions]) ? data[STORAGE_KEYS.sessions] : [];
+    if (sessions.length) {
+      await restoreSessionById(sessions[0].id);
     }
-    return true; // Keep message channel open for async response
   }
 });
 
-async function handleSaveSession(sessionData, sendResponse) {
-  try {
-    const { settings } = await chrome.storage.local.get(['settings']);
-    const tabs = await chrome.tabs.query({ currentWindow: true });
-    
-    const session = {
-      ...sessionData,
-      id: Date.now(),
-      timestamp: Date.now(),
-      tabCount: tabs.length,
-      tabs: tabs.map(tab => ({
-        url: tab.url,
-        title: tab.title,
-        favIconUrl: tab.favIconUrl,
-        pinned: tab.pinned
-      }))
-    };
-    
-    const result = await chrome.storage.local.get(['sessions']);
-    const sessions = result.sessions || [];
-    sessions.unshift(session);
-    
-    // Apply max sessions limit
-    const maxSessions = settings?.maxSessions || 50;
-    const trimmedSessions = sessions.slice(0, maxSessions);
-    
-    await chrome.storage.local.set({ sessions: trimmedSessions });
-    sendResponse({ success: true, session, totalSessions: trimmedSessions.length });
-  } catch (error) {
-    console.error('Error saving session:', error);
-    sendResponse({ success: false, error: error.message });
-  }
-}
-
-async function handleRestoreSession(sessionId, sendResponse) {
-  try {
-    // Ensure sessionId is a number for proper comparison
-    const sessionIdNum = typeof sessionId === 'string' ? parseInt(sessionId) : sessionId;
-    
-    console.log('[Background] Restore session request:', { sessionId, sessionIdNum, type: typeof sessionId });
-    
-    const { settings } = await chrome.storage.local.get(['settings']);
-    const result = await chrome.storage.local.get(['sessions']);
-    const sessions = result.sessions || [];
-    
-    console.log('[Background] Available sessions:', sessions.map(s => ({ id: s.id, name: s.name })));
-    
-    const session = sessions.find(s => s.id === sessionIdNum);
-    
-    if (!session) {
-      sendResponse({ success: false, error: 'Session not found' });
-      return;
-    }
-    
-    // Close current tabs (preserve pinned if setting is enabled)
-    const currentTabs = await chrome.tabs.query({ currentWindow: true });
-    const tabsToClose = settings?.preservePinned 
-      ? currentTabs.filter(tab => !tab.pinned).map(tab => tab.id)
-      : currentTabs.map(tab => tab.id);
-    
-    if (tabsToClose.length > 0) {
-      await chrome.tabs.remove(tabsToClose);
-    }
-    
-    // Open session tabs with proper ordering
-    const createdTabs = [];
-    for (const [index, tab] of session.tabs.entries()) {
-      try {
-        const newTab = await chrome.tabs.create({ 
-          url: tab.url, 
-          active: index === 0, // Activate first tab
-          pinned: tab.pinned
-        });
-        createdTabs.push(newTab);
-      } catch (error) {
-        console.warn(`Failed to open tab: ${tab.url}`, error);
-      }
-    }
-    
-    // Group tabs by mode (optional enhancement)
-    if (session.mode && createdTabs.length > 0) {
-      try {
-        const groupId = await chrome.tabs.group({
-          tabIds: createdTabs.map(t => t.id)
-        });
-        await chrome.tabGroups.update(groupId, {
-          title: session.mode.charAt(0).toUpperCase() + session.mode.slice(1),
-          color: getGroupColor(session.mode)
-        });
-      } catch (error) {
-        // Grouping not essential, just log
-        console.log('Tab grouping skipped:', error.message);
-      }
-    }
-    
-    sendResponse({ 
-      success: true, 
-      restoredTabs: createdTabs.length,
-      sessionName: session.name 
-    });
-  } catch (error) {
-    console.error('Error restoring session:', error);
-    sendResponse({ success: false, error: error.message });
-  }
-}
-
-function getGroupColor(mode) {
-  const colors = {
-    work: 'blue',
-    study: 'purple',
-    entertainment: 'green',
-    custom: 'yellow'
-  };
-  return colors[mode] || 'grey';
-}
-
-async function handleDeleteSession(sessionId, sendResponse) {
-  try {
-    // Ensure sessionId is a number for proper comparison
-    const sessionIdNum = typeof sessionId === 'string' ? parseInt(sessionId) : sessionId;
-    
-    console.log('[Background] Delete session request:', { sessionId, sessionIdNum, type: typeof sessionId });
-    
-    const result = await chrome.storage.local.get(['sessions']);
-    const sessions = result.sessions || [];
-    
-    console.log('[Background] Current sessions:', sessions.map(s => ({ id: s.id, name: s.name, idType: typeof s.id })));
-    console.log('[Background] Looking for ID:', sessionIdNum, 'type:', typeof sessionIdNum);
-    
-    // Debug: Check each session comparison
-    sessions.forEach((s, index) => {
-      console.log(`[Background] Session ${index}: id=${s.id} (type: ${typeof s.id}), match=${s.id !== sessionIdNum}`);
-    });
-    
-    // Find the session index and remove it
-    const sessionIndex = sessions.findIndex(s => s.id === sessionIdNum);
-    
-    console.log('[Background] Session index found:', sessionIndex);
-    
-    let updatedSessions;
-    if (sessionIndex !== -1) {
-      sessions.splice(sessionIndex, 1);
-      console.log('[Background] Session removed, remaining sessions:', sessions.length);
-      updatedSessions = sessions;
-    } else {
-      console.log('[Background] Session not found for deletion');
-      updatedSessions = sessions;
-    }
-    
-    console.log('[Background] Sessions after operation:', updatedSessions.length);
-    
-    await chrome.storage.local.set({ sessions: updatedSessions });
-    sendResponse({ success: true, remaining: updatedSessions.length });
-  } catch (error) {
-    console.error('Error deleting session:', error);
-    sendResponse({ success: false, error: error.message });
-  }
-}
-
-async function handleGetSettings(_, sendResponse) {
-  try {
-    const result = await chrome.storage.local.get(['settings']);
-    sendResponse({ success: true, settings: result.settings || {} });
-  } catch (error) {
-    sendResponse({ success: false, error: error.message });
-  }
-}
-
-async function handleUpdateSettings(settings, sendResponse) {
-  try {
-    await chrome.storage.local.set({ settings });
-    sendResponse({ success: true });
-  } catch (error) {
-    sendResponse({ success: false, error: error.message });
-  }
-}
-
-// Enhanced auto-save with better conditions
-chrome.windows.onRemoved.addListener(async (windowId) => {
-  const { settings } = await chrome.storage.local.get(['settings']);
-  
-  if (!settings?.autoSave) return;
-  
-  const windows = await chrome.windows.getAll();
-  
-  // Auto-save only if this was the last normal window
-  if (windows.length === 0) {
-    const tabs = await chrome.tabs.query({ windowId });
-    
-    if (tabs.length >= 2) { // Only save if more than 1 tab
-      const autoSaveSession = {
-        id: Date.now(),
-        name: `Auto-saved ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-        mode: 'custom',
-        timestamp: Date.now(),
-        tabCount: tabs.length,
-        tabs: tabs.map(tab => ({
-          url: tab.url,
-          title: tab.title,
-          favIconUrl: tab.favIconUrl,
-          pinned: tab.pinned
-        }))
+async function handleRequest(request) {
+  switch (request.action) {
+    case "saveSession":
+      return saveSession(request.data || {});
+    case "restoreSession":
+      return restoreSessionById(request.sessionId);
+    case "deleteSession":
+      return deleteSessionById(request.sessionId);
+    case "getSettings":
+      return {
+        success: true,
+        settings: await getSettings()
       };
-      
-      const result = await chrome.storage.local.get(['sessions', 'settings']);
-      const sessions = result.sessions || [];
-      sessions.unshift(autoSaveSession);
-      
-      // Apply limit
-      const maxSessions = result.settings?.maxSessions || 50;
-      const trimmedSessions = sessions.slice(0, maxSessions);
-      
-      await chrome.storage.local.set({ sessions: trimmedSessions });
-      console.log('Auto-saved session:', autoSaveSession);
+    case "updateSettings":
+      await updateSettings(request.data || {});
+      return { success: true };
+    default:
+      return { success: false, error: "Unknown action" };
+  }
+}
+
+async function ensureDefaults() {
+  const data = await chrome.storage.local.get([STORAGE_KEYS.sessions, STORAGE_KEYS.settings]);
+  if (!Array.isArray(data[STORAGE_KEYS.sessions])) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.sessions]: [] });
+  }
+  if (!data[STORAGE_KEYS.settings]) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.settings]: DEFAULT_SETTINGS });
+  }
+}
+
+async function getSettings() {
+  const data = await chrome.storage.local.get([STORAGE_KEYS.settings]);
+  return sanitizeSettings(data[STORAGE_KEYS.settings] || {});
+}
+
+function sanitizeSettings(settings) {
+  return {
+    autoSave: settings.autoSave !== false,
+    preservePinned: settings.preservePinned !== false,
+    maxSessions: clampNumber(Number(settings.maxSessions), 10, 200, 50),
+    confirmRestore: settings.confirmRestore !== false
+  };
+}
+
+async function saveSession(sessionData) {
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  const eligibleTabs = tabs.filter((tab) => !!tab.url);
+
+  if (!eligibleTabs.length) {
+    return { success: false, error: "No tabs available to save." };
+  }
+
+  const settings = await getSettings();
+  const session = {
+    id: Date.now(),
+    mode: sessionData.mode || "custom",
+    name: (sessionData.name || `Session ${formatTimeLabel()}`).trim(),
+    timestamp: Date.now(),
+    tabCount: eligibleTabs.length,
+    tabs: eligibleTabs.map((tab) => ({
+      favIconUrl: tab.favIconUrl || "",
+      pinned: Boolean(tab.pinned),
+      title: tab.title || tab.url,
+      url: tab.url
+    }))
+  };
+
+  const data = await chrome.storage.local.get([STORAGE_KEYS.sessions]);
+  const sessions = Array.isArray(data[STORAGE_KEYS.sessions]) ? data[STORAGE_KEYS.sessions] : [];
+  const nextSessions = [session, ...sessions].slice(0, settings.maxSessions);
+
+  await chrome.storage.local.set({ [STORAGE_KEYS.sessions]: nextSessions });
+  return { success: true, session };
+}
+
+async function restoreSessionById(sessionId) {
+  const numericId = Number(sessionId);
+  const data = await chrome.storage.local.get([STORAGE_KEYS.sessions]);
+  const settings = await getSettings();
+  const sessions = Array.isArray(data[STORAGE_KEYS.sessions]) ? data[STORAGE_KEYS.sessions] : [];
+  const session = sessions.find((item) => item.id === numericId);
+
+  if (!session) {
+    return { success: false, error: "Session not found." };
+  }
+
+  const currentTabs = await chrome.tabs.query({ currentWindow: true });
+  if (settings.autoSave) {
+    await saveAutoSnapshot(currentTabs, settings.maxSessions, sessions);
+  }
+
+  const tabsToClose = settings.preservePinned
+    ? currentTabs.filter((tab) => !tab.pinned)
+    : currentTabs;
+
+  if (tabsToClose.length) {
+    await chrome.tabs.remove(tabsToClose.map((tab) => tab.id));
+  }
+
+  const createdTabs = [];
+  for (const [index, tab] of session.tabs.entries()) {
+    try {
+      const createdTab = await chrome.tabs.create({
+        active: index === 0,
+        pinned: Boolean(tab.pinned),
+        url: tab.url
+      });
+      createdTabs.push(createdTab);
+    } catch (_error) {
+      // Skip restricted or invalid URLs.
     }
   }
-});
 
-// Listen for tab updates to track active session (optional feature)
-let activeSessionTabs = new Set();
+  if (createdTabs.length > 1) {
+    try {
+      const groupId = await chrome.tabs.group({
+        tabIds: createdTabs.map((tab) => tab.id)
+      });
+      await chrome.tabGroups.update(groupId, {
+        title: session.name,
+        color: modeToColor(session.mode)
+      });
+    } catch (_error) {
+      // Grouping is optional.
+    }
+  }
 
-chrome.tabs.onCreated.addListener((tab) => {
-  activeSessionTabs.add(tab.id);
-});
+  return {
+    success: true,
+    restoredTabs: createdTabs.length,
+    sessionName: session.name
+  };
+}
 
-chrome.tabs.onRemoved.addListener((tabId) => {
-  activeSessionTabs.delete(tabId);
-});
+async function saveAutoSnapshot(currentTabs, maxSessions, existingSessions) {
+  const tabs = currentTabs.filter((tab) => !!tab.url);
+  if (!tabs.length) {
+    return;
+  }
+
+  const autoSession = {
+    id: Date.now() + 1,
+    mode: "custom",
+    name: `Auto snapshot ${formatTimeLabel()}`,
+    timestamp: Date.now(),
+    tabCount: tabs.length,
+    tabs: tabs.map((tab) => ({
+      favIconUrl: tab.favIconUrl || "",
+      pinned: Boolean(tab.pinned),
+      title: tab.title || tab.url,
+      url: tab.url
+    }))
+  };
+
+  const nextSessions = [autoSession, ...existingSessions].slice(0, maxSessions);
+  await chrome.storage.local.set({ [STORAGE_KEYS.sessions]: nextSessions });
+}
+
+async function deleteSessionById(sessionId) {
+  const numericId = Number(sessionId);
+  const data = await chrome.storage.local.get([STORAGE_KEYS.sessions]);
+  const sessions = Array.isArray(data[STORAGE_KEYS.sessions]) ? data[STORAGE_KEYS.sessions] : [];
+  const nextSessions = sessions.filter((session) => session.id !== numericId);
+  await chrome.storage.local.set({ [STORAGE_KEYS.sessions]: nextSessions });
+  return { success: true, remaining: nextSessions.length };
+}
+
+async function updateSettings(settings) {
+  const sanitized = sanitizeSettings(settings);
+  const data = await chrome.storage.local.get([STORAGE_KEYS.sessions]);
+  const sessions = Array.isArray(data[STORAGE_KEYS.sessions]) ? data[STORAGE_KEYS.sessions] : [];
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.settings]: sanitized,
+    [STORAGE_KEYS.sessions]: sessions.slice(0, sanitized.maxSessions)
+  });
+}
+
+function modeToColor(mode) {
+  const map = {
+    work: "blue",
+    study: "purple",
+    entertainment: "green",
+    custom: "yellow"
+  };
+  return map[mode] || "grey";
+}
+
+function clampNumber(value, min, max, fallback) {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, value));
+}
+
+function formatTimeLabel() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
