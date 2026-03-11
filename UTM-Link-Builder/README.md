@@ -1,55 +1,104 @@
-# 🔗 UTM Link Builder
+# UTM Link Builder
 
-## 👨‍💻 Made by Saurabh Tiwari
+`UTM Link Builder` ek compact Chrome extension hai jo marketing campaigns ke liye clean tracking URLs generate karta hai. Isme user base URL aur required UTM parameters fill karta hai, aur extension instantly ready-to-copy final link create kar deta hai.
 
-### 🧩 Description
-**UTM Link Builder** is essential for digital marketers. Create trackable URLs for your campaigns without messy spreadsheets. Add Source, Medium, Campaign, and other parameters to your links instantly.
+## Overview
 
-### 🚀 Features
-- **Presets**: Save frequent values (e.g., "newsletter", "social").
-- **Templates**: Create full parameter templates.
-- **Shorten**: (Optional) Integration with bit.ly (if configured).
-- **History**: Access previously built links.
-- **Dark Mode**: Easy on the eyes.
-- **CSV Export**: Export your link history.
+Manual UTM links banana repetitive aur error-prone hota hai. Ye extension isi workflow ko fast karta hai by giving a focused popup jahan marketer ya growth team bina spreadsheet ke proper campaign URL generate kar sakti hai.
 
-### 🛠️ Tech Stack
-- **HTML5**: Form builder.
-- **JavaScript**: URL construction.
-- **Chrome Extension (Manifest V3)**: Storage.
+## Current Features
 
-### 📂 Folder Structure
+- Base URL validation
+- Required UTM field checks
+- Optional `utm_term` and `utm_content`
+- Instant live URL generation
+- Existing query parameters ke sath safe merge
+- One-click copy
+- Keyboard shortcuts
+- Premium blue campaign-studio popup
+- Chrome MV3 and CSP-safe structure
+
+## Fields Supported
+
+- `utm_source`
+- `utm_medium`
+- `utm_campaign`
+- `utm_term`
+- `utm_content`
+
+## How It Works
+
+1. Base URL enter karo
+2. `Source`, `Medium`, aur `Campaign` fill karo
+3. Optional `Term` aur `Content` add karo
+4. Extension automatically final UTM URL generate karega
+5. `Copy URL` se link clipboard me copy ho jayega
+
+## Keyboard Shortcuts
+
+- `Ctrl + U` : focus base URL field
+- `Ctrl + C` : generated URL copy
+- `Esc` : clear all fields
+
+## Project Structure
+
+```text
+UTM-Link-Builder/
+├── _locales/
+│   └── en/messages.json
+├── icons/
+│   ├── icon16.png
+│   ├── icon48.png
+│   └── icon128.png
+├── manifest.json
+├── popup.html
+├── popup.css
+├── popup.js
+└── README.md
 ```
-UTM-Link-Builder-FINAL/
-├── manifest.json      # Config
-├── popup.html         # Builder UI
-├── popup.js           # Logic
-└── style.css          # Styles
+
+## Permissions
+
+### `clipboardWrite`
+
+Generated UTM URL ko one-click copy karne ke liye.
+
+## CSP Notes
+
+Manifest V3 CSP configured:
+
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self'; object-src 'self'"
+}
 ```
 
-### ⚙️ Installation (Developer Mode)
-1.  Download source.
-2.  Go to `chrome://extensions`.
-3.  Turn on **Developer mode**.
-4.  Load unpacked -> `UTM-Link-Builder-FINAL`.
+Is implementation me:
 
-### 🧠 How It Works
-1.  **Input**: User enters Base URL and params (utm_source, utm_medium, etc.).
-2.  **Build**: Concatenates them into a query string: `url?utm_source=...`.
-3.  **Validate**: Checks for URL validity.
-4.  **Save**: Stores the generated link in history.
+- inline scripts use nahi hui
+- popup events JavaScript se bind hote hain
+- unsafe eval patterns nahi hain
 
-### 🔐 Permissions Explained
-- **`clipboardWrite`**: To copy the final URL.
-- **`tabs`**: To grab the current tab URL as the base URL.
-- **`storage`**: To save your presets and history.
+## Installation
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Builder Interface](https://via.placeholder.com/600x400?text=Builder+Interface)
+1. `chrome://extensions` open karo
+2. `Developer mode` enable karo
+3. `Load unpacked` click karo
+4. `UTM-Link-Builder` folder select karo
 
-### 🔒 Privacy Policy
-- **Local History**: Your marketing data is stored locally.
+## Notes
 
-### 📄 License
-This project is licensed under the **MIT License**.
+- Ye version presets, templates, CSV export, history, ya URL shortener include nahi karta
+- Extension currently focused hai single clean UTM-building workflow par
+
+## Tech Stack
+
+- HTML
+- CSS
+- Vanilla JavaScript
+- Chrome Extension Manifest V3
+- Chrome i18n
+
+## Summary
+
+`UTM Link Builder` ek focused and production-safe extension hai jo unnecessary complexity ke bina fast UTM generation provide karta hai. Premium popup design, validation, and one-click copy isko daily campaign workflow ke liye practical banate hain.

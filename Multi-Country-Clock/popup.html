@@ -1,24 +1,73 @@
-
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>World Clock</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <h2>🌍 World Clock</h2>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-Country Clock</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Global Time Desk</p>
+          <h1>Multi-Country Clock</h1>
+          <p class="subtitle">Track multiple regions with live analog and digital clocks, faster comparison, and cleaner day planning.</p>
+        </div>
+        <div class="hero-actions">
+          <button id="formatToggle" class="icon-btn" type="button" aria-label="Toggle time format">24H</button>
+          <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme">Theme</button>
+        </div>
+      </header>
 
-  <div class="controls">
-    <button id="themeToggle">🌗</button>
-    <button id="formatToggle">🕒</button>
-  </div>
+      <section class="spotlight">
+        <div>
+          <p class="section-label">Local time</p>
+          <div id="localTime" class="spotlight-time">--:--:--</div>
+          <p id="localDate" class="spotlight-date">Loading local date</p>
+        </div>
+        <div class="spotlight-meta">
+          <div class="meta-chip">
+            <span class="meta-key">Clocks</span>
+            <strong id="clockCount">0</strong>
+          </div>
+          <div class="meta-chip">
+            <span class="meta-key">Format</span>
+            <strong id="formatLabel">12h</strong>
+          </div>
+        </div>
+      </section>
 
-  <select id="countrySelect"></select>
-  <button id="addBtn">Add Clock</button>
+      <section class="add-card">
+        <div class="section-head">
+          <div>
+            <p class="section-label">Add destination</p>
+            <h2 class="section-title">Country and city</h2>
+          </div>
+          <span id="statusBadge" class="status-badge">Ready</span>
+        </div>
+        <div class="search-stack">
+          <label class="search-label" for="timezoneSearch">Search timezone</label>
+          <input id="timezoneSearch" class="search-input" type="search" placeholder="Search by country, city, or region" autocomplete="off" />
+        </div>
+        <div class="add-row">
+          <select id="countrySelect" class="country-select" size="7" aria-label="Select country timezone"></select>
+          <button id="addBtn" class="add-btn" type="button">Add Clock</button>
+        </div>
+      </section>
 
-  <div id="clockList"></div>
+      <section class="clock-panel">
+        <div class="section-head">
+          <div>
+            <p class="section-label">Saved clocks</p>
+            <h2 class="section-title">Live comparison</h2>
+          </div>
+          <span class="panel-note">Drag cards to reorder</span>
+        </div>
+        <div id="clockList" class="clock-list"></div>
+      </section>
+    </main>
 
-  <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script>
+  </body>
 </html>
