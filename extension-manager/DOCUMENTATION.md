@@ -1,352 +1,258 @@
-# Extension Manager - Extension Documentation
+# Extension Manager Pro Documentation
 
-## 1. Extension Overview
+## 1. Overview
 
-**Purpose**: Extension Manager is a utility extension that allows users to manage their installed Chrome extensions. It provides a comprehensive view of all installed extensions with filtering, searching, and enable/disable capabilities from a single dashboard.
+`Extension Manager Pro` is a Manifest V3 Chrome extension for quick extension management from a popup interface.
 
-**Current Functionality**:
-- List all installed extensions
-- Filter extensions (all, enabled, disabled)
-- Extension search functionality
-- Enable/disable extensions
-- Display extension icons, names, versions
-- Extension statistics/counts
-- Loading states
-- Empty state handling
-- Responsive UI with cards
+It is designed around a simple use case:
 
----
+- view installed extensions
+- search and filter them quickly
+- enable or disable them
+- inspect essential details
+- remove or open settings when needed
 
-## 2. Current Features (From Codebase Analysis)
-
-### Core Features Implemented:
-1. **Extension Listing**
-   - Fetch all installed extensions via `chrome.management.getAll()`
-   - Display extension list
-   - Exclude Extension Manager itself from list
-   - Alphabetical sorting
-   - Extension icons display
-   - Extension names
-   - Extension versions
-   - Extension descriptions
-
-2. **Filtering System**
-   - All extensions view
-   - Enabled extensions filter
-   - Disabled extensions filter
-   - Dropdown filter selector
-   - Real-time filter application
-   - Filter state tracking
-
-3. **Search Functionality**
-   - Search by extension name
-   - Real-time search
-   - Filter results while searching
-   - Case-insensitive search
-   - Search term tracking
-
-4. **Enable/Disable**
-   - Toggle extension enabled status
-   - Update extension state
-   - Visual feedback on change
-   - State persistence via Chrome management API
-   - Error handling for state changes
-
-5. **Statistics**
-   - Enabled extension count
-   - Disabled extension count
-   - Total extension count
-   - Count updates on filter change
-   - Display in header
-
-6. **UI Elements**
-   - Loading indicator
-   - Extensions grid/list display
-   - Filter dropdown
-   - Search input field
-   - Statistics header
-   - Empty state messaging
-   - Extension cards with details
-   - Toggle buttons for each extension
+The current product intentionally favors a compact popup workflow over a heavy dashboard.
 
 ---
 
-## 3. Problems & Limitations
+## 2. Architecture
 
-### Current Limitations:
-1. **Functionality Limitations**
-   - Cannot uninstall extensions
-   - Cannot view detailed extension information
-   - Cannot access extension settings
-   - Cannot create/modify extensions
-   - Cannot view extension permissions
-   - No extension update checking
-   - No version update notifications
+### Core Files
 
-2. **User Experience**
-   - No extension categorization
-   - No sorting options (only alphabetical)
-   - Limited search capability (name only)
-   - No star/favorite marking
-   - No extension grouping
-   - Limited visual organization
-   - No dark mode
-   - No custom themes
+- `manifest.json`
+  Chrome extension configuration
 
-3. **Information Display**
-   - No permission display
-   - No file size information
-   - No install date
-   - No update frequency
-   - No usage statistics
-   - No permission list
-   - No ratings/reviews
+- `popup.html`
+  Popup structure and layout
 
-4. **Advanced Features**
-   - No bulk operations
-   - Cannot manage extension settings
-   - No backup/restore
-   - No sync across devices
-   - No extension monitoring
-   - No performance metrics
-   - No conflict detection
+- `popup.css`
+  Theme, layout, and component styling
 
-5. **Security & Safety**
-   - No permission warnings
-   - No malware detection
-   - No security auditing
-   - Cannot revoke permissions
-   - No privacy impact analysis
-   - Cannot sandbox extensions
+- `popup.js`
+  Main extension list logic, rendering, search, filters, actions, import/export
 
-6. **Productivity**
-   - No organization features
-   - Cannot create profiles
-   - No quick-access lists
-   - No keyboard shortcuts
-   - No automation
+- `details-modal.js`
+  Extension detail modal renderer and interactions
+
+- `storage.js`
+  Wrapper around `chrome.storage.local` for favorites, tags, and local metadata
+
+- `background.js`
+  Lightweight service worker for command support
 
 ---
 
-## 4. Feature Enhancements
+## 3. Implemented Features
 
-### Recommended Improvements:
+### Extension Listing
 
-1. **Advanced Management**
-   - Uninstall extensions
-   - Update checking
-   - Version management
-   - Permission viewing/managing
-   - Extension settings access
-   - Disable/enable with confirm
+- uses `chrome.management.getAll()`
+- excludes the current extension
+- shows installed extensions in card layout
+- displays:
+  - icon
+  - name
+  - version
+  - description
+  - status
 
-2. **Organization & Categorization**
-   - Auto-categorize by type
-   - Manual categorization
-   - Tagging system
-   - Favorite marking
-   - Create custom groups
-   - Custom sorting options
+### Search and Filtering
 
-3. **Enhanced Search**
-   - Search by description
-   - Search by permission
-   - Search by developer
-   - Advanced filtering
-   - Regular expression support
-   - Save searches
+- real-time search
+- search fields:
+  - name
+  - description
+  - developer label
+- filters:
+  - all
+  - enabled
+  - disabled
+  - favorites
 
-4. **Information Display**
-   - Install date
-   - Update frequency
-   - Permission list with explanation
-   - File size
-   - Creator/developer info
-   - Usage statistics
-   - Security rating
+### Sorting
 
-5. **Monitoring & Alerts**
-   - Performance metrics
-   - Memory usage
-   - CPU usage
-   - Network requests
-   - Storage usage
-   - Duration monitoring
+- name
+- install date surrogate (`first seen`)
+- enabled status
+- developer
 
-6. **Security Features**
-   - Permission audit
-   - Malware scanning
-   - Privacy impact assessment
-   - Suspicious permission warnings
-   - Security ratings
-   - Breach notifications
+### Actions
 
-7. **Automation & Profiles**
-   - Create extension profiles
-   - Usage patterns
-   - Quick-switch profiles
-   - Schedule profiles
-   - Batch operations
-   - Task automation
+- enable extension
+- disable extension
+- batch enable selected
+- batch disable selected
+- open details modal
+- open settings/options page
+- uninstall extension when removable
 
----
+### Details Modal
 
-## 5. Unique & Advanced Features
+- extension name
+- version
+- developer
+- install type
+- homepage URL
+- description
+- permissions
+- security warnings
+- tags
+- favorite toggle
 
-### Innovative Enhancements:
+### Storage-backed Features
 
-1. **Intelligent Assistant**
-   - Recommend useful extensions
-   - Identify duplicate functionality
-   - Suggest removals
-   - Optimize performance
-   - Conflict detection
+Stored with `chrome.storage.local`:
 
-2. **Performance Dashboard**
-   - Extension performance metrics
-   - Memory hog identification
-   - CPU heavy extensions
-   - Impact on browser
-   - Optimization suggestions
+- favorites
+- tags
+- first seen timestamps
+- backup/import metadata
 
-3. **Security Hub**
-   - Permission analysis
-   - Privacy assessment
-   - Malware scanning
-   - Update status check
-   - Vulnerability alerts
-   - Revoke problematic permissions
+### Backup and Restore
 
-4. **Profile Management**
-   - Work profile
-   - Gaming profile
-   - Privacy profile
-   - Development profile
-   - Custom profiles
-   - Switch quickly
+- export JSON backup
+- import JSON backup
+- restore extension enabled states where Chrome allows it
 
-5. **Marketplace Integration**
-   - Browse extensions
-   - Install directly
-   - Reviews and ratings
-   - Developer info
-   - Similar extension suggestions
-   - Installation history
+### UI States
 
-6. **Collaboration**
-   - Share profiles with team
-   - Recommended extension sets
-   - Team standards
-   - Usage reporting
-   - Approval workflows
-
-7. **Analytics**
-   - Usage analytics
-   - Adoption rate
-   - Performance trends
-   - Conflict frequency
-   - Budget impact
+- loading state
+- empty state
+- toast feedback
+- statistics summary
 
 ---
 
-## 6. User Productivity Impact
+## 4. UI Structure
 
-### How Enhancements Benefit Users:
+Current popup layout:
 
-**Browser Management**:
-- Quick overview of all extensions
-- Easy enable/disable without settings
-- Organize and find extensions quickly
-- Reduce browser clutter
-- Improve browser performance
+1. Header
+2. Statistics summary
+3. Search and filter controls
+4. Batch action area
+5. Extension list
 
-**Performance Optimization**:
-- Identify performance issues
-- Disable heavy extensions
-- Manage memory usage
-- Reduce browser slowdown
-- Monitor resource usage
-
-**Security & Privacy**:
-- Review permissions
-- Identify risky extensions
-- Disable suspicious extensions
-- Monitor for vulnerabilities
-- Protect personal data
-
-**Productivity**:
-- Quick access to critical extensions
-- Switch between profiles
-- Disable unnecessary extensions
-- Search quickly
-- Organize logically
-
-**Maintenance**:
-- Track updates needed
-- Manage permissions
-- Remove unused extensions
-- Monitor health
-- Audit regularly
+This matches the project’s current lightweight UX direction.
 
 ---
 
-## 7. Future Scope
+## 5. Theme System
 
-### Long-term Vision:
+The current visual system is documented separately in:
 
-1. **Browser Management Suite**
-   - Full browser configuration
-   - Tab management
-   - Bookmark management
-   - History management
-   - Settings synchronization
+- `THEME_DESIGN.md`
 
-2. **Enterprise Management**
-   - Central extension deployment
-   - Policy enforcement
-   - License management
-   - Compliance monitoring
-   - Admin dashboard
+Approved design baseline:
 
-3. **Mobile Integration**
-   - Mobile app for managing extensions
-   - Cross-device sync
-   - Mobile browser integration
-   - Profile sync
+- font: `Manrope`
+- white background
+- primary blue actions
+- black heading text
+- grey secondary text
+- rounded rectangle controls
+- light blue borders and soft cards
 
-4. **AI-Powered Features**
-   - Intelligent recommendations
-   - Automatic optimization
-   - Anomaly detection
-   - Predictive issues
-   - Smart categorization
+Primary color references:
 
-5. **Integration Ecosystem**
-   - Chrome Web Store integration
-   - Team collaboration
-   - Config sharing
-   - Slack integration
-   - API access
-
-6. **Community & Marketplace**
-   - Share profiles
-   - Browse community profiles
-   - Rate extensions
-   - Report malware
-   - Best practices sharing
+- `#FFFFFF`
+- `#2563EB`
+- `#111111`
+- `#6B7280`
 
 ---
 
-## Development Constraints
+## 6. CSP and Security Notes
 
-- **Frontend-Only**: All management in browser UI
-- **No Backend**: Chrome management API only
-- **Chrome Extension Required**: Depends on Chrome extension API
-- **Limited Permissions**: Cannot access sensitive data
-- **No uninstall**: Chrome API doesn't support uninstall from extension
+The current codebase is aligned with MV3 popup CSP expectations:
+
+- no inline event handlers
+- no inline script blocks
+- no remote script loading
+- no `eval`
+- no `new Function`
+
+Additionally:
+
+- previous `innerHTML` usage in popup rendering was removed
+- popup and modal UI are now rendered with DOM APIs for stronger XSS hygiene
+
+Security-related UI support:
+
+- risky permission highlighting
+- broad host permission warning
+- warning count per extension
 
 ---
 
-## Summary
+## 7. Technical Notes
 
-Extension Manager can expand from a simple listing tool into a comprehensive browser management platform. By adding performance monitoring, security auditing, profile management, and intelligent recommendations, it would serve power users, teams, and enterprises wanting to optimize their browser ecosystem. Integration with team collaboration tools would increase its value for organizations.
+### Developer Label
+
+Developer info is inferred from:
+
+- `homepageUrl` hostname when available
+- fallback to `installType`
+
+### Install Date Sorting
+
+Chrome Management API does not expose a true install timestamp.
+
+Current workaround:
+
+- a local `first seen` timestamp is stored in `chrome.storage.local`
+- this value is used as the install-date-like sort key
+
+### Settings Button
+
+The settings action:
+
+- opens `optionsUrl` when present
+- otherwise opens `chrome://extensions/?id=<extension-id>`
+
+---
+
+## 8. Current Product Decisions
+
+The extension previously explored broader feature ideas, but the current direction is intentionally more focused.
+
+Removed from active popup UX:
+
+- profile management controls
+- performance monitoring section
+
+Reason:
+
+- they added clutter to the popup
+- they were not essential to the core extension-management workflow
+
+---
+
+## 9. Known Limitations
+
+- Chrome may block changes for protected or policy-managed extensions
+- uninstall is not available for every extension
+- true install date is not available from the API
+- some extension icons may fall back to the default icon
+- favorites and tags are local to the browser profile using `chrome.storage.local`
+
+---
+
+## 10. Recommended Future Direction
+
+Keep the extension focused on quick management.
+
+Good future improvements:
+
+- small accessibility pass
+- improved keyboard navigation
+- local bundled Manrope font files for exact typography consistency
+- optional settings page for non-core preferences
+
+Avoid:
+
+- heavy multi-section dashboards
+- adding unrelated productivity tools
+- overloading the popup with rarely used controls
+
