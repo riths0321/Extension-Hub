@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const heightInput = document.getElementById("height");
   const weightInput = document.getElementById("weight");
   const weightLbInput = document.getElementById("weight-lb");
-  const ageInput = document.getElementById("age");
   const feetInput = document.getElementById("feet");
   const inchesInput = document.getElementById("inches");
   const metricRows = document.querySelectorAll(".metric-only");
@@ -22,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const bmiValue = document.getElementById("bmi-value");
   const bmiCategory = document.getElementById("bmi-category");
   const idealValue = document.getElementById("ideal-value");
-  const calorieValue = document.getElementById("calorie-value");
   const barFill = document.getElementById("bar-fill");
   const insightText = document.getElementById("insight-text");
 
@@ -93,8 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
       weightKg = weightRaw * 0.453592;
     }
 
-    const age = parseInt(ageInput.value, 10);
-
     errorMessage.classList.add("hidden");
 
     if (!heightCm || heightCm < 50 || heightCm > 250) {
@@ -103,10 +99,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!weightKg || weightKg < 3 || weightKg > 300) {
       return showError("Weight must be between 3 kg and 300 kg.");
-    }
-
-    if (!age || age < 1 || age > 120) {
-      return showError("Age must be between 1 and 120.");
     }
 
     const heightM = heightCm / 100;
@@ -125,11 +117,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const minWeight = (18.5 * heightM * heightM).toFixed(1);
     const maxWeight = (24.9 * heightM * heightM).toFixed(1);
     idealValue.textContent = `${minWeight} Kg - ${maxWeight} Kg`;
-
-    const bmr = 10 * weightKg + 6.25 * heightCm - 5 * age;
-
-    const calories = Math.round(bmr * 1.55);
-    calorieValue.textContent = `${calories} Kcal/Day`;
 
     results.classList.remove("hidden");
   }

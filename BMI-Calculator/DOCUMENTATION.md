@@ -2,19 +2,18 @@
 
 ## 1. Extension Overview
 
-**Purpose**: BMI Calculator is a health utility extension that calculates Body Mass Index from user-provided height, weight, age, and gender. It provides immediate health category assessment and contextual recommendations based on BMI and demographic data.
+**Purpose**: BMI Calculator is a health utility extension that calculates Body Mass Index from user-provided height and weight. It provides immediate health category assessment, ideal weight range, and contextual recommendations based on BMI.
 
 **Current Functionality**:
 - Height and weight input fields
-- Age input validation (5-120 range)
-- Gender selection dropdown
-- Real-time BMI calculation
+- Metric and Imperial unit system toggle
+- Automatic unit conversion
+- BMI calculation
 - Category classification (Underweight, Normal, Overweight, Obesity)
 - Error message display
-- Age-specific information
 - Results card with detailed information
 - Input validation
-- Enter key support for quick calculation
+- Light and dark mode toggle
 
 ---
 
@@ -24,10 +23,7 @@
 1. **Input Validation**
    - Height validation (must be positive)
    - Weight validation (must be positive)
-   - Age validation (5-120 range)
-   - Gender requirement checking
    - Clear error messages
-   - Input field focus management
 
 2. **BMI Calculation**
    - Formula: BMI = weight / (height in meters)²
@@ -40,8 +36,6 @@
    - Normal Weight: BMI 18.5-24.9
    - Overweight: BMI 25.0-29.9
    - Obesity: BMI ≥ 30.0
-   - Age-dependent information for children
-   - Gender-specific notes
 
 4. **UI/UX Features**
    - Input form with distinct fields
@@ -53,9 +47,6 @@
    - Responsive layout
 
 5. **Special Handling**
-   - Children/teens BMI age-dependency note
-   - Gender-specific interpretation
-   - Age-dependent calculation notes
    - Validation before calculation
 
 ---

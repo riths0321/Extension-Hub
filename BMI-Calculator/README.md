@@ -1,14 +1,13 @@
 ⚖️ BMI Calculator
 
 ## Description
-BMI Calculator is a clean, premium Chrome extension that computes Body Mass Index (BMI) with a clear health category, ideal weight range, daily calorie estimate, and category-based health insights. It is designed to be fast, minimal, and easy to understand within seconds.
+BMI Calculator is a clean, premium Chrome extension that computes Body Mass Index (BMI) with a clear health category, ideal weight range, and category-based health insights. It is designed to be fast, minimal, and easy to understand within seconds.
 
 ## Features
 - Instant BMI calculation with category badge
 - Metric and Imperial unit system toggle (cm/kg or ft/in/lbs)
 - Automatic unit conversion
 - Ideal weight range calculation
-- Daily calories estimation (BMR-based)
 - Health insights per category (Underweight, Normal, Overweight, Obese)
 - Gradient BMI scale visualization with animated fill
 - Light and dark mode toggle (saved in localStorage)
@@ -38,8 +37,8 @@ BMI-Calculator/
 
 ## How It Works
 1. Choose Metric or Imperial.
-2. Enter height, weight, and age.
-3. Click **Calculate** to see BMI, category, insights, ideal range, and calories.
+2. Enter height and weight.
+3. Click **Calculate** to see BMI, category, insights, and ideal range.
 
 Formula:
 `BMI = Weight / (Height × Height)`  
@@ -49,7 +48,7 @@ Formula:
 None. The extension does not require extra permissions.
 
 ## CSP
-A strict `content_security_policy` is set in `manifest.json` and allows only self-hosted scripts/styles plus Google Fonts.
+A strict `content_security_policy` is set in `manifest.json` and allows only self-hosted scripts/styles.
 
 ## Privacy
 - Zero data collection
