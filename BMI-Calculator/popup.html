@@ -1,105 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BMI Calculator</title>
-
-  <!-- Google Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
 </head>
-
 <body>
-  <div class="container">
-
-    <!-- Header -->
+  <div class="wrap">
     <header class="header">
-      <div class="header-icon">
-        <img src="Logo-code.png" alt="BMI Calculator Logo" class="logo-img" />
+      <div class="header-row">
+        <h1 class="title">BMI Calculator</h1>
+        <div class="header-actions">
+          <a
+            id="rate-link"
+            class="rate-btn"
+            href="https://chromewebstore.google.com/detail/bmi-calculator/ejlfenjobcmccecilhkadjekbpoooila/reviews"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Rate this extension"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.6-5.9-3.1-5.9 3.1 1.2-6.6-4.8-4.6 6.6-.9L12 2.5z" fill="currentColor"/>
+            </svg>
+          </a>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">🌙</button>
+        </div>
       </div>
-      <h1>BMI Calculator</h1>
-      <p class="subtitle">Check your body mass index</p>
+      <p class="subtitle">Check Your Body Mass Index Instantly</p>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-
-      <!-- Height -->
-      <div class="input-group">
-        <label for="height">Height (cm)</label>
-        <div class="input-wrapper">
-          <input type="number" id="height" placeholder="e.g. 175" min="0">
+    <main class="main">
+      <div class="unit-switch">
+        <div class="unit-title">Unit System:</div>
+        <div class="segmented" role="tablist" aria-label="Unit system">
+          <button id="metric-tab" class="seg-btn active" type="button" role="tab" aria-selected="true">Metric</button>
+          <button id="imperial-tab" class="seg-btn" type="button" role="tab" aria-selected="false">Imperial</button>
         </div>
       </div>
 
-      <!-- Weight -->
-      <div class="input-group">
-        <label for="weight">Weight (kg)</label>
-        <div class="input-wrapper">
-          <input type="number" id="weight" placeholder="e.g. 70" min="0">
+      <section class="card inputs-card">
+        <div class="row metric-only">
+          <label class="label" id="height-label">Height (cm)</label>
+          <div class="height-cell">
+            <div class="input-group" id="cm-input">
+              <input id="height" type="number" placeholder="175" />
+              <span class="unit-pill">Cm</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Age -->
-      <div class="input-group">
-        <label for="age">Age (years)</label>
-        <div class="input-wrapper">
-          <input type="number" id="age" placeholder="e.g. 25" min="5" max="120">
+        <div class="row imperial-only hidden">
+          <label class="label" id="height-label-imperial">Height (ft)</label>
+          <div class="feet-wrap">
+            <input id="feet" type="number" placeholder="5" />
+            <input id="inches" type="number" placeholder="9" />
+          </div>
         </div>
-      </div>
 
-      <!-- Gender -->
-      <div class="input-group">
-        <label for="gender">Gender</label>
-        <div class="input-wrapper">
-          <select id="gender">
-            <option value="">Select gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
+        <div class="row metric-only">
+          <label class="label" id="weight-label">Weight (kg)</label>
+          <div class="input-group">
+            <input id="weight" type="number" placeholder="70" />
+            <span class="unit-pill">Kg</span>
+          </div>
         </div>
-      </div>
 
-      <!-- Calculate Button -->
-      <button id="calculate-btn" class="primary-btn">
-        <span>Calculate BMI</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round">
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      </button>
+        <div class="row imperial-only hidden">
+          <label class="label" id="weight-label-imperial">Weight (lbs)</label>
+          <div class="input-group">
+            <input id="weight-lb" type="number" placeholder="154" />
+            <span class="unit-pill">Lbs</span>
+          </div>
+        </div>
 
-      <!-- Result -->
-      <div id="result-card" class="result-card hidden">
-        <p class="result-label">Your BMI</p>
-        <div class="result-value" id="bmi-value">--.-</div>
-        <div class="result-category" id="bmi-category"></div>
-      </div>
+        <div class="row">
+          <label class="label">Age</label>
+          <div class="input-group">
+            <input id="age" type="number" placeholder="25" />
+          </div>
+        </div>
 
-      <!-- Error -->
-      <div id="error-message" class="error-message hidden">
-        Please enter valid details.
-      </div>
+      </section>
 
+      <button id="calculate-btn" class="primary-btn">Calculate</button>
+
+      <section class="howto">
+        <div class="howto-title">How to use</div>
+        <div class="howto-steps">
+          <div class="howto-item">1. Select Metric or Imperial.</div>
+          <div class="howto-item">2. Enter height, weight, and age.</div>
+          <div class="howto-item">3. Click Calculate to see results.</div>
+        </div>
+      </section>
+
+      <p id="error-message" class="error hidden">Please enter valid details.</p>
+
+      <section id="results" class="results hidden">
+        <div class="result-card">
+          <div id="bmi-value" class="result-value">--</div>
+          <div id="bmi-category" class="result-pill">--</div>
+        </div>
+
+        <div class="gauge">
+          <div class="bar-gradient">
+            <span id="bar-fill" class="bar-fill"></span>
+          </div>
+          <div class="segment-tabs">
+            <span>Underweight</span>
+            <span>Normal</span>
+            <span>Overweight</span>
+            <span>Obese</span>
+          </div>
+        </div>
+
+        <div class="info-block">
+          <div class="info-title">Ideal Weight Range</div>
+          <div id="ideal-value" class="info-value">--</div>
+        </div>
+
+        <div class="info-block">
+          <div class="info-title">Daily Calories Needed</div>
+          <div id="calorie-value" class="info-value">--</div>
+        </div>
+
+        <div class="insights">
+          <div class="info-title">Health Insights</div>
+          <div class="insight-row">
+            <span class="bulb">💡</span>
+            <span id="insight-text">--</span>
+          </div>
+        </div>
+      </section>
     </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <p>&copy; 2026 Anslation Company</p>
-    </footer>
-
   </div>
 
-  <script src="script.js"></script>
+  <script src="popup.js"></script>
 </body>
-
 </html>
