@@ -1,236 +1,363 @@
-// ===============================
-// QuickShot – Background Service Worker (MV3)
-// ===============================
+// QuickShot – Background Service Worker (MV3) - FIXED VERSION
 
-console.log('🔧 QuickShot Background Service Worker Loaded');
-
-// -------------------------------
-// Helpers
-// -------------------------------
+const SETTINGS_KEY = "qs_settings";
+const DRAFT_KEY = "qs_draft_capture_v1";
+const FULL_LIMIT_SEGMENTS = 20;
+const FULL_MIN_SCROLL_DELAY_MS = 120;
 
 function isRestrictedPage(url) {
   return (
     !url ||
-    url.startsWith('chrome://') ||
-    url.startsWith('chrome-extension://') ||
-    url.includes('chrome.google.com/webstore')
+    url.startsWith("chrome://") ||
+    url.startsWith("edge://") ||
+    url.startsWith("about:") ||
+    url.startsWith("chrome-extension://") ||
+    url.includes("chrome.google.com/webstore")
   );
 }
 
 async function getActiveTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tab;
+  // Prefer capturing from a normal web tab.
+  // If the active tab is an extension page, fall back to a non-extension tab in the same window.
+  const [active] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (!active) return null;
+
+  if (!isRestrictedPage(active.url)) return active;
+
+  const all = await chrome.tabs.query({ currentWindow: true });
+  return all.find((t) => !isRestrictedPage(t.url)) || active;
 }
 
-// -------------------------------
-// Command Listener (Keyboard)
-// -------------------------------
+async function getFormat() {
+  const result = await chrome.storage.local.get([SETTINGS_KEY]);
+  const fmt = result?.[SETTINGS_KEY]?.format;
+  return String(fmt || "png").toLowerCase() === "jpg" ? "jpeg" : "png";
+}
 
+async function setDraftCapture({ dataUrl, cropRect }) {
+  await chrome.storage.local.set({
+    [DRAFT_KEY]: {
+      mode: "single",
+      dataUrl: dataUrl,
+      cropRect: cropRect || null,
+      createdAt: Date.now()
+    }
+  });
+}
+
+async function setDraftFullCapture({ captures, dims }) {
+  await chrome.storage.local.set({
+    [DRAFT_KEY]: {
+      mode: "full",
+      captures: captures,
+      dims: dims,
+      createdAt: Date.now()
+    }
+  });
+}
+
+async function openQuickShotUI() {
+  try {
+    await chrome.action.openPopup();
+    return;
+  } catch {
+    // Fallback: open editor page
+  }
+  const url = chrome.runtime.getURL("editor.html");
+  await chrome.tabs.create({ url });
+}
+
+async function openCapturedPage() {
+  const url = chrome.runtime.getURL("capture/captured.html");
+  const tab = await chrome.tabs.create({ url });
+
+  // Wait for tab to load completely
+  return new Promise((resolve) => {
+    const listener = (tabId, info) => {
+      if (tabId === tab.id && info.status === "complete") {
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve();
+      }
+    };
+
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+}
+
+// FIXED: captureVisibleTab function
+async function captureVisibleTab(tabId) {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.captureVisibleTab(tabId, { format: "png" }, (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+}
+
+// FIXED: captureVisibleToDraft - properly saves single image
+async function captureVisibleToDraft() {
+  try {
+    const tab = await getActiveTab();
+    if (!tab || isRestrictedPage(tab.url)) {
+      throw new Error("This page cannot be captured.");
+    }
+
+    const format = await getFormat();
+    const dataUrl = await captureVisibleTab(tab.windowId, format);
+
+    // Save as single capture properly
+    await setDraftCapture({
+      dataUrl: dataUrl,
+      cropRect: null
+    });
+
+    // Update badge
+    chrome.action.setBadgeText({ text: "1" });
+    chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+
+    return dataUrl;
+  } catch (e) {
+    console.error("Capture failed:", e);
+    chrome.action.setBadgeText({ text: "!" });
+    chrome.action.setBadgeBackgroundColor({ color: "#F44336" });
+    throw e;
+  }
+}
+
+// FIXED: captureFullPageToDraft - properly saves full page capture
+async function captureFullPageToDraft() {
+  const tab = await getActiveTab();
+  if (!tab || isRestrictedPage(tab.url)) {
+    throw new Error("This page cannot be captured.");
+  }
+
+  // Get page dimensions
+  const [{ result: dims }] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: () => {
+      const doc = document.documentElement;
+      const body = document.body;
+      const scrollHeight = Math.max(
+        doc.scrollHeight,
+        body?.scrollHeight || 0,
+        doc.offsetHeight,
+        body?.offsetHeight || 0
+      );
+      const scrollWidth = Math.max(doc.scrollWidth, body?.scrollWidth || 0, doc.offsetWidth, body?.offsetWidth || 0);
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      return {
+        width: scrollWidth,
+        height: scrollHeight,
+        viewportWidth,
+        viewportHeight,
+        devicePixelRatio: window.devicePixelRatio || 1,
+        scrollX: window.scrollX || window.pageXOffset || 0,
+        scrollY: window.scrollY || window.pageYOffset || 0
+      };
+    }
+  });
+
+  const steps = Math.ceil(dims.height / dims.viewportHeight);
+  const maxSteps = Math.min(steps, FULL_LIMIT_SEGMENTS);
+  if (maxSteps < steps) {
+    dims.height = maxSteps * dims.viewportHeight;
+  }
+
+  const format = await getFormat();
+  const captures = [];
+
+  // Capture each segment
+  for (let i = 0; i < maxSteps; i += 1) {
+    const y = i * dims.viewportHeight;
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (yy) => window.scrollTo(0, yy),
+      args: [y]
+    });
+
+    await new Promise((r) => setTimeout(r, FULL_MIN_SCROLL_DELAY_MS));
+
+    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format });
+    captures.push({ y, dataUrl });
+  }
+
+  // Restore scroll position
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: (x, y) => window.scrollTo(x, y),
+    args: [dims.scrollX, dims.scrollY]
+  });
+
+  // Save full page capture
+  await setDraftFullCapture({ captures, dims });
+  
+  // Update badge
+  chrome.action.setBadgeText({ text: maxSteps.toString() });
+  chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+}
+
+async function startAreaSelection() {
+  const tab = await getActiveTab();
+  if (!tab || isRestrictedPage(tab.url)) {
+    throw new Error("Area selection not allowed on this page.");
+  }
+
+  await chrome.scripting.insertCSS({
+    target: { tabId: tab.id },
+    files: ["content.css"]
+  });
+
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ["content.js"]
+  });
+
+  await new Promise((r) => setTimeout(r, 80));
+  await chrome.tabs.sendMessage(tab.id, { action: "QS_START_SELECTION" });
+}
+
+// FIXED: captureSelectionToDraft - properly saves selected area
+async function captureSelectionToDraft(coords) {
+  const tab = await getActiveTab();
+  if (!tab || isRestrictedPage(tab.url)) {
+    throw new Error("This page cannot be captured.");
+  }
+
+  const format = await getFormat();
+  const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format });
+  await setDraftCapture({ dataUrl, cropRect: coords || null });
+  
+  // Update badge
+  chrome.action.setBadgeText({ text: "1" });
+  chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+}
+
+// Keyboard shortcuts
 chrome.commands.onCommand.addListener(async (command) => {
-  console.log('⌨️ Command received:', command);
-
-  if (command === 'capture_visible') {
-    await captureVisible();
-  } else if (command === 'capture_selection') {
-    await captureSelection();
+  try {
+    if (command === "capture_visible") {
+      await captureVisibleToDraft();
+      await openCapturedPage();
+    }
+    if (command === "capture_selection") {
+      await startAreaSelection();
+    }
+  } catch (e) {
+    console.error("Command error:", e);
   }
 });
 
-// -------------------------------
-// Runtime Message Listener
-// -------------------------------
-
+// FIXED: Message listener with proper responses
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('📨 Message received:', request.action);
-
   (async () => {
     try {
-      switch (request.action) {
-        case 'capture_visible':
-          await captureVisible();
-          break;
-
-        case 'capture_selection':
-          await captureSelection();
-          break;
-
-        case 'selection_completed':
-          await captureAndCrop(request.coords);
-          break;
-
-        case 'show_notification':
-          showNotification(request.message);
-          break;
+      if (request?.action === "QS_CAPTURE_VISIBLE") {
+        await captureVisibleToDraft();
+        await openCapturedPage();
+        sendResponse({ status: "ok", message: "Visible capture saved" });
+        return;
       }
-      sendResponse({ status: 'ok' });
-    } catch (err) {
-      console.error('❌ Background handler error:', err);
-      sendResponse({ status: 'error', message: err?.message || 'Unknown error' });
+
+      if (request?.action === "QS_CAPTURE_FULL") {
+        await captureFullPageToDraft();
+        await openCapturedPage();
+        sendResponse({ status: "ok", message: "Full page capture saved" });
+        return;
+      }
+
+      if (request?.action === "QS_START_AREA_CAPTURE") {
+        await startAreaSelection();
+        sendResponse({ status: "ok", message: "Area selection started" });
+        return;
+      }
+
+      if (request?.action === "selection_completed") {
+        await captureSelectionToDraft(request.coords);
+        await openCapturedPage();
+        sendResponse({ status: "ok", message: "Selection captured" });
+        return;
+      }
+
+      // Backward compatibility
+      if (request?.action === "capture_visible") {
+        await captureVisibleToDraft();
+        await openQuickShotUI();
+        sendResponse({ status: "ok" });
+        return;
+      }
+      
+      if (request?.action === "capture_selection") {
+        await startAreaSelection();
+        sendResponse({ status: "ok" });
+        return;
+      }
+
+      // Handle PDF download request from captured page
+      if (request?.action === "DOWNLOAD_AS_PDF") {
+        const { imageDataUrl, filename } = request;
+        
+        // Convert base64 to blob
+        const base64Data = imageDataUrl.split(',')[1];
+        const blob = await fetch(imageDataUrl).then(res => res.blob());
+        
+        // Create PDF (you'll need to implement this or use a library)
+        // For now, download as image
+        const downloadUrl = URL.createObjectURL(blob);
+        
+        await chrome.downloads.download({
+          url: downloadUrl,
+          filename: filename || `quickshot-${Date.now()}.png`,
+          conflictAction: "uniquify"
+        });
+        
+        URL.revokeObjectURL(downloadUrl);
+        sendResponse({ status: "ok", message: "File downloaded" });
+        return;
+      }
+
+      sendResponse({ status: "error", message: "Unknown action" });
+    } catch (e) {
+      console.error("Message handler error:", e);
+      sendResponse({ status: "error", message: e?.message || "Failed to process request" });
     }
   })();
-
-  return true; // keep async channel open
+  return true; // Keep message channel open for async response
 });
 
-// -------------------------------
-// Capture Visible Screen
-// -------------------------------
-
-async function captureVisible() {
-  try {
-    const tab = await getActiveTab();
-    if (!tab || isRestrictedPage(tab.url)) {
-      console.error('❌ Cannot capture restricted page:', tab?.url);
-      showNotification('This page cannot be captured.');
-      return;
+// Clear badge when tab changes
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  chrome.storage.local.get([DRAFT_KEY], (result) => {
+    const draft = result[DRAFT_KEY];
+    if (draft) {
+      if (draft.mode === "single") {
+        chrome.action.setBadgeText({ text: "1" });
+      } else if (draft.mode === "full" && draft.captures) {
+        chrome.action.setBadgeText({ text: draft.captures.length.toString() });
+      }
+    } else {
+      chrome.action.setBadgeText({ text: "" });
     }
-
-    console.log('🖼️ Capturing visible tab:', tab.url);
-
-    // Wait until tab is fully loaded (cleaner than setTimeout)
-    if (tab.status === 'loading') {
-      await new Promise((resolve) => {
-        const listener = (tabId, info) => {
-          if (tabId === tab.id && info.status === 'complete') {
-            chrome.tabs.onUpdated.removeListener(listener);
-            resolve();
-          }
-        };
-        chrome.tabs.onUpdated.addListener(listener);
-      });
-    }
-
-    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
-      format: 'png'
-    });
-
-    openEditor({
-      image: dataUrl,
-      cropCoords: null
-    });
-
-  } catch (error) {
-    console.error('❌ Visible capture failed:', error);
-    showNotification('Visible capture failed.');
-  }
-}
-
-// -------------------------------
-// Capture Area Selection
-// -------------------------------
-
-async function captureSelection() {
-  try {
-    const tab = await getActiveTab();
-    if (!tab || isRestrictedPage(tab.url)) {
-      console.error('❌ Cannot start selection on restricted page:', tab?.url);
-      showNotification('Area selection not allowed on this page.');
-      return;
-    }
-
-    console.log('🎯 Starting area selection on:', tab.url);
-
-    // Inject content CSS first (styles for overlay)
-    await chrome.scripting.insertCSS({
-      target: { tabId: tab.id },
-      files: ['content.css']
-    });
-
-    // Inject content script
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['content.js']
-    });
-
-    // Small wait to ensure content script message listener is registered
-    // before we send QS_START_SELECTION (fixes race condition)
-    await new Promise(resolve => setTimeout(resolve, 80));
-
-    // Ask content script to start selection
-    await chrome.tabs.sendMessage(tab.id, {
-      action: 'QS_START_SELECTION'
-    });
-
-  } catch (error) {
-    console.error('❌ Area selection failed:', error);
-    showNotification('Area selection failed.');
-  }
-}
-
-// -------------------------------
-// Capture & Crop After Selection
-// -------------------------------
-
-async function captureAndCrop(coords) {
-  try {
-    const tab = await getActiveTab();
-    if (!tab || isRestrictedPage(tab.url)) {
-      console.error('❌ Cannot crop on restricted page');
-      return;
-    }
-
-    console.log('📐 Cropping with coords:', coords);
-
-    // Scroll page so captureVisibleTab aligns correctly
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (x, y) => window.scrollTo(x, y),
-      args: [coords.scrollX, coords.scrollY]
-    });
-
-    // Wait for scroll to settle (minimal, deterministic)
-    await new Promise((r) => setTimeout(r, 120));
-
-    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
-      format: 'png'
-    });
-
-    openEditor({
-      image: dataUrl,
-      cropCoords: coords
-    });
-
-  } catch (error) {
-    console.error('❌ Crop capture failed:', error);
-    showNotification('Crop capture failed.');
-  }
-}
-
-// -------------------------------
-// Open Editor (REVIEWER-SAFE PATTERN)
-// -------------------------------
-
-function openEditor({ image, cropCoords }) {
-  const data = {
-    qs_current_image: image,
-    qs_capture_mode: 'single',
-    qs_crop_coords: cropCoords || null
-  };
-
-  chrome.storage.local.set(data, () => {
-    console.log('📝 Editor data saved');
-
-    // ✅ MV3 best practice (Chrome Store friendly)
-    const editorUrl = chrome.runtime.getURL('editor.html');
-    chrome.tabs.create({ url: editorUrl });
   });
-}
+});
 
-// -------------------------------
-// Notifications
-// -------------------------------
-
-function showNotification(message) {
-  if (!chrome.notifications) {
-    console.warn('⚠️ Notifications API unavailable');
-    return;
+// Initialize settings on install
+chrome.runtime.onInstalled.addListener(async () => {
+  const result = await chrome.storage.local.get([SETTINGS_KEY]);
+  if (!result?.[SETTINGS_KEY]) {
+    await chrome.storage.local.set({
+      [SETTINGS_KEY]: {
+        format: "png",
+        autoCopy: false,
+        filenameIncludeDate: true,
+        filenameIncludeTime: true,
+        theme: "light",
+        jpgQuality: 0.92
+      }
+    });
   }
-
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-    title: 'QuickShot',
-    message,
-    priority: 1
-  });
-}
+  chrome.action.setBadgeText({ text: "" });
+});
