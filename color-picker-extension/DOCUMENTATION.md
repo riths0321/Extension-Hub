@@ -2,15 +2,23 @@
 
 ## 1. Extension Overview
 
-**Purpose**: Color Picker is a utility extension that allows users to sample colors from any webpage using the browser's native EyeDropper API. It displays colors in multiple formats (Hex, RGB, HSL) and maintains a history of picked colors.
+**Purpose**: Color Picker is a utility extension that allows users to sample colors from any visible pixel on a webpage. It uses the browser's native EyeDropper API when available and falls back to a screenshot-based picker on unsupported browsers/pages. It displays colors in multiple formats (Hex, RGB, HSL), generates palettes, checks WCAG contrast, and maintains a history of picked colors.
 
 **Current Functionality**:
-- Color picking from web pages using EyeDropper API
-- Display colors in Hex, RGB, and HSL formats
-- Copy color values to clipboard
-- Color history tracking
-- Color preview swatches
-- Browser-native color selection
+- Webpage color picking using native EyeDropper API with fallback support
+- Accurate pixel sampling from visible page content (fallback uses visible-tab screenshot)
+- Display color values in Hex, RGB, and HSL formats
+- Real-time color conversion between formats (editable fields)
+- One-click clipboard copy for any color format
+- Color preview swatch for instant visual reference
+- Persistent color history for previously picked colors
+- History search for quick access to recent colors
+- Automatic palette generation (Auto, Complementary, Analogous, Monochromatic)
+- Palette export (Adobe ASE, GIMP GPL, JSON)
+- Built-in WCAG contrast ratio checker with AA/AAA badges
+- Light/dark theme toggle
+- Rate link (Chrome Web Store reviews)
+- Manual color panel (hue + saturation/brightness)
 
 ---
 
@@ -23,13 +31,14 @@
    - Select any color from webpage
    - Automatic popup minimization during selection
    - Error handling for canceled selections
+   - Fallback picker: page overlay captures click point + screenshot pixel sampling
 
 2. **Color Format Display**
    - Hexadecimal format (e.g., #FFFFFF)
    - RGB format (e.g., rgb(255, 255, 255))
    - HSL format (e.g., hsl(0, 0%, 100%))
    - All three formats displayed simultaneously
-   - Real-time conversion between formats
+   - Real-time conversion between formats (editable fields)
 
 3. **Color Math Conversions**
    - Hex to RGB conversion with bitwise operations
@@ -50,6 +59,7 @@
    - Load history on extension startup
    - Color swatches in history grid
    - Click history items to copy
+   - Search history to filter by hex substring
 
 6. **User Interface**
    - Clean, modern popup design
@@ -57,6 +67,11 @@
    - Organized sections for each format
    - Visual organization of history
    - Responsive layout
+   - Theme toggle (light/dark)
+   - Palette generation section
+   - Palette export buttons (ASE/GPL/JSON)
+   - WCAG contrast checker section
+   - Manual hue + saturation/brightness picker panel
 
 ---
 
@@ -65,9 +80,7 @@
 ### Current Limitations:
 1. **Browser Compatibility**
    - EyeDropper API only available in modern Chromium browsers
-   - Falls back to error message on unsupported browsers
-   - No alternative color picker for older browsers
-   - Limited to Chrome/Edge/Safari+
+   - Fallback picker does not work on restricted pages (e.g., `chrome://` URLs)
 
 2. **Color Selection Limitations**
    - Can only sample visible on-screen colors
@@ -78,9 +91,9 @@
 
 3. **History Management**
    - No deletion of individual history items
-   - No search functionality in history
-   - History not sorted (random order)
-   - No export of color history
+   - History search is basic substring matching
+   - History is most-recent-first
+   - Palette export exists; history export is not provided yet
    - History permanently stored with no time limit
    - No color naming/tagging system
 
@@ -92,19 +105,21 @@
    - No color accessibility information
 
 5. **Missing Features**
-   - No color palette generation from picked colors
-   - Cannot create color schemes
-   - No color harmony suggestions
-   - No contrast ratio checking
-   - No color theory recommendations
-   - No bulk color operations
+   - No triadic/tetradic palettes yet
+   - No CMYK/HSV formats yet
+   - Palette export is implemented; history export is not implemented yet
 
 6. **User Experience**
    - Limited information about picked color
    - No color naming suggestions
    - No visual organization of history
-   - No dark mode support
    - Minimal customization options
+
+---
+
+## 4. CSP Notes
+
+The extension uses a strict extension-page CSP in `manifest.json` (no remote scripts). The popup UI loads all styles and Manrope font files locally from the extension package.
 
 7. **Accessibility Issues**
    - No color blindness simulation

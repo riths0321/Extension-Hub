@@ -1,122 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pixel Perfect Color Picker</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="header">
+        <div class="header-row">
+          <div class="brand">
+            <img src="icons/icon48.png" alt="" width="22" height="22" />
+            <h1 class="title">Pixel Perfect</h1>
+          </div>
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Favicon / Icons -->
-    <link rel="icon" href="icons/icon16.png" sizes="16x16" type="image/png">
-    <link rel="icon" href="icons/icon32.png" sizes="32x32" type="image/png">
-    <link rel="icon" href="icons/icon48.png" sizes="48x48" type="image/png">
-
-    <!-- Apple Touch Icon (extra polish, optional but recommended) -->
-    <link rel="apple-touch-icon" href="icons/icon128.png">
-
-    <!-- Theme color (future-proof, Chrome UI polish) -->
-    <meta name="theme-color" content="#6366f1">
-</head>
-
-<body>
-    <div class="wrapper">
-        <header class="app-header">
-            <div class="logo">
-                <img src="icons/icon48.png" alt="Logo" width="24" height="24">
-                <h1>Pixel Perfect</h1>
-            </div>
-        </header>
-
-        <main class="main-content">
-            <button id="btn-pick" class="btn-primary">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
-                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
-                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
-                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
-                    <path
-                        d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z">
-                    </path>
-                </svg>
-                <span>Pick Color</span>
+          <div class="header-actions">
+            <a
+              id="rate-link"
+              class="icon-btn rate-btn"
+              href="https://chromewebstore.google.com/detail/pixel-perfect-color-picke/kmpiebbhgoghpnngomnmcbmionnieimj/reviews"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rate this extension"
+              title="Rate this extension"
+            >
+              ★
+            </a>
+            <button
+              id="history-search-toggle"
+              class="icon-btn"
+              type="button"
+              aria-label="Search history"
+              title="Search history"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                <path
+                  d="M10 18a8 8 0 1 1 5.293-2.004l4.356 4.357a1 1 0 0 1-1.414 1.414l-4.357-4.356A7.96 7.96 0 0 1 10 18Zm0-2a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"
+                  fill="currentColor"
+                />
+              </svg>
             </button>
+            <button
+              id="theme-toggle"
+              class="icon-btn"
+              type="button"
+              aria-label="Toggle theme"
+              title="Toggle theme"
+            >
+              🌙
+            </button>
+          </div>
+        </div>
+        <p class="subtitle">Pick pixels, copy formats, generate palettes, check contrast.</p>
 
-            <!-- Preview Section -->
-            <div id="preview-section" class="preview-card" style="display: none;">
-                <div id="color-swatch" class="color-preview"></div>
+        <div id="history-search-row" class="search-row hidden" aria-label="History search">
+          <input
+            id="history-search"
+            class="search-input"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            placeholder="Search recent colors (e.g. 3B82F6)"
+          />
+          <button id="history-search-clear" class="ghost-btn" type="button">Clear</button>
+        </div>
+      </header>
 
-                <div class="values-container">
-                    <!-- HEX -->
-                    <div class="value-item">
-                        <span class="label">HEX</span>
-                        <div class="value-row">
-                            <code id="val-hex">#000000</code>
-                            <button class="btn-copy" aria-label="Copy HEX">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+      <main class="main">
+        <button id="btn-pick" class="primary-btn" type="button">
+          <span class="btn-icon" aria-hidden="true">🎯</span>
+          <span>Pick Color</span>
+        </button>
 
-                    <!-- RGB -->
-                    <div class="value-item">
-                        <span class="label">RGB</span>
-                        <div class="value-row">
-                            <code id="val-rgb">rgb(0, 0, 0)</code>
-                            <button class="btn-copy" aria-label="Copy RGB">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+        <section id="panel-section" class="card" aria-label="Color picker panel">
+          <div class="panel-head">
+            <div class="card-title">Color Picker</div>
+            <div id="panel-hex" class="panel-hex mono">#000000</div>
+          </div>
+          <div class="picker" aria-label="Color picker controls">
+            <div id="sv" class="sv" role="application" aria-label="Saturation and brightness">
+              <div id="sv-handle" class="pick-handle" aria-hidden="true"></div>
+            </div>
+            <div id="hue" class="hue" role="application" aria-label="Hue">
+              <div id="hue-handle" class="pick-handle pick-handle-hue" aria-hidden="true"></div>
+            </div>
+          </div>
+        </section>
 
-                    <!-- HSL -->
-                    <div class="value-item">
-                        <span class="label">HSL</span>
-                        <div class="value-row">
-                            <code id="val-hsl">hsl(0, 0%, 0%)</code>
-                            <button class="btn-copy" aria-label="Copy HSL">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+        <section id="preview-section" class="card hidden" aria-label="Picked color">
+          <div class="swatch-row">
+            <div id="color-swatch" class="swatch" aria-label="Color swatch"></div>
+            <div class="swatch-meta">
+              <div class="meta-label">Current</div>
+              <div id="picked-hex" class="meta-value">#000000</div>
+            </div>
+          </div>
+
+          <div class="fields">
+            <div class="field">
+              <div class="field-label">HEX</div>
+              <div class="field-row">
+                <input id="val-hex" class="field-input mono" inputmode="text" autocomplete="off" />
+                <button class="copy-btn" type="button" data-copy="hex" aria-label="Copy HEX">Copy</button>
+              </div>
             </div>
 
-            <!-- History Section -->
-            <div class="history-section">
-                <h6>Recent Colors</h6>
-                <div id="history-grid" class="history-grid">
-                    <!-- History items will be injected here -->
-                </div>
+            <div class="field">
+              <div class="field-label">RGB</div>
+              <div class="field-row">
+                <input id="val-rgb" class="field-input mono" inputmode="text" autocomplete="off" />
+                <button class="copy-btn" type="button" data-copy="rgb" aria-label="Copy RGB">Copy</button>
+              </div>
             </div>
-        </main>
+
+            <div class="field">
+              <div class="field-label">HSL</div>
+              <div class="field-row">
+                <input id="val-hsl" class="field-input mono" inputmode="text" autocomplete="off" />
+                <button class="copy-btn" type="button" data-copy="hsl" aria-label="Copy HSL">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <p id="inline-error" class="inline-error hidden" role="status"></p>
+        </section>
+
+        <section id="palette-section" class="card" aria-label="Generated palettes">
+          <div class="card-head">
+            <div class="card-title">Generate Palette</div>
+            <div id="palette-hex" class="hex-chip mono">#000000</div>
+          </div>
+
+          <div class="palette-actions" role="tablist" aria-label="Palette mode">
+            <button class="pill-btn active" type="button" data-palette="mono" role="tab" aria-selected="true">Monochromatic</button>
+            <button class="pill-btn" type="button" data-palette="complementary" role="tab" aria-selected="false">Complementary</button>
+            <button class="pill-btn" type="button" data-palette="analogous" role="tab" aria-selected="false">Analogous</button>
+            <button class="pill-btn" type="button" data-palette="auto" role="tab" aria-selected="false">Auto</button>
+          </div>
+
+          <div class="generated-label">Generated Colors</div>
+          <div id="palette-grid" class="palette-strip" aria-label="Palette colors"></div>
+
+          <div class="export-head">
+            <div class="export-title">Export Palette</div>
+          </div>
+          <div class="export-row" aria-label="Export buttons">
+            <button id="export-ase" class="export-btn export-ase" type="button">Adobe (.ase)</button>
+            <button id="export-gpl" class="export-btn export-gpl" type="button">GIMP (.gpl)</button>
+            <button id="export-json" class="export-btn export-json" type="button">JSON (.json)</button>
+          </div>
+        </section>
+
+        <section id="contrast-section" class="card hidden" aria-label="WCAG contrast checker">
+          <div class="card-head">
+            <div class="card-title">Contrast (WCAG)</div>
+            <button id="swap-contrast" class="ghost-btn" type="button" aria-label="Swap foreground and background">
+              Swap
+            </button>
+          </div>
+
+          <div class="contrast-grid">
+            <button id="fg-btn" class="contrast-chip" type="button" aria-label="Set foreground from current color">
+              <span id="fg-swatch" class="chip-swatch" aria-hidden="true"></span>
+              <span class="chip-text">Foreground</span>
+            </button>
+            <button id="bg-btn" class="contrast-chip" type="button" aria-label="Set background from current color">
+              <span id="bg-swatch" class="chip-swatch" aria-hidden="true"></span>
+              <span class="chip-text">Background</span>
+            </button>
+          </div>
+
+          <div class="contrast-result">
+            <div class="ratio">
+              <div class="ratio-label">Ratio</div>
+              <div id="contrast-ratio" class="ratio-value">--</div>
+            </div>
+            <div class="badges">
+              <span id="badge-aa" class="badge">AA</span>
+              <span id="badge-aaa" class="badge">AAA</span>
+            </div>
+          </div>
+
+          <div class="contrast-help">
+            AA requires 4.5:1 (normal text). AAA requires 7:1.
+          </div>
+        </section>
+
+        <section class="history" aria-label="Recent colors">
+          <div class="history-head">
+            <div class="card-title">Recent</div>
+            <button id="clear-history" class="ghost-btn" type="button">Clear</button>
+          </div>
+          <div id="history-grid" class="history-grid"></div>
+        </section>
+      </main>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast hidden">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span>Copied to clipboard</span>
-    </div>
-
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
     <script src="popup.js"></script>
-</body>
-
+  </body>
 </html>

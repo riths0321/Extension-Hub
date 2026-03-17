@@ -1,85 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=400, initial-scale=1">
-  <title>Extension Manager</title>
-  <link rel="stylesheet" href="popup.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extension Manager Pro</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <!-- Header -->
-  <div class="header">
-    <div class="header-top">
-      <div class="title">
-        <span class="title-icon">📦</span>
-        <span>Extension Manager</span>
-      </div>
-      <button id="refresh" title="Refresh">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-        </svg>
-      </button>
-    </div>
-
-    <div class="stats">
-      <div class="stat-item">
-        <span class="stat-dot enabled-dot"></span>
-        <span id="enabled-count">0 enabled</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-dot disabled-dot"></span>
-        <span id="disabled-count">0 disabled</span>
-      </div>
-    </div>
-
-    <div class="controls">
-      <div class="search-box">
-        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-        </svg>
-        <input type="text" id="search" placeholder="Search extensions...">
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-block">
+        <div class="brand-badge">EMP</div>
+        <div>
+          <p class="eyebrow">Quick Extension Control</p>
+          <h1>Extension Manager Pro</h1>
+          <p class="subcopy">Enable, disable, inspect, and remove extensions from one clean popup.</p>
+        </div>
       </div>
 
-      <div class="filter-dropdown">
-        <button class="filter-btn" id="filter-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
-          </svg>
-          <span>All</span>
+      <div class="header-actions">
+        <button class="icon-button" id="refresh-button" type="button" aria-label="Refresh extensions">
+          <span>Refresh</span>
         </button>
-        <div class="dropdown-content" id="filter-dropdown">
-          <div class="dropdown-item active" data-filter="all">All Extensions</div>
-          <div class="dropdown-item" data-filter="enabled">Enabled Only</div>
-          <div class="dropdown-item" data-filter="disabled">Disabled Only</div>
+        <button class="icon-button" id="export-button" type="button">Export JSON</button>
+        <button class="icon-button" id="import-button" type="button">Import JSON</button>
+        <input id="import-file" type="file" accept="application/json" hidden>
+        <button class="icon-button" id="settings-button" type="button" aria-label="Settings" title="Extension Settings">
+        <span>⚙️</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="toolbar-panel">
+        <div class="toolbar-row">
+          <label class="search-field">
+            <span class="visually-hidden">Search extensions</span>
+            <input id="search-input" type="search" placeholder="Search by name, description">
+          </label>
+
+          <select id="status-filter" class="select-field" aria-label="Filter extensions">
+            <option value="all">All extensions</option>
+            <option value="enabled">Enabled</option>
+            <option value="disabled">Disabled</option>
+            <option value="favorites">Favorites</option>
+          </select>
+        </div>
+
+        <div class="toolbar-row">
+          <div class="batch-toolbar" id="batch-toolbar">
+            <div class="batch-group">
+              <span class="batch-label">All extensions</span>
+              <button id="enable-all-button" class="ghost-button" type="button">Enable All</button>
+              <button id="disable-all-button" class="ghost-button" type="button">Disable All</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-panel stats-panel-compact" aria-label="Extension statistics">
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span class="stat-label">Total</span>
+            <strong id="total-count">0</strong>
+            <span class="stat-help">Installed extensions</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Enabled</span>
+            <strong id="enabled-count">0</strong>
+            <span class="stat-help">Currently active</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Disabled</span>
+            <strong id="disabled-count">0</strong>
+            <span class="stat-help">Ready to restore</span>
+          </article>
+          <article class="stat-card warning">
+            <span class="stat-label">Risk Alerts</span>
+            <strong id="risk-count">0</strong>
+            <span class="stat-help">Sensitive permissions</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="list-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Installed Extensions</p>
+            <h2>Extension List</h2>
+          </div>
+          <p class="section-note" id="results-summary">Loading extensions...</p>
+        </div>
+
+        <div id="loading-state" class="state-card">Loading installed extensions...</div>
+        <div id="empty-state" class="state-card" hidden>No extensions match the current filters.</div>
+
+        <div class="extension-grid" id="extension-grid" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal-root"></div>
+
+  <!-- Settings Modal Template -->
+  <template id="settings-modal-template">
+    <div class="modal-overlay">
+      <div class="modal-card settings-modal">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button class="modal-close" id="close-settings-modal" type="button" aria-label="Close">✕</button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- Profiles Section -->
+          <section class="modal-section">
+            <h3>Profile Management</h3>
+            
+            <div class="profile-management">
+              <div class="profile-list-section">
+                <label for="settings-profile-select">Saved Profiles</label>
+                <select id="settings-profile-select" class="select-field">
+                  <option value="">Select a profile</option>
+                </select>
+              </div>
+              
+              <div class="profile-actions">
+                <button id="settings-save-profile" class="primary-button" type="button">Save Current State as Profile</button>
+                <button id="settings-apply-profile" class="ghost-button" type="button">Apply Selected Profile</button>
+                <button id="settings-delete-profile" class="remove-button" type="button">Delete Selected Profile</button>
+              </div>
+              
+              <div class="profile-note">
+                <p class="meta-line">Profiles save which extensions are enabled/disabled for quick switching.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Import/Export Section -->
+          <section class="modal-section">
+            <h3>Backup & Restore</h3>
+            
+            <div class="backup-actions">
+              <button id="settings-export" class="ghost-button" type="button">Export Backup (JSON)</button>
+              <button id="settings-import" class="ghost-button" type="button">Import Backup</button>
+              <input id="settings-import-file" type="file" accept="application/json" hidden>
+            </div>
+          </section>
+
+          <!-- Display Settings Section -->
+          <section class="modal-section">
+            <h3>Display</h3>
+            
+            <div class="display-options">
+              <label class="toggle-switch">
+                <input type="checkbox" id="show-risk-warnings">
+                <span class="toggle-slider"></span>
+              </label>
+              <span>Show risk warnings on cards</span>
+            </div>
+          </section>
         </div>
       </div>
     </div>
-  </div>
+  </template>
 
-  <!-- Extensions List -->
-  <div class="extensions-list" id="extensions-list">
-    <div class="loading">
-      <div class="empty-icon">⏳</div>
-      <div class="empty-text">Loading extensions...</div>
-    </div>
-  </div>
+  <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Actions -->
-  <div class="actions">
-    <button class="action-btn disable-btn" id="disable-all">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-      </svg>
-      Disable All
-    </button>
-    <button class="action-btn enable-btn" id="enable-all">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-      </svg>
-      Enable All
-    </button>
-  </div>
-
-  <script src="popup.js"></script>
+  <script src="popup.js" type="module"></script>
 </body>
 </html>
