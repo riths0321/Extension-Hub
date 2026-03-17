@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuickShot – Editor</title>
+    <link rel="stylesheet" href="../ui.css" />
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <div class="qs-editor-page">
+      <header class="qs-topbar qs-editor-topbar">
+        <div class="qs-brand">
+          <h1 class="qs-title">QuickShot</h1>
+          <p class="qs-subtitle">Editor</p>
+        </div>
+        <div class="qs-iconbar">
+          <button class="qs-btn" id="btn-history" type="button">History</button>
+          <button class="qs-btn" id="btn-options" type="button">Options</button>
+        </div>
+      </header>
+
+      <main class="qs-editor-main">
+        <aside class="qs-card qs-side">
+          <div class="qs-card-hd">
+            <div>
+              <p class="qs-card-title">Tools</p>
+              <p class="qs-card-sub">Minimal, fast, precise</p>
+            </div>
+          </div>
+          <div class="qs-card-bd">
+            <div class="qs-pillbar" id="tools" role="toolbar" aria-label="Annotation tools">
+              <button class="qs-pill" data-tool="pen" aria-pressed="true" type="button">Pen</button>
+              <button class="qs-pill" data-tool="arrow" aria-pressed="false" type="button">Arrow</button>
+              <button class="qs-pill" data-tool="rect" aria-pressed="false" type="button">Rect</button>
+              <button class="qs-pill" data-tool="circle" aria-pressed="false" type="button">Circle</button>
+              <button class="qs-pill" data-tool="text" aria-pressed="false" type="button">Text</button>
+              <button class="qs-pill" data-tool="crop" aria-pressed="false" type="button">Crop</button>
+            </div>
+
+            <div class="qs-editor-controls">
+              <div class="qs-field">
+                <div class="qs-label">Color</div>
+                <input class="qs-input" id="color" type="color" value="#2563EB" aria-label="Color picker" />
+              </div>
+              <div class="qs-field">
+                <div class="qs-label">Brush</div>
+                <input class="qs-input" id="brush" type="range" min="1" max="32" value="4" />
+              </div>
+              <div class="qs-field">
+                <div class="qs-label">Opacity</div>
+                <input class="qs-input" id="opacity" type="range" min="10" max="100" value="100" />
+              </div>
+            </div>
+
+            <div class="qs-editor-actions">
+              <button class="qs-btn" id="btn-undo" type="button">Undo</button>
+              <button class="qs-btn" id="btn-redo" type="button">Redo</button>
+              <button class="qs-btn" id="btn-clear" type="button">Clear</button>
+              <button class="qs-btn qs-btn-danger" id="btn-reset" type="button">Reset</button>
+            </div>
+
+            <div class="qs-editor-export">
+              <button class="qs-btn qs-btn-primary" id="btn-copy" type="button">Copy</button>
+              <button class="qs-btn qs-btn-primary" id="btn-download" type="button">Download</button>
+            </div>
+
+            <div class="qs-hint" id="status">Tip: Use Crop for area tweaks.</div>
+          </div>
+        </aside>
+
+        <section class="qs-card qs-canvas-panel">
+          <div class="qs-card-hd">
+            <div>
+              <p class="qs-card-title">Canvas</p>
+              <p class="qs-card-sub">Edits stay local</p>
+            </div>
+          </div>
+          <div class="qs-card-bd qs-canvas-bd">
+            <div class="qs-canvas-wrap qs-canvas-wrap-lg">
+              <canvas id="editor-canvas" class="qs-canvas"></canvas>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="qs-modal-backdrop" id="text-backdrop" data-open="false" aria-hidden="true">
+      <div class="qs-modal" role="dialog" aria-modal="true" aria-labelledby="text-title">
+        <div class="qs-modal-hd">
+          <p class="qs-modal-title" id="text-title">Add Text</p>
+          <button class="qs-iconbtn" id="text-close" type="button" aria-label="Close">✕</button>
+        </div>
+        <div class="qs-modal-bd">
+          <label class="qs-label" for="text-value">Text</label>
+          <textarea class="qs-input" id="text-value" rows="3" placeholder="Type…"></textarea>
+          <div class="qs-row">
+            <div class="qs-field" style="min-width: 0">
+              <div class="qs-label">Size</div>
+              <input class="qs-input" id="text-size" type="number" min="10" max="72" value="22" />
+            </div>
+            <div class="qs-field" style="min-width: 0">
+              <div class="qs-label">Opacity</div>
+              <input class="qs-input" id="text-opacity" type="number" min="10" max="100" value="100" />
+            </div>
+          </div>
+        </div>
+        <div class="qs-modal-actions">
+          <button class="qs-btn" id="text-cancel" type="button">Cancel</button>
+          <button class="qs-btn qs-btn-primary" id="text-apply" type="button">Place Text</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="editor.js"></script>
+  </body>
+</html>

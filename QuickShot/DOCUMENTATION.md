@@ -1,24 +1,23 @@
-# QuickShot - Advanced Screen Capture - Extension Documentation
+# QuickShot – Screen Capture Tool (MV3) – Extension Documentation
 
 ## 1. Extension Overview
 
-**Purpose**: QuickShot is a professional screen capture and annotation extension that allows users to capture visible parts of the screen or selected areas, then edit and annotate them with drawing tools before downloading or sharing.
+**Purpose**: QuickShot is a fast, minimal screen capture extension: **Capture → Annotate → Export**. Everything runs locally with Canvas + `chrome.storage.local`.
 
 **Current Functionality**:
-- Capture visible screen content
-- Select and capture specific screen regions
-- Annotation and drawing tools
-- Color palette with 12+ colors
-- Undo/Redo functionality
-- Keyboard shortcuts support
-- Auto-save functionality
-- Download as PNG with quality control
-- Copy to clipboard capability
-- Grid overlay for alignment assistance
+- Capture visible screen (`chrome.tabs.captureVisibleTab`)
+- Capture selected area (content-script selection overlay + crop)
+- Full page capture (scroll + stitch, lightweight limit)
+- Lightweight editor (Canvas API): Pen, Arrow, Rectangle, Circle, Text
+- Controls: brush size, opacity, color picker, crop tool
+- Actions: undo/redo, clear, reset to original
+- Export: copy to clipboard or download (PNG/JPG) with auto filename
+- History page: last 20 exports (thumbnail grid)
+- Options page: format, auto-copy toggle, filename toggles, theme toggle
 
 ---
 
-## 2. Current Features (From Codebase Analysis)
+## 2. Features (Implemented)
 
 ### Core Features Implemented:
 1. **Capture Modes**
@@ -28,45 +27,27 @@
 
 2. **Drawing & Annotation Tools**
    - Pen tool for freehand drawing
-   - Arrow tool for pointing and directions
-   - Rectangle tool for highlighting boxes
-   - Circle tool for highlighting areas
-   - Line tool for connecting points
-   - Text tool for adding annotations
-   - Color palette with 12+ vibrant colors
-   - Custom color picker
+   - Arrow tool
+   - Rectangle tool
+   - Circle tool
+   - Text tool
+   - Color picker
 
-3. **Image Controls**
-   - Brush size adjustment (variable thickness)
-   - Opacity/transparency control
-   - Full Undo/Redo history (Ctrl+Z/Ctrl+Y)
-   - Clear canvas option
-   - Crop functionality
+3. **Editing Controls**
+   - Brush size adjustment
+   - Opacity control
+   - Undo/Redo
+   - Crop tool
+   - Clear + Reset to original
 
-4. **Zoom & Navigation**
-   - Pinch-to-zoom support
-   - Fit-to-screen option
-   - Pan/scroll through large images
-   - Grid overlay for alignment assistance
+4. **Export**
+   - Copy to clipboard
+   - Download (PNG/JPG)
+   - Automatic filename generation (`screenshot-{date}-{time}.png`)
 
-5. **Export & Sharing**
-   - Download as PNG file
-   - Copy to clipboard directly
-   - High-quality export options
-   - Automatic filename generation
-
-6. **UI/UX Features**
-   - Modern professional interface
-   - Ocean blue accent colors
-   - Responsive design for all screen sizes
-   - Keyboard navigation support
-   - Accessibility features (focus states, ARIA labels)
-   - Auto-save functionality prevents data loss
-
-7. **Storage & Notifications**
-   - Browser storage for recent captures
-   - Notifications for completed actions
-   - Download notifications with file location
+5. **Storage**
+   - History stored in `chrome.storage.local` (max 20 items)
+   - Settings stored in `chrome.storage.local`
 
 ---
 
