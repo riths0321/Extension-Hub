@@ -74,7 +74,39 @@
           </div>
         </div>
 
+        <div class="row">
+          <label class="label">Activity Level</label>
+          <div class="activity-selector">
+            <label class="activity-option">
+              <input type="radio" name="activity" value="sedentary" checked />
+              <span>Sedentary</span>
+            </label>
+            <label class="activity-option">
+              <input type="radio" name="activity" value="light" />
+              <span>Lightly Active</span>
+            </label>
+            <label class="activity-option">
+              <input type="radio" name="activity" value="moderate" />
+              <span>Moderate</span>
+            </label>
+            <label class="activity-option">
+              <input type="radio" name="activity" value="very" />
+              <span>Very Active</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="label" id="goal-label">Target Weight (kg)</label>
+          <div class="input-group">
+            <input id="goal-weight" type="number" placeholder="65" />
+            <span id="goal-unit" class="unit-pill">Kg</span>
+          </div>
+        </div>
+
       </section>
+
+      <div id="toast" class="toast hidden"></div>
 
       <button id="calculate-btn" class="primary-btn">Calculate</button>
 
@@ -110,6 +142,12 @@
         <div class="info-block">
           <div class="info-title">Ideal Weight Range</div>
           <div id="ideal-value" class="info-value">--</div>
+        </div>
+
+        <div class="info-block">
+          <div class="info-title">Daily Calories Required</div>
+          <div id="calories-value" class="info-value">--</div>
+          <div class="calorie-note">Based on sedentary lifestyle</div>
         </div>
 
         <div class="insights">
