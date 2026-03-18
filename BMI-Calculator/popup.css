@@ -361,6 +361,13 @@ body {
   font-weight: 700;
 }
 
+.calorie-note {
+  color: #6B7280;
+  font-size: 10px;
+  margin-top: 4px;
+  font-weight: 400;
+}
+
 .result-card {
   background: #F3F4F6;
   border-radius: 12px;
@@ -490,4 +497,94 @@ body.dark .howto {
 
 body.dark .howto-title {
   color: #9CC5FF;
+}
+
+.activity-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.activity-option {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px;
+  border: 1.5px solid #D1D5DB;
+  border-radius: 8px;
+  background: #FFFFFF;
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.activity-option input {
+  margin-right: 6px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.activity-option:hover {
+  background: #F0F9FF;
+  border-color: var(--primary);
+}
+
+.activity-option input:checked + span {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.activity-option input:checked {
+  accent-color: var(--primary);
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 1000;
+  white-space: nowrap;
+  animation: slideUp 0.3s ease;
+}
+
+.toast.success {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
+.toast.error {
+  background: #EF4444;
+  color: #FFFFFF;
+}
+
+.toast.hidden {
+  display: none;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+body.dark .activity-option {
+  background: #1C2940;
+  border-color: #2D3E5E;
+  color: #E6EEFF;
+}
+
+body.dark .activity-option:hover {
+  background: #2D3E5E;
+  border-color: #3D5E8E;
 }
