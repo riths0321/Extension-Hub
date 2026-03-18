@@ -166,10 +166,11 @@ def generate_index():
         </div>"""
         cards.append(card)
 
-    with open(index_file, 'w', encoding='utf-8') as f:
-        f.write(html_template.format(count=len(final_policies), cards="".join(cards)))
+    for filename in ['privacy_index.html', 'index.html']:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(html_template.format(count=len(final_policies), cards="".join(cards)))
     
-    print(f"Successfully generated {index_file} with {len(final_policies)} policies (deduplicated).")
+    print(f"Successfully generated privacy_index.html and index.html with {len(final_policies)} policies (deduplicated).")
 
 if __name__ == "__main__":
     generate_index()
