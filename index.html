@@ -5,26 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policies - Extension Hub</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; color: #333; }
-        h1 { text-align: center; margin-bottom: 20px; }
-        .description { text-align: center; color: #666; margin-bottom: 40px; }
-        .grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .card { border: 1px solid #eee; border-radius: 8px; padding: 20px; background: #fff; display: flex; justify-content: space-between; align-items: center; }
-        .card:hover { border-color: #bbb; }
-        .info { flex-grow: 1; }
-        .info h3 { margin: 0 0 5px 0; color: #2196F3; }
-        .info p { margin: 0; font-size: 0.9em; color: #666; }
-        .link-box { background: #f5f5f5; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd; font-family: monospace; font-size: 0.85em; color: #333; margin-left: 20px; user-select: all; white-space: nowrap; overflow-x: auto; max-width: 400px; }
-        .view-btn { display: inline-block; padding: 8px 16px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em; margin-left: 10px; white-space: nowrap; }
-        .view-btn:hover { background-color: #1976D2; }
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 1100px; margin: 0 auto; padding: 40px 20px; color: var(--text-color); background-color: var(--bg-color); }
+        header { text-align: center; margin-bottom: 50px; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: #1a1a1a; }
+        .description { color: #6c757d; font-size: 1.1em; }
+        
+        .search-container { margin-bottom: 40px; position: sticky; top: 20px; z-index: 1000; display: flex; justify-content: center; }
+        #searchInput { width: 100%; max-width: 700px; padding: 15px 25px; font-size: 18px; border: 1px solid #ced4da; border-radius: 50px; outline: none; transition: all 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        #searchInput:focus { border-color: var(--primary-color); box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .card { border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; background: var(--card-bg); display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); border-color: #dee2e6; }
+        
+        .info { margin-bottom: 24px; flex-grow: 1; }
+        .info h3 { margin: 0 0 10px 0; color: #1a1a1a; font-size: 1.25em; font-weight: 600; line-height: 1.3; }
+        .info p { margin: 0; font-size: 0.9em; color: #868e96; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+        
+        .link-box { background: #f1f3f5; padding: 12px; border-radius: 8px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.75em; color: #495057; margin-bottom: 20px; user-select: all; word-break: break-all; border: 1px solid #e9ecef; line-height: 1.4; }
+        
+        .view-btn { display: block; text-align: center; padding: 12px 24px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; font-size: 1em; font-weight: 600; transition: all 0.2s; }
+        .view-btn:hover { background-color: var(--primary-dark); box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3); }
+        
+        #noResults { display: none; text-align: center; padding: 80px 20px; color: #adb5bd; font-size: 1.4em; border: 2px dashed #dee2e6; border-radius: 20px; }
+        
+        .footer { margin-top: 80px; text-align: center; color: #adb5bd; font-size: 0.9em; border-top: 1px solid #e9ecef; padding-top: 40px; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8em; }
+            body { padding: 20px 15px; }
+        }
     </style>
 </head>
 <body>
-<<<<<<< Updated upstream
-    <h1>Extension Hub Privacy Policies</h1>
-    <p class="description">Below are the direct links to the privacy policies for all extensions (115 total).</p>
-    <div class="grid">
-=======
     <header>
         <h1>Extension Hub Privacy Policies</h1>
         <p class="description">Browse and access privacy policies for all <strong>118</strong> official extensions.</p>
@@ -40,7 +62,6 @@
     </div>
     
     <div class="grid" id="policyGrid">
->>>>>>> Stashed changes
         
         <div class="card">
             <div class="info">
@@ -152,30 +173,12 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>QuickConvert - Image PDF Tools</h3>
-                <p>Privacy Policy</p>
-            </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/quickconvert-image-pdf-tools.html</div>
-            <a href="privacy-policies/quickconvert-image-pdf-tools.html" class="view-btn">View Policy</a>
-        </div>
-        <div class="card">
-            <div class="info">
-                <h3>QuickShot - Advanced Screen Capture</h3>
-                <p>Privacy Policy</p>
-            </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/quickshot-advanced-screen-capture.html</div>
-            <a href="privacy-policies/quickshot-advanced-screen-capture.html" class="view-btn">View Policy</a>
-=======
                 <h3>QuickShot – Screen Capture Tool</h3>
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
                 https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/quickshot-screen-capture-tool.html</div>
             <a href="privacy-policies/quickshot-screen-capture-tool.html" class="view-btn">View Policy</a>
->>>>>>> Stashed changes
         </div>
         <div class="card">
             <div class="info">
@@ -314,8 +317,6 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-=======
                 <h3>AutoPause Tutor</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -325,7 +326,6 @@
         </div>
         <div class="card">
             <div class="info">
->>>>>>> Stashed changes
                 <h3>Mini Book Store</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -371,21 +371,12 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>Clipboard History Pro</h3>
-                <p>Privacy Policy</p>
-            </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/clipboard-history-pro.html</div>
-            <a href="privacy-policies/clipboard-history-pro.html" class="view-btn">View Policy</a>
-=======
                 <h3>Clipboard History Manager</h3>
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
                 https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/clipboard-history-manager.html</div>
             <a href="privacy-policies/clipboard-history-manager.html" class="view-btn">View Policy</a>
->>>>>>> Stashed changes
         </div>
         <div class="card">
             <div class="info">
@@ -416,11 +407,7 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>Pixel Perfect Color Picker</h3>
-=======
                 <h3>Pixel Perfect : Color Picker</h3>
->>>>>>> Stashed changes
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
@@ -447,21 +434,12 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>Cover Letter Generator (Form Based)</h3>
-                <p>Privacy Policy</p>
-            </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/cover-letter-generator-form-based.html</div>
-            <a href="privacy-policies/cover-letter-generator-form-based.html" class="view-btn">View Policy</a>
-=======
                 <h3>Cover Letter Studio</h3>
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
                 https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/cover-letter-studio.html</div>
             <a href="privacy-policies/cover-letter-studio.html" class="view-btn">View Policy</a>
->>>>>>> Stashed changes
         </div>
         <div class="card">
             <div class="info">
@@ -501,8 +479,6 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-=======
                 <h3>Deep Redirect Trace</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -512,7 +488,6 @@
         </div>
         <div class="card">
             <div class="info">
->>>>>>> Stashed changes
                 <h3>Design Token Generator</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -558,21 +533,12 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>Extension Manager</h3>
-                <p>Privacy Policy</p>
-            </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/extension-manager.html</div>
-            <a href="privacy-policies/extension-manager.html" class="view-btn">View Policy</a>
-=======
                 <h3>Extension Manager Pro</h3>
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
                 https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/extension-manager-pro.html</div>
             <a href="privacy-policies/extension-manager-pro.html" class="view-btn">View Policy</a>
->>>>>>> Stashed changes
         </div>
         <div class="card">
             <div class="info">
@@ -756,8 +722,6 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-=======
                 <h3>Microphone Checker</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -767,7 +731,6 @@
         </div>
         <div class="card">
             <div class="info">
->>>>>>> Stashed changes
                 <h3>Mini Click Game</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -831,21 +794,12 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>Pomodoro Timer</h3>
-                <p>Privacy Policy</p>
-            </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/pomodoro-timer.html</div>
-            <a href="privacy-policies/pomodoro-timer.html" class="view-btn">View Policy</a>
-=======
                 <h3>Pomodoro Focus Timer</h3>
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
                 https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/pomodoro-focus-timer.html</div>
             <a href="privacy-policies/pomodoro-focus-timer.html" class="view-btn">View Policy</a>
->>>>>>> Stashed changes
         </div>
         <div class="card">
             <div class="info">
@@ -939,11 +893,7 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>README.md Generator – Offline & Private</h3>
-=======
                 <h3>README.md Generator — Offline & Private</h3>
->>>>>>> Stashed changes
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
@@ -1069,8 +1019,6 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-=======
                 <h3>Temp Mail</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -1080,7 +1028,6 @@
         </div>
         <div class="card">
             <div class="info">
->>>>>>> Stashed changes
                 <h3>Text Case Converter</h3>
                 <p>Privacy Policy</p>
             </div>
@@ -1126,21 +1073,12 @@
         </div>
         <div class="card">
             <div class="info">
-<<<<<<< Updated upstream
-                <h3>Privacy First Todo Tab</h3>
-                <p>Privacy Policy</p>
-            </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/privacy-first-todo-tab.html</div>
-            <a href="privacy-policies/privacy-first-todo-tab.html" class="view-btn">View Policy</a>
-=======
                 <h3>Todo Tab</h3>
                 <p>Privacy Policy</p>
             </div>
             <div class="link-box">
                 https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/todo-tab.html</div>
             <a href="privacy-policies/todo-tab.html" class="view-btn">View Policy</a>
->>>>>>> Stashed changes
         </div>
         <div class="card">
             <div class="info">
@@ -1188,5 +1126,35 @@
             <a href="privacy-policies/whatfont-font-identifier.html" class="view-btn">View Policy</a>
         </div>
     </div>
+
+    <div class="footer">
+        &copy; 2026 Saurabh Tiwari and ANSLATION COMPANY. All rights reserved.<br>
+        <small>Note: Updates may take a few minutes to appear on the live site after deployment.</small>
+    </div>
+
+    <script>
+    function filterPolicies() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const grid = document.getElementById('policyGrid');
+        const cards = grid.getElementsByClassName('card');
+        const noResults = document.getElementById('noResults');
+        let visibleCount = 0;
+
+        for (let i = 0; i < cards.length; i++) {
+            const h3 = cards[i].getElementsByTagName('h3')[0];
+            const txtValue = h3.textContent || h3.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                cards[i].style.display = "";
+                visibleCount++;
+            } else {
+                cards[i].style.display = "none";
+            }
+        }
+        
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+        grid.style.display = visibleCount === 0 ? "none" : "grid";
+    }
+    </script>
 </body>
 </html>
