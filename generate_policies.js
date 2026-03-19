@@ -43,7 +43,8 @@ const generatePolicyHTML = (extensionName, permissions) => {
         permissionList = `<ul>${permissions.map(p => `<li><strong>${p}</strong>: Required for extension functionality.</li>`).join('')}</ul>`;
     }
 
-    return `<!DOCTYPE html>
+    return `<!-- AUTO-GENERATED POLICY -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -114,26 +115,95 @@ const generateIndexHTML = (extensions) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policies - Extension Hub</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; color: #333; }
-        h1 { text-align: center; margin-bottom: 20px; }
-        .description { text-align: center; color: #666; margin-bottom: 40px; }
-        .grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .card { border: 1px solid #eee; border-radius: 8px; padding: 20px; background: #fff; display: flex; justify-content: space-between; align-items: center; }
-        .card:hover { border-color: #bbb; }
-        .info { flex-grow: 1; }
-        .info h3 { margin: 0 0 5px 0; color: #2196F3; }
-        .info p { margin: 0; font-size: 0.9em; color: #666; }
-        .link-box { background: #f5f5f5; padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd; font-family: monospace; font-size: 0.85em; color: #333; margin-left: 20px; user-select: all; white-space: nowrap; overflow-x: auto; max-width: 400px; }
-        .view-btn { display: inline-block; padding: 8px 16px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em; margin-left: 10px; white-space: nowrap; }
-        .view-btn:hover { background-color: #1976D2; }
+        :root {
+            --primary-color: #2196F3;
+            --primary-dark: #1976D2;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; max-width: 1100px; margin: 0 auto; padding: 40px 20px; color: var(--text-color); background-color: var(--bg-color); }
+        header { text-align: center; margin-bottom: 50px; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: #1a1a1a; }
+        .description { color: #6c757d; font-size: 1.1em; }
+        
+        .search-container { margin-bottom: 40px; position: sticky; top: 20px; z-index: 1000; display: flex; justify-content: center; }
+        #searchInput { width: 100%; max-width: 700px; padding: 15px 25px; font-size: 18px; border: 1px solid #ced4da; border-radius: 50px; outline: none; transition: all 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        #searchInput:focus { border-color: var(--primary-color); box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .card { border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; background: var(--card-bg); display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); border-color: #dee2e6; }
+        
+        .info { margin-bottom: 24px; flex-grow: 1; }
+        .info h3 { margin: 0 0 10px 0; color: #1a1a1a; font-size: 1.25em; font-weight: 600; line-height: 1.3; }
+        .info p { margin: 0; font-size: 0.9em; color: #868e96; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+        
+        .link-box { background: #f1f3f5; padding: 12px; border-radius: 8px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.75em; color: #495057; margin-bottom: 20px; user-select: all; word-break: break-all; border: 1px solid #e9ecef; line-height: 1.4; }
+        
+        .view-btn { display: block; text-align: center; padding: 12px 24px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; font-size: 1em; font-weight: 600; transition: all 0.2s; }
+        .view-btn:hover { background-color: var(--primary-dark); box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3); }
+        
+        #noResults { display: none; text-align: center; padding: 80px 20px; color: #adb5bd; font-size: 1.4em; border: 2px dashed #dee2e6; border-radius: 20px; }
+        
+        .footer { margin-top: 80px; text-align: center; color: #adb5bd; font-size: 0.9em; border-top: 1px solid #e9ecef; padding-top: 40px; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8em; }
+            body { padding: 20px 15px; }
+        }
     </style>
 </head>
 <body>
-    <h1>Extension Hub Privacy Policies</h1>
-    <p class="description">Below are the direct links to the privacy policies for all extensions (${extensions.length} total).</p>
-    <div class="grid">
+    <header>
+        <h1>Extension Hub Privacy Policies</h1>
+        <p class="description">Browse and access privacy policies for all <strong>${extensions.length}</strong> official extensions.</p>
+    </header>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search by extension name..." onkeyup="filterPolicies()" autofocus>
+    </div>
+
+    <div id="noResults">
+        <p>No extensions found matching your search.</p>
+        <button onclick="document.getElementById('searchInput').value=''; filterPolicies()" style="background:none; border:none; color:var(--primary-color); cursor:pointer; font-weight:bold; font-size:0.8em; text-decoration:underline;">Clear search</button>
+    </div>
+    
+    <div class="grid" id="policyGrid">
         ${cards}
     </div>
+
+    <div class="footer">
+        &copy; 2026 Saurabh Tiwari and ANSLATION COMPANY. All rights reserved.<br>
+        <small>Note: Updates may take a few minutes to appear on the live site after deployment.</small>
+    </div>
+
+    <script>
+    function filterPolicies() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const grid = document.getElementById('policyGrid');
+        const cards = grid.getElementsByClassName('card');
+        const noResults = document.getElementById('noResults');
+        let visibleCount = 0;
+
+        for (let i = 0; i < cards.length; i++) {
+            const h3 = cards[i].getElementsByTagName('h3')[0];
+            const txtValue = h3.textContent || h3.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                cards[i].style.display = "";
+                visibleCount++;
+            } else {
+                cards[i].style.display = "none";
+            }
+        }
+        
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+        grid.style.display = visibleCount === 0 ? "none" : "grid";
+    }
+    </script>
 </body>
 </html>`;
 };
@@ -184,11 +254,37 @@ directories.forEach(dir => {
         if (!filename) filename = 'extension';
         filename += '.html';
 
-        const content = generatePolicyHTML(name, permissions);
-        fs.writeFileSync(path.join(policiesDir, filename), content);
+        const existingPolicyPath = path.join(policiesDir, filename);
+        let content;
+
+        const p1 = path.join(dirPath, 'privacy_policy.html');
+        const p2 = path.join(dirPath, 'privacy.html');
+
+        if (fs.existsSync(p1)) {
+            content = fs.readFileSync(p1, 'utf8');
+            fs.unlinkSync(p1);
+            console.log(`Moved custom policy: ${name} from privacy_policy.html`);
+        } else if (fs.existsSync(p2)) {
+            content = fs.readFileSync(p2, 'utf8');
+            fs.unlinkSync(p2);
+            console.log(`Moved custom policy: ${name} from privacy.html`);
+        } else if (fs.existsSync(existingPolicyPath)) {
+            const existingContent = fs.readFileSync(existingPolicyPath, 'utf8');
+            if (!existingContent.includes('<!-- AUTO-GENERATED POLICY -->')) {
+                content = existingContent;
+                console.log(`Kept custom policy for: ${name} (from ${filename})`);
+            } else {
+                content = generatePolicyHTML(name, permissions);
+                console.log(`Updated default policy for: ${name}`);
+            }
+        } else {
+            content = generatePolicyHTML(name, permissions);
+            console.log(`Generated default policy for: ${name}`);
+        }
+
+        fs.writeFileSync(existingPolicyPath, content);
 
         processedExtensions.push({ name, filename });
-        console.log(`Generated policy for: ${name}`);
     }
 });
 
