@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester Pro Workspace</title>
+    <link rel="stylesheet" href="../themes.css">
+    <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+    <div class="app-shell workspace-shell">
+        <header class="glass-panel topbar workspace-topbar">
+            <div class="brand">
+                <h1 class="brand-title">API Tester Pro Workspace</h1>
+                <p class="brand-subtitle">REST, GraphQL, WebSocket, collections, assertions, snippets, docs, schedules</p>
+            </div>
+            <div class="topbar-actions">
+                <button id="openSettings" class="secondary-button">Settings</button>
+                <button id="toggleTheme" class="ghost-button">Dark theme</button>
+            </div>
+        </header>
+
+        <div class="panel-split">
+            <aside class="sidebar-column">
+                <section class="glass-panel section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Workspace Search</h2>
+                            <p class="section-copy">Search collections, history and favorites.</p>
+                        </div>
+                    </div>
+                    <div class="stack">
+                        <input id="globalSearch" class="input" placeholder="Search by request name, URL or folder">
+                        <div class="button-row">
+                            <button id="exportAll" class="secondary-button">Export JSON</button>
+                            <button id="importAll" class="secondary-button">Import JSON</button>
+                            <input id="importFile" type="file" accept=".json" class="hidden">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="glass-panel section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Environments</h2>
+                            <p class="section-copy">Reusable variables and auth data.</p>
+                        </div>
+                        <button id="saveEnvironment" class="secondary-button">Save env</button>
+                    </div>
+                    <div class="stack">
+                        <select id="environmentSelect" class="select"></select>
+                        <div id="environmentRows" class="table-stack"></div>
+                        <button id="addEnvironmentVar" class="ghost-button">Add variable</button>
+                    </div>
+                </section>
+
+                <section class="glass-panel section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Collections</h2>
+                            <p class="section-copy">Folders, templates, favorites and reusable requests.</p>
+                        </div>
+                        <button id="saveRequest" class="primary-button">Save request</button>
+                    </div>
+                    <div class="stack">
+                        <input id="collectionSearch" class="input" placeholder="Filter collections">
+                        <div id="collectionTree" class="tree-group"></div>
+                    </div>
+                </section>
+
+                <section class="glass-panel section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Batch & Schedule</h2>
+                            <p class="section-copy">Queue requests, chain variables, and schedule runs.</p>
+                        </div>
+                    </div>
+                    <div class="stack">
+                        <div class="button-row">
+                            <button id="addToBatch" class="secondary-button">Add current to batch</button>
+                            <button id="runBatch" class="primary-button">Run batch</button>
+                        </div>
+                        <div id="batchList" class="list-box">
+                            <div class="empty-state">Batch queue is empty.</div>
+                        </div>
+                        <div class="compact-grid">
+                            <div class="field">
+                                <label class="field-label" for="scheduleName">Schedule name</label>
+                                <input id="scheduleName" class="input" placeholder="Nightly smoke test">
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="scheduleMinutes">Every N minutes</label>
+                                <input id="scheduleMinutes" class="input" type="number" min="5" value="30">
+                            </div>
+                        </div>
+                        <button id="scheduleCurrent" class="secondary-button">Schedule current request</button>
+                        <div id="scheduleList" class="list-box">
+                            <div class="empty-state">No schedules yet.</div>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+
+            <main class="content-column">
+                <section class="glass-panel section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Request Builder</h2>
+                            <p class="section-copy">Advanced request building with auth, params, body, assertions and extractors.</p>
+                        </div>
+                        <div class="pill-tabs" id="protocolTabs">
+                            <button class="pill-tab active" data-protocol="rest">REST</button>
+                            <button class="pill-tab" data-protocol="graphql">GraphQL</button>
+                            <button class="pill-tab" data-protocol="websocket">WebSocket</button>
+                            <button class="pill-tab" data-protocol="webhook">Webhook</button>
+                        </div>
+                    </div>
+
+                    <div class="request-grid">
+                        <div class="compact-grid">
+                            <div class="field">
+                                <label class="field-label" for="requestName">Request name</label>
+                                <input id="requestName" class="input" placeholder="Get post details">
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="folderName">Folder</label>
+                                <input id="folderName" class="input" placeholder="General">
+                            </div>
+                        </div>
+
+                        <div class="request-controls">
+                            <div id="methodField" class="field">
+                                <label class="field-label" for="method">Method</label>
+                                <select id="method" class="select">
+                                    <option>GET</option>
+                                    <option>POST</option>
+                                    <option>PUT</option>
+                                    <option>PATCH</option>
+                                    <option>DELETE</option>
+                                    <option>HEAD</option>
+                                    <option>OPTIONS</option>
+                                </select>
+                            </div>
+                            <div id="restUrlGroup" class="request-url-grid">
+                                <div class="field">
+                                    <label class="field-label" for="requestBaseUrl">Base URL</label>
+                                    <input id="requestBaseUrl" class="input" placeholder="https://jsonplaceholder.typicode.com">
+                                </div>
+                                <div class="field">
+                                    <label class="field-label" for="requestEndpoint">Endpoint</label>
+                                    <input id="requestEndpoint" class="input" placeholder="/comments">
+                                </div>
+                            </div>
+                            <div id="singleUrlGroup" class="field hidden">
+                                <label id="singleUrlLabel" class="field-label" for="requestUrl">Endpoint URL</label>
+                                <input id="requestUrl" class="input" placeholder="https://api.example.com/graphql">
+                            </div>
+                            <button id="sendRequest" class="primary-button">Send</button>
+                        </div>
+
+                        <div id="websocketPanel" class="subpanel hidden">
+                            <h3 class="subpanel-title">WebSocket Session</h3>
+                            <div class="toolbar-row">
+                                <button id="connectWebSocket" class="primary-button">Connect</button>
+                                <button id="disconnectWebSocket" class="secondary-button">Disconnect</button>
+                                <button id="reconnectWebSocket" class="ghost-button">Reconnect</button>
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="websocketMessage">Send message</label>
+                                <textarea id="websocketMessage" class="textarea websocket-message-input" placeholder='{"type":"ping"}'></textarea>
+                            </div>
+                            <div class="button-row">
+                                <button id="sendWebSocketMessage" class="secondary-button">Send message</button>
+                            </div>
+                            <pre id="websocketLog" class="code-view websocket-log-view">Connect to a WebSocket URL to view incoming and outgoing messages.</pre>
+                        </div>
+
+                        <div class="builder-tabs" id="builderTabs">
+                            <button class="pill-tab active" data-pane="paramsPane">Params</button>
+                            <button class="pill-tab" data-pane="headersPane">Headers</button>
+                            <button class="pill-tab" data-pane="bodyPane">Body</button>
+                            <button class="pill-tab" data-pane="authPane">Auth</button>
+                            <button class="pill-tab" data-pane="testsPane">Assertions</button>
+                            <button class="pill-tab" data-pane="extractPane">Chaining</button>
+                        </div>
+
+                        <div id="paramsPane" class="builder-pane active subpanel">
+                            <h3 class="subpanel-title">Query parameters</h3>
+                            <div id="paramsRows" class="table-stack"></div>
+                            <button id="addParam" class="ghost-button">Add parameter</button>
+                        </div>
+
+                        <div id="headersPane" class="builder-pane subpanel">
+                            <h3 class="subpanel-title">Headers</h3>
+                            <div id="headersRows" class="table-stack"></div>
+                            <button id="addHeader" class="ghost-button">Add header</button>
+                        </div>
+
+                        <div id="bodyPane" class="builder-pane subpanel">
+                            <h3 class="subpanel-title">Request body</h3>
+                            <div class="compact-grid">
+                                <div class="field">
+                                    <label class="field-label" for="bodyType">Body type</label>
+                                    <select id="bodyType" class="select">
+                                        <option value="json">JSON</option>
+                                        <option value="text">Text</option>
+                                        <option value="form">Form URL encoded</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label class="field-label" for="graphqlQuery">GraphQL query</label>
+                                    <textarea id="graphqlQuery" class="textarea graphql-variables-input" placeholder='query { countries { code name } }'></textarea>
+                                </div>
+                                <div class="field" id="graphqlVariablesField">
+                                    <label class="field-label" for="graphqlVariables">GraphQL variables</label>
+                                    <textarea id="graphqlVariables" class="textarea graphql-variables-input" placeholder='{"id": "123"}'></textarea>
+                                </div>
+                            </div>
+                            <textarea id="requestBody" class="textarea" placeholder='{"message":"hello"}'></textarea>
+                        </div>
+
+                        <div id="authPane" class="builder-pane subpanel">
+                            <h3 class="subpanel-title">Authentication helpers</h3>
+                            <div class="triple-grid">
+                                <div class="field">
+                                    <label class="field-label" for="authType">Auth type</label>
+                                    <select id="authType" class="select">
+                                        <option value="none">None</option>
+                                        <option value="bearer">Bearer token</option>
+                                        <option value="apiKey">API key</option>
+                                        <option value="basic">Basic auth</option>
+                                        <option value="oauth">OAuth client credentials</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label class="field-label" for="authKey">Key / username</label>
+                                    <input id="authKey" class="input" placeholder="Authorization / username">
+                                </div>
+                                <div class="field">
+                                    <label class="field-label" for="authValue">Secret / token</label>
+                                    <input id="authValue" class="input" placeholder="token / password">
+                                </div>
+                            </div>
+                            <div class="compact-grid">
+                                <div class="field">
+                                    <label class="field-label" for="oauthTokenUrl">OAuth token URL</label>
+                                    <input id="oauthTokenUrl" class="input" placeholder="https://auth.example.com/oauth/token">
+                                </div>
+                                <div class="field">
+                                    <label class="field-label" for="apiKeyPlacement">API key placement</label>
+                                    <select id="apiKeyPlacement" class="select">
+                                        <option value="header">Header</option>
+                                        <option value="query">Query</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="button-row">
+                                <button id="resolveOAuth" class="secondary-button">Fetch OAuth token</button>
+                            </div>
+                        </div>
+
+                        <div id="testsPane" class="builder-pane subpanel">
+                            <h3 class="subpanel-title">Assertions and schema checks</h3>
+                            <div class="compact-grid">
+                                <div class="field">
+                                    <label class="field-label" for="expectedStatus">Expected status</label>
+                                    <input id="expectedStatus" class="input" placeholder="200">
+                                </div>
+                                <div class="field">
+                                    <label class="field-label" for="bodyIncludes">Body includes</label>
+                                    <input id="bodyIncludes" class="input" placeholder="success">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="requiredJsonKeys">Required JSON keys</label>
+                                <input id="requiredJsonKeys" class="input" placeholder="id,title,data.items">
+                            </div>
+                        </div>
+
+                        <div id="extractPane" class="builder-pane subpanel">
+                            <h3 class="subpanel-title">Request chaining</h3>
+                            <p class="hint">Extract response values into environment variables for later requests. Use paths like <code>data.token</code>.</p>
+                            <div id="extractRows" class="table-stack"></div>
+                            <button id="addExtractor" class="ghost-button">Add extractor</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="glass-panel section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Response Intelligence</h2>
+                            <p class="section-copy">Formatted views, validation, diffs, snippets, docs and metrics.</p>
+                        </div>
+                    </div>
+
+                    <div class="metric-strip">
+                        <div class="metric-card">
+                            <div class="metric-label">Status</div>
+                            <div id="metricStatus" class="metric-value">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Response time</div>
+                            <div id="metricTime" class="metric-value">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Size</div>
+                            <div id="metricSize" class="metric-value">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Format</div>
+                            <div id="metricFormat" class="metric-value">-</div>
+                        </div>
+                    </div>
+
+                    <div class="result-split result-split-spaced">
+                        <div class="stack">
+                            <div class="response-tabs" id="responseTabs">
+                                <button class="pill-tab active" data-pane="responsePrettyPane">Pretty</button>
+                                <button class="pill-tab" data-pane="responseHeadersPane">Headers</button>
+                                <button class="pill-tab" data-pane="responseRawPane">Raw</button>
+                                <button class="pill-tab" data-pane="responseTestsPane">Assertions</button>
+                                <button class="pill-tab" data-pane="responseDiffPane">Diff</button>
+                            </div>
+                            <div id="responsePrettyPane" class="response-pane response-pane-left active">
+                                <pre id="responsePretty" class="code-view">Send a request to see the response.</pre>
+                            </div>
+                            <div id="responseHeadersPane" class="response-pane response-pane-left">
+                                <pre id="responseHeaders" class="code-view"></pre>
+                            </div>
+                            <div id="responseRawPane" class="response-pane response-pane-left">
+                                <pre id="responseRaw" class="code-view"></pre>
+                            </div>
+                            <div id="responseTestsPane" class="response-pane response-pane-left">
+                                <div id="assertionResults" class="rich-preview">Assertions will run after each request.</div>
+                            </div>
+                            <div id="responseDiffPane" class="response-pane response-pane-left">
+                                <pre id="responseDiff" class="code-view">Run multiple requests to compare responses.</pre>
+                            </div>
+                        </div>
+
+                        <div class="stack">
+                            <div class="response-tabs" id="outputTabs">
+                                <button class="pill-tab active" data-pane="snippetPane">Snippets</button>
+                                <button class="pill-tab" data-pane="docsPane">Docs</button>
+                                <button class="pill-tab" data-pane="ciPane">CI/CD</button>
+                                <button class="pill-tab" data-pane="mockPane">Mock</button>
+                            </div>
+                            <div id="snippetPane" class="response-pane response-pane-right active">
+                                <div class="button-row output-actions-row">
+                                    <button id="copySnippetCurl" class="secondary-button">cURL</button>
+                                    <button id="copySnippetPython" class="secondary-button">Python</button>
+                                    <button id="copySnippetJs" class="secondary-button">JavaScript</button>
+                                </div>
+                                <pre id="snippetOutput" class="code-view"></pre>
+                            </div>
+                            <div id="docsPane" class="response-pane response-pane-right">
+                                <div class="button-row output-actions-row">
+                                    <button id="copyDocs" class="secondary-button">Copy docs</button>
+                                </div>
+                                <pre id="docsOutput" class="code-view"></pre>
+                            </div>
+                            <div id="ciPane" class="response-pane response-pane-right">
+                                <div class="button-row output-actions-row">
+                                    <button id="copyCi" class="secondary-button">Copy CI snippet</button>
+                                </div>
+                                <pre id="ciOutput" class="code-view"></pre>
+                            </div>
+                            <div id="mockPane" class="response-pane response-pane-right">
+                                <div class="field">
+                                    <label class="field-label" for="mockPath">Mock route</label>
+                                    <input id="mockPath" class="input" placeholder="/users/:id">
+                                </div>
+                                <div class="field">
+                                    <label class="field-label" for="mockStatus">Mock status</label>
+                                    <input id="mockStatus" class="input" type="number" value="200">
+                                </div>
+                                <div class="button-row">
+                                    <button id="generateMock" class="secondary-button">Generate mock config</button>
+                                    <button id="copyMock" class="secondary-button">Copy config</button>
+                                </div>
+                                <pre id="mockOutput" class="code-view"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="glass-panel section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">History & Favorites</h2>
+                            <p class="section-copy">Search previous runs, favorite requests and export response history.</p>
+                        </div>
+                        <div class="button-row">
+                            <button id="exportHistory" class="secondary-button">Export history</button>
+                            <button id="clearHistory" class="danger-button">Clear history</button>
+                        </div>
+                    </div>
+                    <div class="stack">
+                        <input id="historySearch" class="input" placeholder="Search history">
+                        <div id="historyList" class="list-box">
+                            <div class="empty-state">History will appear here after requests run.</div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script type="module" src="workspace.js"></script>
+</body>
+</html>
