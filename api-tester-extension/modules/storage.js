@@ -16,7 +16,10 @@ export function defaultSettings() {
         autoCopy: false,
         historyLimit: 50,
         requestTimeout: 45,
-        defaultContentType: "application/json"
+        defaultContentType: "application/json",
+        safeMode: true,
+        allowPrivateNetwork: false,
+        enableBackgroundSchedules: false
     };
 }
 

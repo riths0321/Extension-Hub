@@ -10,7 +10,9 @@
     "clipboardWrite"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -32,6 +34,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https: http: wss: ws: data:;"
   }
 }

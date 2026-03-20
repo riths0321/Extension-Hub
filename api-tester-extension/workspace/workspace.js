@@ -21,7 +21,6 @@ import {
     buildQueryString,
     bytesToSize,
     debounce,
-    escapeHtml,
     formatTimestamp,
     lineDiff,
     normalizeRows,
@@ -104,6 +103,87 @@ function getRequestDisplayUrl(request) {
     return getRequestPrimaryUrl(request) || request.url || "";
 }
 
+function validateUrlByProtocol(rawUrl, protocol) {
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(String(rawUrl || "").trim());
+    } catch (error) {
+        return { ok: false, message: "Enter a valid URL" };
+    }
+
+    const value = parsedUrl.protocol.toLowerCase();
+    if (protocol === "websocket") {
+        if (!["ws:", "wss:"].includes(value)) {
+            return { ok: false, message: "WebSocket URL must start with ws:// or wss://" };
+        }
+        return { ok: true, value: parsedUrl.toString() };
+    }
+
+    if (!["http:", "https:"].includes(value)) {
+        return { ok: false, message: "Request URL must start with http:// or https://" };
+    }
+
+    return { ok: true, value: parsedUrl.toString() };
+}
+
+function isPrivateHostname(hostname) {
+    const host = String(hostname || "").toLowerCase();
+    if (!host) return false;
+    if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
+    if (/^127\./.test(host)) return true;
+    if (/^10\./.test(host)) return true;
+    if (/^192\.168\./.test(host)) return true;
+    const match172 = host.match(/^172\.(\d{1,3})\./);
+    if (match172) {
+        const second = Number(match172[1]);
+        if (second >= 16 && second <= 31) return true;
+    }
+    return false;
+}
+
+function enforceNetworkSafety(url, protocol, options = {}) {
+    const validation = validateUrlByProtocol(url, protocol);
+    if (!validation.ok) return validation;
+
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(validation.value);
+    } catch (error) {
+        return validation;
+    }
+
+    if (!state.settings.allowPrivateNetwork && isPrivateHostname(parsedUrl.hostname)) {
+        return {
+            ok: false,
+            message: "Private or localhost APIs are blocked. Enable them in Settings if needed."
+        };
+    }
+
+    if (state.settings.safeMode) {
+        if (protocol === "websocket" && parsedUrl.protocol.toLowerCase() === "ws:") {
+            return {
+                ok: false,
+                message: "Safe mode requires secure WebSocket URLs (wss://)."
+            };
+        }
+        if (protocol !== "websocket" && parsedUrl.protocol.toLowerCase() === "http:" && !isPrivateHostname(parsedUrl.hostname)) {
+            return {
+                ok: false,
+                message: "Safe mode requires HTTPS for external APIs."
+            };
+        }
+    }
+
+    if (options.schedule && !state.settings.enableBackgroundSchedules) {
+        return {
+            ok: false,
+            message: "Background schedules are disabled in Settings."
+        };
+    }
+
+    return { ok: true, value: validation.value };
+}
+
 function resetWebSocketState() {
     if (state.ws) {
         state.ws.close();
@@ -126,22 +206,46 @@ function setTheme(theme) {
 function createKeyValueRow(row, options = {}) {
     const wrap = document.createElement("div");
     wrap.className = "key-value-row";
-    wrap.innerHTML = `
-        <input class="input row-key" placeholder="${options.keyPlaceholder || "Key"}" value="${escapeHtml(row.key || "")}">
-        <input class="input row-value" placeholder="${options.valuePlaceholder || "Value"}" value="${escapeHtml(row.value || "")}">
-        <button class="danger-button row-remove" type="button">Remove</button>
-    `;
+
+    const keyInput = document.createElement("input");
+    keyInput.className = "input row-key";
+    keyInput.placeholder = options.keyPlaceholder || "Key";
+    keyInput.value = row.key || "";
+
+    const valueInput = document.createElement("input");
+    valueInput.className = "input row-value";
+    valueInput.placeholder = options.valuePlaceholder || "Value";
+    valueInput.value = row.value || "";
+
+    const removeButton = document.createElement("button");
+    removeButton.className = "danger-button row-remove";
+    removeButton.type = "button";
+    removeButton.textContent = "Remove";
+
+    wrap.append(keyInput, valueInput, removeButton);
     return wrap;
 }
 
 function createExtractorRow(row) {
     const wrap = document.createElement("div");
     wrap.className = "key-value-row";
-    wrap.innerHTML = `
-        <input class="input extractor-path" placeholder="response path e.g. data.token" value="${escapeHtml(row.path || "")}">
-        <input class="input extractor-variable" placeholder="env variable name" value="${escapeHtml(row.variable || "")}">
-        <button class="danger-button extractor-remove" type="button">Remove</button>
-    `;
+
+    const pathInput = document.createElement("input");
+    pathInput.className = "input extractor-path";
+    pathInput.placeholder = "response path e.g. data.token";
+    pathInput.value = row.path || "";
+
+    const variableInput = document.createElement("input");
+    variableInput.className = "input extractor-variable";
+    variableInput.placeholder = "env variable name";
+    variableInput.value = row.variable || "";
+
+    const removeButton = document.createElement("button");
+    removeButton.className = "danger-button extractor-remove";
+    removeButton.type = "button";
+    removeButton.textContent = "Remove";
+
+    wrap.append(pathInput, variableInput, removeButton);
     return wrap;
 }
 
@@ -392,14 +496,23 @@ function renderBatchList() {
     state.batchQueue.forEach((item) => {
         const row = document.createElement("div");
         row.className = "list-item";
-        row.innerHTML = `
-            <div class="list-item-main">
-                <div class="list-item-title">${escapeHtml(item.name || getRequestDisplayUrl(item) || "Queued request")}</div>
-                <div class="list-item-meta">${escapeHtml(item.method)} • ${escapeHtml(item.protocol || "rest")}</div>
-            </div>
-            <button class="danger-button" type="button">Remove</button>
-        `;
-        row.querySelector("button").addEventListener("click", () => {
+        const main = document.createElement("div");
+        main.className = "list-item-main";
+        const title = document.createElement("div");
+        title.className = "list-item-title";
+        title.textContent = item.name || getRequestDisplayUrl(item) || "Queued request";
+        const meta = document.createElement("div");
+        meta.className = "list-item-meta";
+        meta.textContent = `${item.method} • ${item.protocol || "rest"}`;
+        const removeButton = document.createElement("button");
+        removeButton.className = "danger-button";
+        removeButton.type = "button";
+        removeButton.textContent = "Remove";
+
+        main.append(title, meta);
+        row.append(main, removeButton);
+
+        removeButton.addEventListener("click", () => {
             state.batchQueue = state.batchQueue.filter((entry) => entry.id !== item.id);
             renderBatchList();
         });
@@ -418,14 +531,23 @@ function renderScheduleList() {
     state.schedules.forEach((item) => {
         const row = document.createElement("div");
         row.className = "list-item";
-        row.innerHTML = `
-            <div class="list-item-main">
-                <div class="list-item-title">${escapeHtml(item.name)}</div>
-                <div class="list-item-meta">Every ${item.minutes} min • ${escapeHtml(item.request.method || "POST")} ${escapeHtml(getRequestDisplayUrl(item.request))}</div>
-            </div>
-            <button class="danger-button" type="button">Delete</button>
-        `;
-        row.querySelector("button").addEventListener("click", async () => {
+        const main = document.createElement("div");
+        main.className = "list-item-main";
+        const title = document.createElement("div");
+        title.className = "list-item-title";
+        title.textContent = item.name;
+        const meta = document.createElement("div");
+        meta.className = "list-item-meta";
+        meta.textContent = `Every ${item.minutes} min • ${item.request.method || "POST"} ${getRequestDisplayUrl(item.request)}`;
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "danger-button";
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+
+        main.append(title, meta);
+        row.append(main, deleteButton);
+
+        deleteButton.addEventListener("click", async () => {
             state.schedules = state.schedules.filter((entry) => entry.id !== item.id);
             await saveSchedules(state.schedules);
             chrome.runtime.sendMessage({ action: "deleteSchedule", scheduleId: item.id });
@@ -454,18 +576,30 @@ function renderHistory(filterText = "") {
         const isFavorite = state.favorites.includes(item.id);
         const row = document.createElement("div");
         row.className = "list-item";
-        row.innerHTML = `
-            <div class="list-item-main">
-                <div class="list-item-title">${escapeHtml(item.name || item.url || "Untitled request")}</div>
-                <div class="list-item-meta">${escapeHtml(item.method)} • ${escapeHtml(item.statusLabel || "-")} • ${formatTimestamp(item.createdAt)}</div>
-            </div>
-            <div class="button-row">
-                <button class="ghost-button load-btn" type="button">Load</button>
-                <button class="secondary-button fav-btn" type="button">${isFavorite ? "Unfavorite" : "Favorite"}</button>
-            </div>
-        `;
+        const main = document.createElement("div");
+        main.className = "list-item-main";
+        const title = document.createElement("div");
+        title.className = "list-item-title";
+        title.textContent = item.name || item.url || "Untitled request";
+        const meta = document.createElement("div");
+        meta.className = "list-item-meta";
+        meta.textContent = `${item.method} • ${item.statusLabel || "-"} • ${formatTimestamp(item.createdAt)}`;
+        const actions = document.createElement("div");
+        actions.className = "button-row";
+        const loadButton = document.createElement("button");
+        loadButton.className = "ghost-button";
+        loadButton.type = "button";
+        loadButton.textContent = "Load";
+        const favoriteButton = document.createElement("button");
+        favoriteButton.className = "secondary-button";
+        favoriteButton.type = "button";
+        favoriteButton.textContent = isFavorite ? "Unfavorite" : "Favorite";
 
-        row.querySelector(".load-btn").addEventListener("click", async () => {
+        main.append(title, meta);
+        actions.append(loadButton, favoriteButton);
+        row.append(main, actions);
+
+        loadButton.addEventListener("click", async () => {
             state.workspace = {
                 ...defaultWorkspace(),
                 ...(item.requestSnapshot || {})
@@ -475,7 +609,7 @@ function renderHistory(filterText = "") {
             showToast("Loaded from history");
         });
 
-        row.querySelector(".fav-btn").addEventListener("click", async () => {
+        favoriteButton.addEventListener("click", async () => {
             if (isFavorite) {
                 state.favorites = state.favorites.filter((entry) => entry !== item.id);
             } else {
@@ -898,6 +1032,14 @@ async function connectWebSocket(url) {
         showToast("Enter a WebSocket URL first");
         return;
     }
+    const validation = validateUrlByProtocol(url, "websocket");
+    if (!validation.ok) {
+        throw new Error(validation.message);
+    }
+    const safety = enforceNetworkSafety(validation.value, "websocket");
+    if (!safety.ok) {
+        throw new Error(safety.message);
+    }
 
     if (state.ws) {
         state.ws.close();
@@ -908,9 +1050,9 @@ async function connectWebSocket(url) {
 
     await new Promise((resolve, reject) => {
         const startedAt = performance.now();
-        const socket = new WebSocket(url);
+        const socket = new WebSocket(safety.value);
         state.ws = socket;
-        state.wsReconnectUrl = url;
+        state.wsReconnectUrl = safety.value;
 
         socket.addEventListener("open", () => {
             appendWebSocketLog("system", "Connection opened");
@@ -1057,9 +1199,15 @@ async function runCurrentRequest() {
         showToast("Enter a GraphQL query");
         return;
     }
+    const safety = enforceNetworkSafety(requiredUrl, state.workspace.protocol);
+    if (!safety.ok) {
+        showToast(safety.message);
+        return;
+    }
 
     try {
         const requestSnapshot = buildResolvedRequest();
+        requestSnapshot.finalUrl = safety.value;
         const response = await executeRequest(requestSnapshot);
         state.previousResponseText = state.currentResponse?.body || "";
         state.currentResponse = response;
@@ -1125,9 +1273,14 @@ async function fetchOAuthToken() {
         showToast("Add token URL and client ID");
         return;
     }
+    const safety = enforceNetworkSafety(tokenUrl, "rest");
+    if (!safety.ok) {
+        showToast(safety.message);
+        return;
+    }
 
     try {
-        const response = await fetch(tokenUrl, {
+        const response = await fetch(safety.value, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
@@ -1200,7 +1353,7 @@ function generateJsSnippet(request) {
         return `const socket = new WebSocket("${resolved.finalUrl || resolved.url}");\nsocket.addEventListener("open", () => console.log("connected"));\nsocket.addEventListener("message", (event) => console.log(event.data));`;
     }
     if (resolved.request.protocol === "graphql") {
-        return `const response = await fetch("${resolved.finalUrl}", {\n  method: "POST",\n  headers: ${JSON.stringify({ ...resolved.headers, "Content-Type": "application/json" }, null, 2)},\n  body: ${JSON.stringify(JSON.stringify({ query: resolved.graphqlQuery, variables: resolved.graphqlVariables ? parseJsonSafe(resolved.graphqlVariables).value || {} : {} }))}\n});\n\nconsole.log(response.status);\nconsole.log(await response.text());`;
+        return `const response = await fetch("${resolved.finalUrl}", {\n  method: "POST",\n  headers: ${JSON.stringify({ ...resolved.headers, "Content-Type": "application/json" }, null, 2)},\n  body: JSON.stringify(${JSON.stringify({ query: resolved.graphqlQuery, variables: resolved.graphqlVariables ? parseJsonSafe(resolved.graphqlVariables).value || {} : {} }, null, 2)})\n});\n\nconsole.log(response.status);\nconsole.log(await response.text());`;
     }
     const method = resolved.request.protocol === "webhook" ? "POST" : resolved.request.method;
     const body = buildRequestBodyByType(resolved.request.bodyType, resolved.body);
@@ -1319,6 +1472,19 @@ async function scheduleCurrentRequest() {
     collectWorkspaceForm();
     if (state.workspace.protocol === "websocket") {
         showToast("WebSocket requests cannot be scheduled");
+        return;
+    }
+    const requiredUrl =
+        state.workspace.protocol === "rest"
+            ? joinBaseUrlAndEndpoint(state.workspace.baseUrl, state.workspace.endpoint)
+            : state.workspace.url.trim();
+    const safety = enforceNetworkSafety(requiredUrl, state.workspace.protocol, { schedule: true });
+    if (!safety.ok) {
+        showToast(safety.message);
+        return;
+    }
+    const confirmed = window.confirm("Scheduled requests run in the background. Continue?");
+    if (!confirmed) {
         return;
     }
     const name = els.scheduleName.value.trim() || state.workspace.name || "Scheduled request";

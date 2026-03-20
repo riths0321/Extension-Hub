@@ -71,6 +71,18 @@
                         <label class="field-label" for="historyLimit">History limit</label>
                         <input id="historyLimit" class="input" type="number" min="10" max="500">
                     </div>
+                    <label class="toggle-row">
+                        <input id="safeMode" type="checkbox">
+                        <span>Safe mode: prefer secure protocols and stricter request checks</span>
+                    </label>
+                    <label class="toggle-row">
+                        <input id="allowPrivateNetwork" type="checkbox">
+                        <span>Allow localhost and private/internal network APIs</span>
+                    </label>
+                    <label class="toggle-row">
+                        <input id="enableBackgroundSchedules" type="checkbox">
+                        <span>Enable scheduled background requests</span>
+                    </label>
                 </div>
             </section>
 
