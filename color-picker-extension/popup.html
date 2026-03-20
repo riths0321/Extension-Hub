@@ -161,20 +161,40 @@
 
         <section id="contrast-section" class="card hidden" aria-label="WCAG contrast checker">
           <div class="card-head">
-            <div class="card-title">Contrast (WCAG)</div>
-            <button id="swap-contrast" class="ghost-btn" type="button" aria-label="Swap foreground and background">
-              Swap
+            <div>
+              <div class="card-title">Contrast (WCAG)</div>
+              <p class="contrast-subtitle">
+                Check readability against WCAG 2.1 for normal and large text.
+                <span
+                  class="contrast-tip"
+                  tabindex="0"
+                  role="note"
+                  aria-label="WCAG tip: AA is the standard accessibility target, while AAA is a stricter enhanced readability target."
+                  title="AA is the standard accessibility target. AAA is stricter and offers stronger readability."
+                >
+                  What do AA / AAA mean?
+                </span>
+              </p>
+            </div>
+            <button id="swap-contrast" class="ghost-btn" type="button" aria-label="Swap foreground and background colors">
+              Swap Colors
             </button>
           </div>
 
           <div class="contrast-grid">
             <button id="fg-btn" class="contrast-chip" type="button" aria-label="Set foreground from current color">
               <span id="fg-swatch" class="chip-swatch" aria-hidden="true"></span>
-              <span class="chip-text">Foreground</span>
+              <span class="chip-meta">
+                <span class="chip-text">Foreground</span>
+                <span id="fg-hex" class="chip-value mono">#000000</span>
+              </span>
             </button>
             <button id="bg-btn" class="contrast-chip" type="button" aria-label="Set background from current color">
               <span id="bg-swatch" class="chip-swatch" aria-hidden="true"></span>
-              <span class="chip-text">Background</span>
+              <span class="chip-meta">
+                <span class="chip-text">Background</span>
+                <span id="bg-hex" class="chip-value mono">#FFFFFF</span>
+              </span>
             </button>
           </div>
 
@@ -183,14 +203,48 @@
               <div class="ratio-label">Ratio</div>
               <div id="contrast-ratio" class="ratio-value">--</div>
             </div>
-            <div class="badges">
-              <span id="badge-aa" class="badge">AA</span>
-              <span id="badge-aaa" class="badge">AAA</span>
+            <div id="contrast-preview" class="contrast-preview" aria-hidden="true">
+              <span class="contrast-preview-text">Aa</span>
             </div>
           </div>
 
+          <div class="compliance-table" role="table" aria-label="WCAG compliance levels">
+            <div class="compliance-row" role="row">
+              <div class="compliance-copy" role="cell">
+                <div class="compliance-title">AA Normal Text</div>
+                <div class="compliance-rule">Needs 4.5:1 or higher</div>
+              </div>
+              <div id="wcag-aa-normal" class="compliance-status" role="cell">--</div>
+            </div>
+            <div class="compliance-row" role="row">
+              <div class="compliance-copy" role="cell">
+                <div class="compliance-title">AA Large Text</div>
+                <div class="compliance-rule">Needs 3.0:1 or higher</div>
+              </div>
+              <div id="wcag-aa-large" class="compliance-status" role="cell">--</div>
+            </div>
+            <div class="compliance-row" role="row">
+              <div class="compliance-copy" role="cell">
+                <div class="compliance-title">AAA Normal Text</div>
+                <div class="compliance-rule">Needs 7.0:1 or higher</div>
+              </div>
+              <div id="wcag-aaa-normal" class="compliance-status" role="cell">--</div>
+            </div>
+            <div class="compliance-row" role="row">
+              <div class="compliance-copy" role="cell">
+                <div class="compliance-title">AAA Large Text</div>
+                <div class="compliance-rule">Needs 4.5:1 or higher</div>
+              </div>
+              <div id="wcag-aaa-large" class="compliance-status" role="cell">--</div>
+            </div>
+          </div>
+
+          <p id="contrast-suggestion" class="contrast-suggestion" role="status" aria-live="polite">
+            Ready to evaluate contrast.
+          </p>
+
           <div class="contrast-help">
-            AA requires 4.5:1 (normal text). AAA requires 7:1.
+            Ratios update live when foreground or background changes. Aim for AA at minimum for readable text.
           </div>
         </section>
 

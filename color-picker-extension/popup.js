@@ -38,9 +38,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const swapContrastBtn = document.getElementById("swap-contrast");
   const fgSwatch = document.getElementById("fg-swatch");
   const bgSwatch = document.getElementById("bg-swatch");
+  const fgHexLabel = document.getElementById("fg-hex");
+  const bgHexLabel = document.getElementById("bg-hex");
   const contrastRatioEl = document.getElementById("contrast-ratio");
-  const badgeAA = document.getElementById("badge-aa");
-  const badgeAAA = document.getElementById("badge-aaa");
+  const contrastPreview = document.getElementById("contrast-preview");
+  const aaNormalStatus = document.getElementById("wcag-aa-normal");
+  const aaLargeStatus = document.getElementById("wcag-aa-large");
+  const aaaNormalStatus = document.getElementById("wcag-aaa-normal");
+  const aaaLargeStatus = document.getElementById("wcag-aaa-large");
+  const contrastSuggestion = document.getElementById("contrast-suggestion");
 
   const historyGrid = document.getElementById("history-grid");
   const clearHistoryBtn = document.getElementById("clear-history");
@@ -329,18 +335,121 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateContrast() {
     if (!currentHex) return;
-    fgSwatch.style.backgroundColor = fgHex;
-    bgSwatch.style.backgroundColor = bgHex;
+    const validFg = normalizeHex(fgHex);
+    const validBg = normalizeHex(bgHex);
 
-    const ratio = contrastRatio(fgHex, bgHex);
-    contrastRatioEl.textContent = ratio.toFixed(2) + ":1";
+    fgHexLabel.textContent = validFg || "Invalid";
+    bgHexLabel.textContent = validBg || "Invalid";
+    fgSwatch.style.backgroundColor = validFg || "transparent";
+    bgSwatch.style.backgroundColor = validBg || "transparent";
+    contrastPreview.style.color = validFg || "inherit";
+    contrastPreview.style.backgroundColor = validBg || "transparent";
 
-    const passAA = ratio >= 4.5;
-    const passAAA = ratio >= 7;
-    badgeAA.classList.toggle("pass", passAA);
-    badgeAA.classList.toggle("fail", !passAA);
-    badgeAAA.classList.toggle("pass", passAAA);
-    badgeAAA.classList.toggle("fail", !passAAA);
+    if (!validFg || !validBg) {
+      contrastRatioEl.textContent = "Invalid color format";
+      setComplianceStatus(aaNormalStatus, null);
+      setComplianceStatus(aaLargeStatus, null);
+      setComplianceStatus(aaaNormalStatus, null);
+      setComplianceStatus(aaaLargeStatus, null);
+      contrastSuggestion.textContent = "Invalid color format";
+      return;
+    }
+
+    const result = evaluateContrast(validFg, validBg);
+    contrastRatioEl.textContent = formatContrastRatio(result.ratio);
+    setComplianceStatus(aaNormalStatus, result.aaNormal);
+    setComplianceStatus(aaLargeStatus, result.aaLarge);
+    setComplianceStatus(aaaNormalStatus, result.aaaNormal);
+    setComplianceStatus(aaaLargeStatus, result.aaaLarge);
+    contrastSuggestion.textContent = getContrastSuggestion(validFg, validBg, result);
+  }
+
+  function setComplianceStatus(el, passed) {
+    el.classList.remove("pass", "fail", "invalid");
+    if (passed === null) {
+      el.classList.add("invalid");
+      el.textContent = "INVALID";
+      return;
+    }
+    el.classList.add(passed ? "pass" : "fail");
+    el.textContent = passed ? "✅ PASS" : "❌ FAIL";
+  }
+
+  function evaluateContrast(foregroundHex, backgroundHex) {
+    const ratio = contrastRatio(foregroundHex, backgroundHex);
+    return {
+      ratio,
+      aaNormal: ratio >= 4.5,
+      aaLarge: ratio >= 3,
+      aaaNormal: ratio >= 7,
+      aaaLarge: ratio >= 4.5
+    };
+  }
+
+  function formatContrastRatio(ratio) {
+    return `${ratio.toFixed(2)}:1`;
+  }
+
+  function getContrastSuggestion(foregroundHex, backgroundHex, result) {
+    if (result.aaNormal) {
+      return result.aaaNormal
+        ? "Excellent contrast. This pairing passes AAA for normal text."
+        : "Good contrast. This pairing passes AA for normal text.";
+    }
+
+    const suggestion = findSuggestedForeground(foregroundHex, backgroundHex, 4.5);
+    if (!suggestion) {
+      return "Try increasing the brightness difference between foreground and background.";
+    }
+
+    return `Try ${suggestion.direction} foreground shade like ${suggestion.hex} for better contrast.`;
+  }
+
+  function findSuggestedForeground(foregroundHex, backgroundHex, targetRatio) {
+    const foreground = hexToRgb(foregroundHex);
+    const background = hexToRgb(backgroundHex);
+    const options = [
+      searchAccessibleForeground(foreground, background, { r: 0, g: 0, b: 0 }, "a darker", targetRatio),
+      searchAccessibleForeground(foreground, background, { r: 255, g: 255, b: 255 }, "a lighter", targetRatio)
+    ].filter(Boolean);
+
+    if (options.length === 0) return null;
+    options.sort((a, b) => a.distance - b.distance);
+    const best = options[0];
+    if (best.ratio < targetRatio) return null;
+    return { hex: best.hex, direction: best.direction };
+  }
+
+  function searchAccessibleForeground(startRgb, backgroundRgb, targetRgb, direction, targetRatio) {
+    // Walk toward black/white in small steps and keep the first accessible shade.
+    let best = null;
+    const backgroundHex = rgbToHex(backgroundRgb.r, backgroundRgb.g, backgroundRgb.b);
+    for (let step = 1; step <= 40; step++) {
+      const amount = step / 40;
+      const candidate = mixRgb(startRgb, targetRgb, amount);
+      const hex = rgbToHex(candidate.r, candidate.g, candidate.b);
+      const ratio = contrastRatio(hex, backgroundHex);
+      if (ratio >= targetRatio) {
+        best = { hex, ratio, direction, distance: colorDistance(startRgb, candidate) };
+        break;
+      }
+    }
+    return best;
+  }
+
+  function mixRgb(a, b, amount) {
+    return {
+      r: Math.round(a.r + (b.r - a.r) * amount),
+      g: Math.round(a.g + (b.g - a.g) * amount),
+      b: Math.round(a.b + (b.b - a.b) * amount)
+    };
+  }
+
+  function colorDistance(a, b) {
+    const dr = a.r - b.r;
+    const dg = a.g - b.g;
+    const db = a.b - b.b;
+    return dr * dr + dg * dg + db * db;
   }
 
   function saveToHistory(hex) {
@@ -802,7 +911,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function relLuminance(r, g, b) {
     const srgb = [r, g, b].map((v) => {
       const c = v / 255;
-      return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     });
     return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
   }
