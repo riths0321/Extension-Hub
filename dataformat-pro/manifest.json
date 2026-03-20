@@ -1,11 +1,9 @@
 {
   "manifest_version": 3,
   "name": "DataFormat Pro",
-  "version": "1.0.1",
-  "description": "Professional JSON/XML formatter with syntax highlighting, validation, and auto-detection",
-  "permissions": [
-    "storage"
-  ],
+  "version": "3.1.0",
+  "description": "JSON · XML · YAML · TOML · CSV · HTML — format, validate, convert",
+  "permissions": ["storage", "clipboardRead", "clipboardWrite"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "DataFormat Pro"
@@ -15,7 +13,6 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "options_page": "settings.html",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }
