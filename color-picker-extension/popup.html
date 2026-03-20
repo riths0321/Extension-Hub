@@ -61,9 +61,16 @@
             type="text"
             inputmode="text"
             autocomplete="off"
-            placeholder="Search recent colors (e.g. 3B82F6)"
+            placeholder="Search or enter HEX/RGB/HSL (e.g. #3B82F6)"
           />
           <button id="history-search-clear" class="ghost-btn" type="button">Clear</button>
+        </div>
+        <div id="search-preview" class="search-preview hidden" aria-live="polite">
+          <div id="search-preview-swatch" class="search-preview-swatch" aria-hidden="true"></div>
+          <div class="search-preview-meta">
+            <div class="search-preview-label">Typed Color Preview</div>
+            <div id="search-preview-value" class="search-preview-value mono">#000000</div>
+          </div>
         </div>
       </header>
 

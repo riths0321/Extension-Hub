@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const historySearchRow = document.getElementById("history-search-row");
   const historySearch = document.getElementById("history-search");
   const historySearchClear = document.getElementById("history-search-clear");
+  const searchPreview = document.getElementById("search-preview");
+  const searchPreviewSwatch = document.getElementById("search-preview-swatch");
+  const searchPreviewValue = document.getElementById("search-preview-value");
 
   const panelHex = document.getElementById("panel-hex");
   const sv = document.getElementById("sv");
@@ -73,11 +76,19 @@ document.addEventListener("DOMContentLoaded", () => {
   historySearchClear.addEventListener("click", () => {
     historyQuery = "";
     historySearch.value = "";
+    updateSearchPreview(null);
     renderHistory();
     historySearch.focus();
   });
   historySearch.addEventListener("input", () => {
-    historyQuery = String(historySearch.value || "").trim().toUpperCase();
+    const value = String(historySearch.value || "").trim();
+    historyQuery = value.toUpperCase();
+    const typedHex = parseAnyColorToHex(value);
+    updateSearchPreview(typedHex);
+    if (typedHex) {
+      clearInlineError();
+      setCurrent(typedHex, { save: false });
+    }
     renderHistory();
   });
 
@@ -333,12 +344,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveToHistory(hex) {
-    chrome.storage.local.get({ colors: [] }, (result) => {
+    chrome.storage.local.get({ colors: [], lastPicked: null }, (result) => {
       let colors = Array.isArray(result.colors) ? result.colors : [];
       colors = colors.filter((c) => c !== hex);
       colors.unshift(hex);
       if (colors.length > HISTORY_LIMIT) colors = colors.slice(0, HISTORY_LIMIT);
-      chrome.storage.local.set({ colors }, () => loadHistory());
+      chrome.storage.local.set({ colors, lastPicked: hex }, () => loadHistory());
     });
   }
 
@@ -359,9 +370,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderHistory() {
     historyGrid.replaceChildren();
     const q = historyQuery;
-    const colors = q ? historyColors.filter((h) => String(h).toUpperCase().includes(q)) : historyColors;
+    const typedHex = parseAnyColorToHex(q);
+    let colors = q ? historyColors.filter((h) => String(h).toUpperCase().includes(q)) : historyColors.slice();
+    if (typedHex && !colors.includes(typedHex)) {
+      colors = [typedHex, ...colors];
+    }
 
     colors.forEach((hex) => {
+      const item = document.createElement("div");
+      item.className = "history-card";
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "history-item";
@@ -377,7 +395,14 @@ document.addEventListener("DOMContentLoaded", () => {
           showToast("Copy failed");
         }
       });
-      historyGrid.appendChild(btn);
+
+      const label = document.createElement("div");
+      label.className = "history-label mono";
+      label.textContent = hex;
+
+      item.appendChild(btn);
+      item.appendChild(label);
+      historyGrid.appendChild(item);
     });
   }
 
@@ -390,8 +415,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function onStorageChanged(changes, areaName) {
     if (areaName !== "local") return;
-    if (!changes.lastPicked || !changes.lastPicked.newValue) return;
-    setCurrent(changes.lastPicked.newValue, { save: false });
+    if (changes.lastPicked && changes.lastPicked.newValue) {
+      setCurrent(changes.lastPicked.newValue, { save: false });
+    }
     if (changes.colors && Array.isArray(changes.colors.newValue)) {
       historyColors = changes.colors.newValue;
       renderHistory();
@@ -406,8 +432,22 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       historySearch.value = "";
       historyQuery = "";
+      updateSearchPreview(null);
       renderHistory();
     }
+  }
+
+  function updateSearchPreview(hex) {
+    if (!hex) {
+      searchPreview.classList.add("hidden");
+      searchPreviewValue.textContent = "#000000";
+      searchPreviewSwatch.style.backgroundColor = "transparent";
+      return;
+    }
+
+    searchPreview.classList.remove("hidden");
+    searchPreviewValue.textContent = hex;
+    searchPreviewSwatch.style.backgroundColor = hex;
   }
 
   function initRateLink() {
@@ -580,6 +620,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
     return null;
+  }
+
+  function parseAnyColorToHex(input) {
+    const hex = normalizeHex(input);
+    if (hex) return hex;
+
+    const rgb = parseRgb(input);
+    if (rgb) return rgbToHex(rgb.r, rgb.g, rgb.b);
+
+    const hsl = parseHsl(input);
+    if (!hsl) return null;
+
+    const converted = hslToRgb(hsl.h, hsl.s, hsl.l);
+    return rgbToHex(converted.r, converted.g, converted.b);
   }
 
   function hexToRgb(hex) {
