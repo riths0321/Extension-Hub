@@ -7,7 +7,7 @@ function $(id) {
 }
 
 function bindElements() {
-    ["theme", "autoFormat", "autoCopy", "defaultContentType", "requestTimeout", "historyLimit", "saveSettings", "resetSettings", "openWorkspace"].forEach((id) => {
+    ["theme", "autoFormat", "autoCopy", "defaultContentType", "requestTimeout", "historyLimit", "safeMode", "allowPrivateNetwork", "enableBackgroundSchedules", "saveSettings", "resetSettings", "openWorkspace"].forEach((id) => {
         els[id] = $(id);
     });
 }
@@ -23,6 +23,9 @@ function loadIntoForm(settings) {
     els.defaultContentType.value = settings.defaultContentType;
     els.requestTimeout.value = settings.requestTimeout;
     els.historyLimit.value = settings.historyLimit;
+    els.safeMode.checked = Boolean(settings.safeMode);
+    els.allowPrivateNetwork.checked = Boolean(settings.allowPrivateNetwork);
+    els.enableBackgroundSchedules.checked = Boolean(settings.enableBackgroundSchedules);
     applyTheme(settings.theme);
 }
 
@@ -33,7 +36,10 @@ function collectForm() {
         autoCopy: els.autoCopy.checked,
         defaultContentType: els.defaultContentType.value,
         requestTimeout: Math.max(5, Number(els.requestTimeout.value || 45)),
-        historyLimit: Math.max(10, Number(els.historyLimit.value || 50))
+        historyLimit: Math.max(10, Number(els.historyLimit.value || 50)),
+        safeMode: els.safeMode.checked,
+        allowPrivateNetwork: els.allowPrivateNetwork.checked,
+        enableBackgroundSchedules: els.enableBackgroundSchedules.checked
     };
 }
 
