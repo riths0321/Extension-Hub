@@ -34,7 +34,7 @@ var optAutoFormat =$('optAutoFormat');
 var editorsEl     =document.querySelector('.editors');
 
 // State
-var curOut='', curFmt='', debT=null, stT=null, convOpen=false;
+var curOut='', curFmt='', debT=null, stT=null;
 
 // ── Init ──────────────────────────────────────────────────────
 function init(){loadSettings();bindEvents();renderGutter(inputLineNums,1);updateInputStats();}
@@ -96,20 +96,9 @@ function bindEvents(){
     }
   });
 
-  // Convert dropdown
-  convertBtn.addEventListener('click',function(e){
-    e.stopPropagation();
-    convOpen=!convOpen;
-    convertMenu.style.display=convOpen?'block':'none';
-  });
-  convertMenu.addEventListener('click',function(e){
-    var item=e.target.closest('.drop-item');
-    if(!item)return;
-    convOpen=false;convertMenu.style.display='none';
-    doConvert(item.dataset.from,item.dataset.to);
-  });
-  document.addEventListener('click',function(){
-    if(convOpen){convOpen=false;convertMenu.style.display='none';}
+  // Convert — handled by dropdowns.js, listen to custom event
+  document.addEventListener('dfp:convert',function(e){
+    doConvert(e.detail.from, e.detail.to);
   });
 
   // Search
@@ -155,6 +144,7 @@ function autoDetectBadge(){
 function updateInputStats(){
   var v=inputEditor.value;
   inputStats.textContent=v.split('\n').length+' lines · '+v.length+' chars';
+  // also shown in card-sub
 }
 
 // ── Format detection ──────────────────────────────────────────
