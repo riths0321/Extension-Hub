@@ -53,11 +53,6 @@ const categories = {
     Ω:1,kΩ:1000,MΩ:1000000,F:1,μF:0.000001
   },
   FuelEconomy: { kmL:1,L100km:100,mpg:0.425144,mpg_imp:0.354006 },
-  Cooking: { cup:236.588,tbsp:14.7868,tsp:4.92892,pinch:0.308,dash:0.616,drop:0.05 },
-  Currency: {
-    USD:1,EUR:0.92,GBP:0.79,JPY:150.5,CNY:7.19,
-    INR:83.5,CAD:1.36,AUD:1.52,CHF:0.88
-  },
   Number: { dec:10,bin:2,hex:16,oct:8 }
 };
 
@@ -508,7 +503,7 @@ function updateRecentUI() {
   if (!recentConversions.length) {
     const d = document.createElement('div');
     d.className = 'recent-item';
-    d.style.cssText = 'text-align:center;color:#6B7280';
+    d.className = 'recent-item recent-empty';
     d.textContent = 'No recent conversions';
     els.recentGrid.appendChild(d);
     return;
@@ -582,9 +577,6 @@ function formatUnitName(u) {
     N:'Newton',kN:'kN',lbf:'lbf',dyn:'Dyne',kgf:'kgf',
     V:'Volt',kV:'kV',mV:'mV',A:'Ampere',mA:'mA',Ω:'Ohm',kΩ:'kΩ',MΩ:'MΩ',F:'Farad',μF:'μF',
     kmL:'km/L',L100km:'L/100km',mpg:'MPG(US)',mpg_imp:'MPG(UK)',
-    pinch:'Pinch',dash:'Dash',drop:'Drop',
-    USD:'US Dollar',EUR:'Euro',GBP:'British Pound',JPY:'Japanese Yen',CNY:'Chinese Yuan',
-    INR:'Indian Rupee',CAD:'Canadian Dollar',AUD:'Australian Dollar',CHF:'Swiss Franc',
     dec:'Decimal',bin:'Binary',hex:'Hexadecimal',oct:'Octal'
   };
   return n[u]||u;
