@@ -103,8 +103,7 @@ const generateIndexHTML = (extensions) => {
                 <h3>${ext.name}</h3>
                 <p>Privacy Policy</p>
             </div>
-            <div class="link-box">
-                https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/${ext.filename}</div>
+            <div class="link-box">https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/${ext.filename}</div>
             <a href="privacy-policies/${ext.filename}" class="view-btn">View Policy</a>
         </div>`).join('');
 
