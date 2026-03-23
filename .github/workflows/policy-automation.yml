@@ -25,19 +25,17 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Run Policy Manager
+      - name: Run Policy Generator
         run: |
-          python scripts/manage_policies.py
-          # Optional: Add validation logic here if you want to fail the PR on missing policies
-          # python -c "from scripts.manage_policies import validate_policies; exit(0 if validate_policies() else 1)"
+          node generate_policies.js
 
       - name: Commit and push changes
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git add privacy_index.html index.html
-          git commit -m "Auto-update privacy index and index files" || echo "No changes to commit"
+          git add privacy-policies/ privacy_index.html index.html
+          git commit -m "Auto-update privacy policies and index files" || echo "No changes to commit"
           git push || echo "No changes to push"
 
   deploy-pages:
