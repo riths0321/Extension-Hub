@@ -377,7 +377,7 @@ function renderCSV(text){
 function setOutErr(label,detail){
   curOut='';curFmt='';
   outputBadge.textContent='Error';outputBadge.className='fmt-chip fmt-chip-err';outputBadge.style.display='';
-  outputEditor.innerHTML='<div class="empty-state"><div class="empty-icon" style="background:var(--red-bg);color:var(--red)"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div><p class="empty-title" style="color:var(--red)">'+esc(label)+'</p><p class="empty-hint">'+esc(detail.slice(0,120))+'</p></div>';
+  outputEditor.innerHTML='<div class="empty-state"><div class="empty-icon err-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div><p class="empty-title err-title">'+esc(label)+'</p><p class="empty-hint">'+esc(detail.slice(0,120))+'</p></div>';
   outputStats2.textContent='';renderGutter(outputLineNums,0);
 }
 
