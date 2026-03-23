@@ -3,19 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Unit Converter</title>
+  <title>ConvertAll - Calculator & Converter</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <header class="app-header">
-    <h1 class="app-title">ConvertAll</h1>
+    <div class="header-left">
+      <div class="app-icon">C</div>
+      <h1 class="app-title">ConvertAll</h1>
+      <span class="app-badge">v2.0</span>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="icon-btn" title="Toggle theme">🌙</button>
+      <button id="settingsBtn" class="icon-btn" title="Settings">⚙️</button>
+    </div>
   </header>
 
-  <main class="glass-panel">
-    <section class="form-group">
+  <!-- Mode Toggle -->
+  <div class="mode-toggle">
+    <button id="modeConverter" class="mode-btn active">Converter</button>
+    <button id="modeCalculator" class="mode-btn">Calculator</button>
+  </div>
+
+  <!-- Converter Section -->
+  <div id="converterSection" class="glass-panel">
+    <div class="form-group">
       <label for="category">Measurement Category</label>
       <select id="category" aria-label="Select Category"></select>
-    </section>
+    </div>
 
     <div class="conversion-section">
       <div class="unit-row">
@@ -24,7 +39,7 @@
           <input type="number" id="inputValue" placeholder="0.00" step="any" inputmode="decimal" />
         </div>
         <div class="form-group">
-          <label for="fromUnit">From Unit</label>
+          <label for="fromUnit">From</label>
           <select id="fromUnit"></select>
         </div>
       </div>
@@ -36,19 +51,108 @@
       <div class="unit-row">
         <div class="form-group">
           <label for="outputValue">Result</label>
-          <input type="text" id="outputValue" readonly placeholder="Result" />
+          <input type="text" id="outputValue" readonly placeholder="0.00" />
         </div>
         <div class="form-group">
-          <label for="toUnit">To Unit</label>
+          <label for="toUnit">To</label>
           <select id="toUnit"></select>
         </div>
       </div>
     </div>
 
+    <!-- Recent Conversions -->
+    <div class="recent-section" id="recentSection">
+      <div class="recent-title">
+        Recent Conversions
+        <span>click to reuse</span>
+      </div>
+      <div class="recent-grid" id="recentGrid"></div>
+    </div>
+
     <button id="copyBtn" class="btn-primary" type="button">
-      📋 Copy to Clipboard
+      <span>📋</span> Copy Result
     </button>
-  </main>
+  </div>
+
+  <!-- Calculator Section -->
+  <div id="calculatorSection" class="glass-panel hidden">
+    <div class="calc-display">
+      <div class="calc-expression" id="calcExpression">0</div>
+      <div class="calc-result" id="calcResult">0</div>
+    </div>
+    
+    <div class="calc-grid">
+      <!-- Row 1 -->
+      <button class="calc-btn function" data-action="clear">C</button>
+      <button class="calc-btn function" data-action="backspace">⌫</button>
+      <button class="calc-btn function" data-action="percent">%</button>
+      <button class="calc-btn operator" data-action="divide">÷</button>
+      <button class="calc-btn operator" data-action="multiply">×</button>
+      
+      <!-- Row 2 -->
+      <button class="calc-btn" data-value="7">7</button>
+      <button class="calc-btn" data-value="8">8</button>
+      <button class="calc-btn" data-value="9">9</button>
+      <button class="calc-btn operator" data-action="subtract">−</button>
+      <button class="calc-btn function" data-action="sqrt">√</button>
+      
+      <!-- Row 3 -->
+      <button class="calc-btn" data-value="4">4</button>
+      <button class="calc-btn" data-value="5">5</button>
+      <button class="calc-btn" data-value="6">6</button>
+      <button class="calc-btn operator" data-action="add">+</button>
+      <button class="calc-btn function" data-action="square">x²</button>
+      
+      <!-- Row 4 -->
+      <button class="calc-btn" data-value="1">1</button>
+      <button class="calc-btn" data-value="2">2</button>
+      <button class="calc-btn" data-value="3">3</button>
+      <button class="calc-btn function" data-action="sin">sin</button>
+      <button class="calc-btn function" data-action="cos">cos</button>
+      
+      <!-- Row 5 -->
+      <button class="calc-btn" data-value="0">0</button>
+      <button class="calc-btn" data-value=".">.</button>
+      <button class="calc-btn operator" data-action="equals">=</button>
+      <button class="calc-btn function" data-action="tan">tan</button>
+      <button class="calc-btn function" data-action="log">log</button>
+      
+      <!-- Row 6 (Extra scientific functions) -->
+      <button class="calc-btn function" data-action="pi">π</button>
+      <button class="calc-btn function" data-action="e">e</button>
+      <button class="calc-btn function" data-action="power">x^y</button>
+      <button class="calc-btn function" data-action="fact">n!</button>
+      <button class="calc-btn function" data-action="recip">1/x</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>⚙️ Settings</h3>
+      
+      <div class="setting-item">
+        <label>Decimal Precision: <span id="precisionValue">4</span></label>
+        <input type="range" id="precisionSlider" min="0" max="10" step="1" value="4" />
+      </div>
+      
+      <div class="setting-item">
+        <label class="checkbox-label">
+          <input type="checkbox" id="thousandsSeparator" checked />
+          Use thousands separator (e.g., 1,000)
+        </label>
+      </div>
+      
+      <div class="setting-item">
+        <label class="checkbox-label">
+          <input type="checkbox" id="autoCopy" />
+          Auto-copy results to clipboard
+        </label>
+      </div>
+      
+      <button id="closeSettings" class="modal-close">Save & Close</button>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>

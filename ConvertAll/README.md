@@ -1,5 +1,4 @@
 🔁 ConvertAll – All-in-One Unit Converter
-👨‍💻 Made by Saurabh Tiwari
 🧩 Description
 
 ConvertAll is a fast, lightweight, all-in-one unit converter built right into your browser.
