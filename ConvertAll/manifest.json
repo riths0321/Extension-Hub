@@ -1,48 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "ConvertAll - Scientific Calculator & Unit Converter",
-  "short_name": "ConvertAll",
-  "version": "2.0.0",
-  "description": "Advanced scientific calculator with 20+ unit categories including length, weight, volume, temperature, and more. Includes highlight-to-convert and smart calculator features.",
-
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ],
-
-  "host_permissions": [
-    "<all_urls>"
-  ],
-
+  "name": "ConvertAll",
+  "version": "2.0",
+  "description": "Scientific Calculator & Unit Converter — all in one",
+  "permissions": ["storage", "clipboardRead", "clipboardWrite"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ConvertAll - Calculator & Converter"
+    "default_title": "ConvertAll"
   },
-
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["content.css"],
-      "run_at": "document_idle"
-    }
-  ],
-
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
-  "web_accessible_resources": [
-    {
-      "resources": ["icons/*"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self'"
+    "extension_pages": "script-src 'self'; object-src 'none'"
   }
 }
