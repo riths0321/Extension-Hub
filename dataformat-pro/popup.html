@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DataFormat Pro</title>
+  <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
 <div class="app" id="app">
 
-  <!-- ═══════════ HEADER ═══════════ -->
+  <!-- ══════════════════════ HEADER ══════════════════════ -->
   <header class="header">
 
-    <!-- LEFT: Brand -->
+    <!-- Brand -->
     <div class="header-brand">
       <div class="brand-logo">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -24,88 +25,114 @@
       </div>
       <div class="brand-text">
         <span class="brand-title">DataFormat Pro</span>
-        <span class="brand-badge">v3</span>
+        <span class="brand-badge">v2</span>
       </div>
     </div>
 
-    <!-- CENTER: Dropdowns -->
+    <!-- Center controls -->
     <div class="header-center">
-      <div class="sel-wrap">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="sel-prefix-icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        <select id="formatSelect">
-          <option value="auto">Auto Detect</option>
-          <option value="json">JSON</option>
-          <option value="xml">XML</option>
-          <option value="yaml">YAML</option>
-          <option value="toml">TOML</option>
-          <option value="csv">CSV</option>
-          <option value="html">HTML</option>
-        </select>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="sel-caret"><path d="M7 10l5 5 5-5z"/></svg>
+
+      <!-- Format custom dropdown -->
+      <div class="cust-drop-wrap" id="fmtDropWrap">
+        <button class="cust-drop-btn" id="fmtDropBtn" type="button">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="cdb-icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <span id="fmtLabel">Auto Detect</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="cdb-caret"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
+        <div class="cust-drop-menu" id="fmtMenu" style="display:none">
+          <button class="cdm-item active" data-val="auto">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            Auto Detect
+          </button>
+          <button class="cdm-item" data-val="json">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zm0 2v14h14V5H5z"/></svg>
+            JSON
+          </button>
+          <button class="cdm-item" data-val="xml">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12.89 3L14.85 3.4L11.11 21L9.15 20.6L12.89 3M19.59 12L16 8.41V5.58L22.42 12L16 18.41V15.58L19.59 12M1.58 12L8 5.58V8.41L4.41 12L8 15.58V18.41L1.58 12Z"/></svg>
+            XML
+          </button>
+          <button class="cdm-item" data-val="yaml">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h2V3H3v2zm0 8h2v-2H3v2zm4 0h14v-2H7v2zm0 8h14v-2H7v2zm-4 0h2v-2H3v2zM3 9h2V7H3v2zm4-4v2h14V5H7zm0 4v2h14V9H7z"/></svg>
+            YAML
+          </button>
+          <button class="cdm-item" data-val="toml">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v2H3zm0 8h18v2H3zm0 8h18v2H3z"/></svg>
+            TOML
+          </button>
+          <button class="cdm-item" data-val="csv">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v4H3zm0 6h18v4H3zm0 6h18v4H3z"/></svg>
+            CSV
+          </button>
+          <button class="cdm-item" data-val="html">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.56L16.07 16.43L16.62 10.33H9.38L9.2 8.3H16.8L17 6.31H7L7.56 12.32H14.45L14.22 14.9L12 15.5L9.78 14.9L9.64 13.24H7.64L7.93 16.43L12 17.56M4.07 3H19.93L18.5 19.2L12 21L5.5 19.2L4.07 3Z"/></svg>
+            HTML
+          </button>
+        </div>
       </div>
 
-      <div class="sel-wrap">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" class="sel-prefix-icon"><path d="M3 5h2V3H3v2zm0 8h2v-2H3v2zm4 0h14v-2H7v2zm0 8h14v-2H7v2zm-4 0h2v-2H3v2zM3 9h2V7H3v2zm4-4v2h14V5H7zm0 4v2h14V9H7z"/></svg>
-        <select id="indentSelect">
-          <option value="2">2 spaces</option>
-          <option value="4" selected>4 spaces</option>
-          <option value="tab">Tab</option>
-        </select>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="sel-caret"><path d="M7 10l5 5 5-5z"/></svg>
+      <!-- Indent custom dropdown -->
+      <div class="cust-drop-wrap" id="indDropWrap">
+        <button class="cust-drop-btn" id="indDropBtn" type="button">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" class="cdb-icon"><path d="M3 5h2V3H3v2zm0 8h2v-2H3v2zm4 0h14v-2H7v2zm0 8h14v-2H7v2zm-4 0h2v-2H3v2zM3 9h2V7H3v2zm4-4v2h14V5H7zm0 4v2h14V9H7z"/></svg>
+          <span id="indLabel">4 spaces</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="cdb-caret"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
+        <div class="cust-drop-menu" id="indMenu" style="display:none">
+          <button class="cdm-item" data-val="2">2 spaces</button>
+          <button class="cdm-item active" data-val="4">4 spaces</button>
+          <button class="cdm-item" data-val="tab">Tab</button>
+        </div>
       </div>
+
     </div>
 
-    <!-- RIGHT: Actions -->
+    <!-- Right controls -->
     <div class="header-right">
-      <!-- Toggles -->
-      <label class="hdr-toggle" title="Sort JSON keys alphabetically">
-        <input type="checkbox" id="optSortKeys">
-        Sort
+
+      <label class="hdr-toggle" title="Sort JSON keys">
+        <input type="checkbox" id="optSortKeys"> Sort
       </label>
-      <label class="hdr-toggle" title="Wrap long lines">
-        <input type="checkbox" id="optWordWrap">
-        Wrap
+      <label class="hdr-toggle" title="Word wrap">
+        <input type="checkbox" id="optWordWrap"> Wrap
       </label>
-      <label class="hdr-toggle" title="Auto-format on paste">
-        <input type="checkbox" id="optAutoFormat">
-        Auto
+      <label class="hdr-toggle" title="Auto format on paste">
+        <input type="checkbox" id="optAutoFormat"> Auto
       </label>
 
       <div class="hdr-sep"></div>
 
-      <!-- Convert -->
-      <div class="drop-wrap" id="convertWrap">
-        <button class="hdr-btn" id="convertBtn">
+      <!-- Convert dropdown -->
+      <div class="cust-drop-wrap" id="convertWrap">
+        <button class="hdr-btn" id="convertBtn" type="button">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
           Convert
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" class="cdb-caret"><path d="M7 10l5 5 5-5z"/></svg>
         </button>
-        <div class="dropdown" id="convertMenu" style="display:none">
-          <div class="drop-label">JSON →</div>
-          <button class="drop-item" data-from="json" data-to="xml">XML</button>
-          <button class="drop-item" data-from="json" data-to="yaml">YAML</button>
-          <button class="drop-item" data-from="json" data-to="toml">TOML</button>
-          <button class="drop-item" data-from="json" data-to="csv">CSV</button>
-          <div class="drop-label">XML →</div>
-          <button class="drop-item" data-from="xml" data-to="json">JSON</button>
-          <div class="drop-label">YAML →</div>
-          <button class="drop-item" data-from="yaml" data-to="json">JSON</button>
-          <button class="drop-item" data-from="yaml" data-to="toml">TOML</button>
-          <div class="drop-label">TOML →</div>
-          <button class="drop-item" data-from="toml" data-to="json">JSON</button>
-          <button class="drop-item" data-from="toml" data-to="yaml">YAML</button>
+        <div class="cust-drop-menu" id="convertMenu" style="display:none">
+          <div class="cdm-label">JSON to</div>
+          <button class="cdm-item" data-from="json" data-to="xml">→ XML</button>
+          <button class="cdm-item" data-from="json" data-to="yaml">→ YAML</button>
+          <button class="cdm-item" data-from="json" data-to="toml">→ TOML</button>
+          <button class="cdm-item" data-from="json" data-to="csv">→ CSV</button>
+          <div class="cdm-label">XML to</div>
+          <button class="cdm-item" data-from="xml" data-to="json">→ JSON</button>
+          <div class="cdm-label">YAML to</div>
+          <button class="cdm-item" data-from="yaml" data-to="json">→ JSON</button>
+          <button class="cdm-item" data-from="yaml" data-to="toml">→ TOML</button>
+          <div class="cdm-label">TOML to</div>
+          <button class="cdm-item" data-from="toml" data-to="json">→ JSON</button>
+          <button class="cdm-item" data-from="toml" data-to="yaml">→ YAML</button>
         </div>
       </div>
 
-      <!-- Escape -->
-      <button class="hdr-btn" id="escapeBtn">
+      <button class="hdr-btn" id="escapeBtn" type="button">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
         Escape
       </button>
 
       <div class="hdr-sep"></div>
 
-      <!-- Dark mode -->
       <button class="icon-btn" id="darkToggle" title="Toggle dark mode">
         <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
         <svg class="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
@@ -113,7 +140,7 @@
     </div>
   </header>
 
-  <!-- ═══════════ SEARCH BAR ═══════════ -->
+  <!-- ══════════════════════ SEARCH BAR ══════════════════════ -->
   <div class="search-bar" id="searchBar" style="display:none">
     <div class="sf">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -133,7 +160,7 @@
     </div>
   </div>
 
-  <!-- ═══════════ EDITORS ═══════════ -->
+  <!-- ══════════════════════ EDITORS ══════════════════════ -->
   <div class="editors">
 
     <!-- INPUT CARD -->
@@ -142,10 +169,9 @@
         <div class="card-header-left">
           <span class="card-dot card-dot-blue"></span>
           <span class="card-label">Editor</span>
-          <span class="card-sub">Paste or upload your data</span>
+          <span class="card-sub" id="inputStats">0 lines</span>
         </div>
         <div class="card-header-right">
-          <span class="word-count" id="inputStats">0 chars</span>
           <button class="icon-btn icon-btn-sm" id="searchToggle" title="Find & Replace  Ctrl+H">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           </button>
@@ -161,16 +187,13 @@
           <input type="file" id="fileInput" accept=".json,.xml,.yaml,.yml,.toml,.csv,.html,.htm,.txt" style="display:none">
         </div>
       </div>
-
       <div class="editor-body" id="inputWrap">
         <div class="gutter" id="inputLineNums" aria-hidden="true">1
 </div>
         <textarea id="inputEditor" class="code-editor"
-          placeholder="Paste JSON, XML, YAML, TOML, CSV or HTML here…&#10;Or use the upload button above."
-          spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
-        ></textarea>
+          placeholder="Paste JSON, XML, YAML, TOML, CSV or HTML…"
+          spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
       </div>
-
       <div class="card-footer">
         <div class="detected-wrap">
           <span id="detectedBadge" class="fmt-chip" style="display:none"></span>
@@ -192,7 +215,6 @@
           <span class="fmt-chip fmt-chip-active" id="outputBadge" style="display:none"></span>
         </div>
       </div>
-
       <div class="editor-body" id="outputWrap">
         <div class="gutter" id="outputLineNums" aria-hidden="true"></div>
         <div id="outputEditor" class="code-output">
@@ -205,7 +227,6 @@
           </div>
         </div>
       </div>
-
       <div class="card-footer">
         <span class="footer-ok" id="statusMsg"></span>
         <span class="footer-stat" id="outputStats"></span>
@@ -214,7 +235,7 @@
 
   </div>
 
-  <!-- ═══════════ ACTION BAR ═══════════ -->
+  <!-- ══════════════════════ ACTION BAR ══════════════════════ -->
   <footer class="action-bar">
     <div class="action-left">
       <span class="status-dot" id="statusDot"></span>
@@ -250,8 +271,27 @@
 
 </div>
 
+<!-- Hidden native selects for JS value storage -->
+<select id="formatSelect" style="display:none">
+  <option value="auto" selected>Auto Detect</option>
+  <option value="json">JSON</option>
+  <option value="xml">XML</option>
+  <option value="yaml">YAML</option>
+  <option value="toml">TOML</option>
+  <option value="csv">CSV</option>
+  <option value="html">HTML</option>
+</select>
+<select id="indentSelect" style="display:none">
+  <option value="2">2 spaces</option>
+  <option value="4" selected>4 spaces</option>
+  <option value="tab">Tab</option>
+</select>
+
 <script src="js/yaml-parser.js"></script>
 <script src="js/toml-parser.js"></script>
 <script src="js/csv-parser.js"></script>
 <script src="js/html-formatter.js"></script>
 <script src="popup.js"></script>
+<script src="js/dropdowns.js"></script>
+</body>
+</html>

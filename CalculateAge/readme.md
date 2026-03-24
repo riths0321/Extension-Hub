@@ -1,7 +1,5 @@
 # 🎂 Age Calculator
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **Age Calculator** is a simple utility to find out your exact age. Enter your date of birth, and it tells you your age in years, months, days, and even computes the days remaining until your next birthday.
 

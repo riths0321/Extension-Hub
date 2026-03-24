@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DataFormat Pro",
-  "version": "3.1.0",
+  "version": "2.0.0",
   "description": "JSON · XML · YAML · TOML · CSV · HTML — format, validate, convert",
   "permissions": ["storage", "clipboardRead", "clipboardWrite"],
   "action": {
@@ -14,6 +14,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'none'"
   }
 }
