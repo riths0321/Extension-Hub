@@ -163,12 +163,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Show Next Birthday
-        if (daysToNextBirthday > 0) {
-            if (daysToNextBirthday === 365 || daysToNextBirthday === 366) {
-                nextBdayCountdown.textContent = "Today! Happy Birthday! 🎉";
-            } else {
-                nextBdayCountdown.textContent = `${daysToNextBirthday} ${daysToNextBirthday === 1 ? 'day' : 'days'}`;
-            }
+        const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        // Check if today IS the birthday
+        const isBirthdayToday = (
+            todayDate.getMonth()  === birthDate.getMonth() &&
+            todayDate.getDate()   === birthDate.getDate()
+        );
+
+        if (isBirthdayToday) {
+            nextBdayCountdown.textContent = 'Today! Happy Birthday! 🎉';
+            nextBdayContainer.classList.remove('hidden');
+        } else if (daysToNextBirthday > 0) {
+            const bdayDayName  = DAYS[nextBirthday.getDay()];
+            const bdayMonthStr = MONTHS[nextBirthday.getMonth()];
+            const bdayDateNum  = nextBirthday.getDate();
+            // e.g. "in 45 days — Monday, Mar 15"
+            nextBdayCountdown.textContent =
+                `in ${daysToNextBirthday} ${daysToNextBirthday === 1 ? 'day' : 'days'} — ${bdayDayName}, ${bdayMonthStr} ${bdayDateNum}`;
             nextBdayContainer.classList.remove('hidden');
         }
 
@@ -648,10 +661,11 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessage.textContent = msg;
         errorMessage.classList.remove('hidden');
 
-        // Re-trigger animation
-        errorMessage.style.animation = 'none';
-        errorMessage.offsetHeight;
-        errorMessage.style.animation = null;
+        // Re-trigger animation by toggling class
+        errorMessage.classList.remove('shake-trigger');
+        // Force reflow
+        void errorMessage.offsetHeight;
+        errorMessage.classList.add('shake-trigger');
         
         // Auto hide after 3 seconds
         setTimeout(() => {

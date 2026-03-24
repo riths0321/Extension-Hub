@@ -1221,3 +1221,94 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         transition-duration: 0.01ms !important;
     }
 }
+/* =====================================================
+   INLINE STYLE REPLACEMENTS (CSP fix)
+   ===================================================== */
+
+/* logo img - was style="object-fit: contain" */
+.logo-img {
+    object-fit: contain;
+}
+
+/* calculate button - was style="width: 100%" */
+.primary-btn.full-width {
+    width: 100%;
+}
+
+/* stats section heading - was style="margin-top: 16px" */
+.section-mt {
+    margin-top: 16px;
+}
+
+/* error animation re-trigger class */
+.error-msg.shake-trigger {
+    animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+/* =====================================================
+   PROFILE ITEM HOVER FIX
+   Profile hover was causing icon buttons inside to
+   misbehave — fixed by isolating button hover states
+   ===================================================== */
+
+/* Remove conflicting transform on profile item hover
+   Keep border highlight but drop the translateX that
+   causes layout shift inside the item */
+.profile-item:hover {
+    transform: none;
+    border-color: var(--primary-color);
+    background: var(--bg-card);
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.dark-mode .profile-item:hover {
+    background: var(--bg-card);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* Profile icon buttons — proper isolated hover */
+.profile-item .icon-btn.small {
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    opacity: 0.6;
+}
+
+.profile-item:hover .icon-btn.small {
+    opacity: 1;
+}
+
+.profile-item .icon-btn.small:hover {
+    background: var(--bg-main);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.dark-mode .profile-item .icon-btn.small:hover {
+    background: var(--bg-main);
+    border-color: var(--primary-color);
+}
+
+/* Delete button specific hover — red tint */
+.profile-item .delete-profile:hover {
+    background: var(--error-bg);
+    border-color: var(--error-border);
+    color: var(--error-text);
+    transform: scale(1.1);
+}
+
+.dark-mode .profile-item .delete-profile:hover {
+    background: var(--error-bg);
+    border-color: var(--error-border);
+}
+
+/* =====================================================
+   NEXT BIRTHDAY — wider card for day name display
+   ===================================================== */
+.next-bday-card .bday-text strong {
+    font-size: 13px;
+    line-height: 1.4;
+}
