@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuickShot – History</title>
+    <link rel="stylesheet" href="../ui.css" />
+    <link rel="stylesheet" href="history.css" />
+  </head>
+  <body>
+    <div class="qs-page">
+      <header class="qs-topbar">
+        <div class="qs-brand">
+          <h1 class="qs-title">History</h1>
+          <p class="qs-subtitle">Recent screenshots (max 20)</p>
+        </div>
+        <div class="qs-iconbar">
+          <button class="qs-btn qs-btn-danger" id="btn-clear-all" type="button">Clear All</button>
+        </div>
+      </header>
+
+      <div id="empty" class="qs-empty-page" hidden>No screenshots yet.</div>
+      <div id="grid" class="qs-grid" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="history.js"></script>
+  </body>
+</html>
+

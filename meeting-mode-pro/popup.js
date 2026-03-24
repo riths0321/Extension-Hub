@@ -29,11 +29,9 @@ class MeetingMode {
     async init() {
         await this.loadSettings();
         await this.loadState();
-        document.addEventListener('DOMContentLoaded', () => {
-            this.updateUI();
-        });
+        this.updateUI();
         this.setupEventListeners();
-        this.startTabMonitoring();
+        this.setupModalEvents();
         console.log('Meeting Mode Pro initialized');
     }
 
@@ -75,10 +73,14 @@ class MeetingMode {
     }
 
     updateSettingsUI() {
-        document.getElementById('autoHideNotifications').checked = this.settings.autoHideNotifications;
-        document.getElementById('autoCleanUrls').checked = this.settings.autoCleanUrls;
-        document.getElementById('timerSound').checked = this.settings.timerSound;
-        document.getElementById('actionExtraction').checked = this.settings.actionExtraction;
+        const bind = (id, value) => {
+            const node = document.getElementById(id);
+            if (node) node.checked = value;
+        };
+        bind('autoHideNotifications', this.settings.autoHideNotifications);
+        bind('autoCleanUrls', this.settings.autoCleanUrls);
+        bind('timerSound', this.settings.timerSound);
+        bind('actionExtraction', this.settings.actionExtraction);
     }
 
     setupEventListeners() {
@@ -94,9 +96,6 @@ class MeetingMode {
 
         add('hidePersonalBtn', 'click', () => this.hidePersonalTabs());
         add('cleanUrlBtn', 'click', () => this.cleanCurrentUrl());
-        add('timerBtn', 'click', () => this.showTimerModal());
-        add('agendaBtn', 'click', () => this.showAgendaModal());
-
         add('autoHideNotifications', 'change', (e) =>
             this.updateSetting('autoHideNotifications', e.target.checked)
         );
@@ -113,68 +112,75 @@ class MeetingMode {
             this.updateSetting('actionExtraction', e.target.checked)
         );
 
-        // Privacy policy button
-        add('privacyPolicyBtn', 'click', () => {
-            chrome.tabs.create({
-                url: chrome.runtime.getURL('privacy-policy.html')
-            });
-        });
     }
 
 
     setupModalEvents() {
-        // Agenda modal
         const agendaModal = document.getElementById('agendaModal');
+        const timerModal = document.getElementById('timerModal');
+        if (!agendaModal || !timerModal) return;
+
         const cancelAgenda = document.getElementById('cancelAgenda');
         const saveAgenda = document.getElementById('saveAgenda');
+        const clearAgendaBtn = document.getElementById('clearAgendaBtn');
+        const agendaTemplateBtn = document.getElementById('agendaTemplateBtn');
+        const agendaText = document.getElementById('agendaText');
+        const timerBtn = document.getElementById('timerBtn');
+        const agendaBtn = document.getElementById('agendaBtn');
+        const startTimer = document.getElementById('startTimer');
+        const pauseTimer = document.getElementById('pauseTimer');
+        const resetTimer = document.getElementById('resetTimer');
+        const hoursInput = document.getElementById('hours');
+        const minutesInput = document.getElementById('minutes');
 
-        document.getElementById('agendaBtn').addEventListener('click', () => {
+        agendaBtn?.addEventListener('click', () => {
             agendaModal.classList.add('active');
             this.loadAgenda();
         });
 
-        cancelAgenda.addEventListener('click', () => {
+        cancelAgenda?.addEventListener('click', () => {
             agendaModal.classList.remove('active');
         });
 
-        saveAgenda.addEventListener('click', () => {
+        saveAgenda?.addEventListener('click', () => {
             this.saveAgenda();
             agendaModal.classList.remove('active');
         });
+        clearAgendaBtn?.addEventListener('click', () => {
+            this.clearAgendaDraft();
+        });
+        agendaTemplateBtn?.addEventListener('click', () => {
+            this.insertAgendaTemplate();
+        });
+        agendaText?.addEventListener('input', () => {
+            this.renderAgendaPreview(agendaText.value);
+        });
 
-        // Timer modal
-        const timerModal = document.getElementById('timerModal');
-        const startTimer = document.getElementById('startTimer');
-        const pauseTimer = document.getElementById('pauseTimer');
-        const resetTimer = document.getElementById('resetTimer');
-
-        document.getElementById('timerBtn').addEventListener('click', () => {
+        timerBtn?.addEventListener('click', () => {
             timerModal.classList.add('active');
         });
-
-        cancelAgenda.addEventListener('click', () => {
-            timerModal.classList.remove('active');
+        startTimer?.addEventListener('click', () => {
+            this.startMeetingTimer(null);
         });
-
-        startTimer.addEventListener('click', () => {
-            this.startMeetingTimer();
-        });
-
-        pauseTimer.addEventListener('click', () => {
+        pauseTimer?.addEventListener('click', () => {
             this.pauseMeetingTimer();
         });
-
-        resetTimer.addEventListener('click', () => {
+        resetTimer?.addEventListener('click', () => {
             this.resetMeetingTimer();
-        });
-
-        // Time input validation
-        document.getElementById('hours').addEventListener('input', (e) => {
             this.updateTimeDisplay();
         });
+        hoursInput?.addEventListener('input', () => this.updateTimeDisplay());
+        minutesInput?.addEventListener('input', () => this.updateTimeDisplay());
 
-        document.getElementById('minutes').addEventListener('input', (e) => {
-            this.updateTimeDisplay();
+        agendaModal.addEventListener('click', (event) => {
+            if (event.target === agendaModal) {
+                agendaModal.classList.remove('active');
+            }
+        });
+        timerModal.addEventListener('click', (event) => {
+            if (event.target === timerModal) {
+                timerModal.classList.remove('active');
+            }
         });
     }
 
@@ -447,19 +453,32 @@ class MeetingMode {
     }
 
     updateTimeDisplay() {
-        const hours = parseInt(document.getElementById('hours').value) || 0;
-        const minutes = parseInt(document.getElementById('minutes').value) || 0;
+        const hoursNode = document.getElementById('hours');
+        const minutesNode = document.getElementById('minutes');
+        if (!hoursNode || !minutesNode) return;
+        const hours = parseInt(hoursNode.value, 10) || 0;
+        const minutes = parseInt(minutesNode.value, 10) || 0;
         
         const totalSeconds = (hours * 3600) + (minutes * 60);
         this.meetingTimer.remaining = totalSeconds;
         
         const display = this.formatTime(totalSeconds);
-        document.getElementById('timeRemaining').textContent = display;
+        const remaining = document.getElementById('timeRemaining');
+        if (remaining) remaining.textContent = display;
     }
 
     startMeetingTimer(durationMinutes = null) {
-        if (durationMinutes) {
+        if (durationMinutes && durationMinutes > 0) {
             this.meetingTimer.remaining = durationMinutes * 60;
+        } else if (!this.meetingTimer.remaining) {
+            const hours = parseInt(document.getElementById('hours')?.value || '0', 10) || 0;
+            const minutes = parseInt(document.getElementById('minutes')?.value || '0', 10) || 0;
+            this.meetingTimer.remaining = (hours * 3600) + (minutes * 60);
+        }
+
+        if (this.meetingTimer.remaining <= 0) {
+            this.showNotification('Invalid Timer', 'Set a timer greater than 0 minutes');
+            return;
         }
         
         this.meetingTimer.active = true;
@@ -505,23 +524,13 @@ class MeetingMode {
     }
 
     updateTimerUI() {
-        const timerElement = document.getElementById('meetingTimer');
-        if (!timerElement) return;   
-
-        const timerText = timerElement.querySelector('.timer-text');
-        if (!timerText) return;      
-
-        if (this.meetingTimer.active && this.meetingTimer.remaining > 0) {
-            const timeStr = this.formatTime(this.meetingTimer.remaining);
-            timerText.textContent = `Meeting: ${timeStr}`;
-            timerElement.style.background = '#dbeafe';
-            timerElement.style.color = '#1d4ed8';
-        } else {
-            timerText.textContent = 'No active meeting';
-            timerElement.style.background = '';
-            timerElement.style.color = '';
+        const remainingNode = document.getElementById('timeRemaining');
+        if (remainingNode) {
+            remainingNode.textContent = this.meetingTimer.remaining > 0
+                ? this.formatTime(this.meetingTimer.remaining)
+                : '00:00:00';
         }
-}
+    }
 
 
     formatTime(seconds) {
@@ -554,18 +563,89 @@ class MeetingMode {
 
     showAgendaModal() {
         document.getElementById('agendaModal').classList.add('active');
+        this.loadAgenda();
     }
 
     async loadAgenda() {
         const saved = await chrome.storage.local.get(['meetingAgenda']);
         const agendaText = document.getElementById('agendaText');
-        agendaText.value = saved.meetingAgenda || '';
+        if (!agendaText) return;
+        const raw = saved.meetingAgenda;
+        const text = typeof raw === 'string' ? raw : (raw?.text || '');
+        agendaText.value = text;
+        this.renderAgendaPreview(text);
     }
 
     async saveAgenda() {
-        const agendaText = document.getElementById('agendaText').value;
-        await chrome.storage.local.set({ meetingAgenda: agendaText });
-        this.showNotification('Agenda Saved', 'Meeting agenda has been saved');
+        const agendaTextNode = document.getElementById('agendaText');
+        if (!agendaTextNode) return;
+
+        const text = agendaTextNode.value.trim();
+        const items = this.getAgendaItemsFromText(text);
+
+        await chrome.storage.local.set({
+            meetingAgenda: text,
+            meetingAgendaMeta: {
+                itemCount: items.length,
+                updatedAt: new Date().toISOString()
+            }
+        });
+        this.showNotification('Agenda Saved', `${items.length} agenda item(s) saved`);
+    }
+
+    getAgendaItemsFromText(text) {
+        return String(text || '')
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+    }
+
+    renderAgendaPreview(text) {
+        const preview = document.getElementById('agendaPreview');
+        const countNode = document.getElementById('agendaCount');
+        if (!preview || !countNode) return;
+
+        const items = this.getAgendaItemsFromText(text);
+        countNode.textContent = `${items.length} item${items.length === 1 ? '' : 's'}`;
+
+        preview.innerHTML = '';
+        if (!items.length) {
+            const empty = document.createElement('div');
+            empty.className = 'agenda-preview-empty';
+            empty.textContent = 'No agenda items yet.';
+            preview.appendChild(empty);
+            return;
+        }
+
+        items.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'agenda-preview-item';
+            row.textContent = `${index + 1}. ${item}`;
+            preview.appendChild(row);
+        });
+    }
+
+    insertAgendaTemplate() {
+        const agendaTextNode = document.getElementById('agendaText');
+        if (!agendaTextNode) return;
+        if (agendaTextNode.value.trim()) return;
+
+        agendaTextNode.value = [
+            'Welcome & introductions',
+            'Review previous action items',
+            'Project updates',
+            'Risks / blockers discussion',
+            'Decisions required',
+            'New action items and owners'
+        ].join('\n');
+        this.renderAgendaPreview(agendaTextNode.value);
+    }
+
+    clearAgendaDraft() {
+        const agendaTextNode = document.getElementById('agendaText');
+        if (!agendaTextNode) return;
+        agendaTextNode.value = '';
+        this.renderAgendaPreview('');
     }
 
     async updateSetting(key, value) {
@@ -594,17 +674,12 @@ class MeetingMode {
     }
 
     showNotification(title, message) {
-        if (!('Notification' in window)) return;
-        
-        if (Notification.permission === 'granted') {
-            new Notification(title, { body: message, icon: 'icons/icon128.png' });
-        } else if (Notification.permission !== 'denied') {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    new Notification(title, { body: message, icon: 'icons/icon128.png' });
-                }
-            });
-        }
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icons/icon48.png',
+            title,
+            message
+        });
     }
 
     startTabMonitoring() {

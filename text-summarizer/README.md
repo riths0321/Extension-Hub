@@ -1,7 +1,5 @@
 # 📝 Text Summarizer
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **Text Summarizer** is a productivity tool intended to shorten long paragraphs of text into concise summaries. Paste any article, email, or report into the extension, and it will attempt to extract the key sentences to give you the gist of the content.
 

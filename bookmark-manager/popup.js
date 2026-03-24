@@ -1,132 +1,159 @@
-/* ===========================
-   Helpers
-=========================== */
+const searchInput = document.getElementById("search");
+const resultsList = document.getElementById("results");
+const statusBox = document.getElementById("status");
+const overlay = document.getElementById("bookmarkOverlay");
+const categoryInput = document.getElementById("category");
 
-const $ = (id) => document.getElementById(id);
+let searchDebounce = null;
 
-const searchInput    = $("search");
-const resultsList    = $("results");
-const statusBox      = $("status");
+document.addEventListener("DOMContentLoaded", () => {
+  bindPopupEvents();
+  refreshOverview();
+});
 
-/* ===========================
-   Status (exported for bookmarks.js & sessions.js)
-=========================== */
+function bindPopupEvents() {
+  searchInput.addEventListener("input", handleSearchInput);
+  searchInput.addEventListener("blur", () => {
+    window.setTimeout(() => {
+      resultsList.replaceChildren();
+    }, 180);
+  });
+
+  document.getElementById("openBookmarkOverlay").addEventListener("click", openOverlay);
+  document.getElementById("cancelOverlay").addEventListener("click", closeOverlay);
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) {
+      closeOverlay();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !overlay.classList.contains("hidden")) {
+      closeOverlay();
+      return;
+    }
+
+    if (event.key === "Enter") {
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement.tagName === "BUTTON") {
+        activeElement.click();
+      }
+    }
+  });
+
+  categoryInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      document.getElementById("confirmAddBookmark").click();
+    }
+  });
+}
 
 function showStatus(message, type = "success") {
   statusBox.textContent = message;
-  // Clear previous classes
-  statusBox.className = "status-bar " + type;
-
-  if (showStatus._timer) clearTimeout(showStatus._timer);
-  showStatus._timer = setTimeout(() => {
+  statusBox.className = `status-bar ${type}`;
+  if (showStatus._timer) {
+    clearTimeout(showStatus._timer);
+  }
+  showStatus._timer = window.setTimeout(() => {
     statusBox.className = "status-bar hidden";
   }, 2800);
 }
 
-// Make globally accessible so bookmarks.js / sessions.js can call it
 window.showStatus = showStatus;
+window.closeBookmarkOverlay = closeOverlay;
+window.refreshOverview = refreshOverview;
 
-/* ===========================
-   Keyboard: Enter on focused button
-=========================== */
+function handleSearchInput(event) {
+  const query = event.target.value.trim();
+  resultsList.replaceChildren();
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    const el = document.activeElement;
-    if (el && el.tagName === "BUTTON") el.click();
+  if (!query) {
+    return;
   }
-});
-
-/* ===========================
-   Bookmark Search  (results shown in UI, not console)
-=========================== */
-
-let searchDebounce = null;
-
-searchInput.addEventListener("input", (e) => {
-  const query = e.target.value.trim();
-  resultsList.innerHTML = "";
-
-  if (!query) return;
 
   clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(() => {
+  searchDebounce = window.setTimeout(() => {
     chrome.bookmarks.search(query, (bookmarks) => {
-      resultsList.innerHTML = "";
-
-      const filtered = (bookmarks || []).filter(b => b.url);
-
-      if (!filtered.length) {
-        const li = document.createElement("li");
-        li.textContent = "No results found";
-        li.className = "no-results";
-        resultsList.appendChild(li);
+      if (chrome.runtime.lastError) {
+        showStatus("Search failed", "error");
         return;
       }
-
-      filtered.slice(0, 7).forEach((b) => {
-        const li = document.createElement("li");
-        li.textContent = b.title || b.url;
-        li.title = b.url;
-        li.setAttribute("role", "listitem");
-        li.addEventListener("mousedown", (e) => {
-          // mousedown fires before blur — prevents list clearing too early
-          e.preventDefault();
-          chrome.tabs.create({ url: b.url });
-        });
-        resultsList.appendChild(li);
-      });
+      renderSearchResults((bookmarks || []).filter((bookmark) => bookmark.url));
     });
-  }, 180);
-});
+  }, 160);
+}
 
-// Delay clearing so clicks register before blur fires
-searchInput.addEventListener("blur", () => {
-  setTimeout(() => { resultsList.innerHTML = ""; }, 200);
-});
+function renderSearchResults(bookmarks) {
+  resultsList.replaceChildren();
 
-/* ===========================
-   Bookmark Overlay
-=========================== */
+  if (!bookmarks.length) {
+    const empty = document.createElement("li");
+    empty.className = "result-empty";
+    empty.textContent = "No matching bookmarks found";
+    resultsList.appendChild(empty);
+    return;
+  }
 
-const overlay        = $("bookmarkOverlay");
-const openOverlayBtn = $("openBookmarkOverlay");
-const confirmBtn     = $("confirmAddBookmark");
-const cancelBtn      = $("cancelOverlay");
-const categoryInput  = $("category");
+  bookmarks.slice(0, 8).forEach((bookmark) => {
+    const item = document.createElement("li");
+    item.className = "result-item";
+    item.setAttribute("role", "listitem");
 
-openOverlayBtn.addEventListener("click", () => {
+    const title = document.createElement("div");
+    title.className = "result-title";
+    title.textContent = bookmark.title || bookmark.url;
+
+    const url = document.createElement("div");
+    url.className = "result-url";
+    url.textContent = bookmark.url;
+
+    item.append(title, url);
+    item.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      chrome.tabs.create({ url: bookmark.url });
+    });
+
+    resultsList.appendChild(item);
+  });
+}
+
+function openOverlay() {
   overlay.classList.remove("hidden");
   categoryInput.value = "";
-  // Small delay so transition plays first
-  setTimeout(() => categoryInput.focus(), 60);
-});
+  window.setTimeout(() => categoryInput.focus(), 60);
+}
 
 function closeOverlay() {
   overlay.classList.add("hidden");
 }
 
-cancelBtn.addEventListener("click", closeOverlay);
+function refreshOverview() {
+  chrome.bookmarks.getTree((tree) => {
+    if (chrome.runtime.lastError) {
+      return;
+    }
+    document.getElementById("bookmarkCount").textContent = String(countBookmarks(tree));
+  });
 
-// Close on Escape
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
-    closeOverlay();
-  }
-});
+  chrome.storage.local.get(["lastSession", "lastSessionSavedAt"], (data) => {
+    const lastSession = Array.isArray(data.lastSession) ? data.lastSession : [];
+    document.getElementById("sessionCount").textContent = String(lastSession.length);
+    document.getElementById("sessionSavedAt").textContent = data.lastSessionSavedAt
+      ? new Date(data.lastSessionSavedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : "Not saved";
+  });
+}
 
-// Close on backdrop click
-overlay.addEventListener("click", (e) => {
-  if (e.target === overlay) closeOverlay();
-});
-
-// Confirm triggers the hidden #addBookmark button in bookmarks.js
-confirmBtn.addEventListener("click", () => {
-  $("addBookmark")?.click();
-  closeOverlay();
-});
-
-// Enter in category input triggers confirm
-categoryInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") confirmBtn.click();
-});
+function countBookmarks(nodes) {
+  let total = 0;
+  nodes.forEach((node) => {
+    if (node.url) {
+      total += 1;
+    }
+    if (node.children) {
+      total += countBookmarks(node.children);
+    }
+  });
+  return total;
+}

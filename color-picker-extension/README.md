@@ -1,15 +1,19 @@
 # 🎨 Pixel Perfect Color Picker
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
-**Pixel Perfect Color Picker** allows designers and developers to grab the exact color code of any pixel on their screen. Whether you need a specific shade of blue from an image or a button's background color, get the Hex, RGB, or HSL code instantly.
+**Pixel Perfect Color Picker** helps designers and developers grab exact colors from any visible pixel on a webpage and work with them instantly (formats, palettes, contrast).
 
 ### 🚀 Features
-- **Eyedropper Tool**: Pick colors from anywhere in the browser window.
-- **Format Conversion**: Auto-converts to HEX, RGB, and HSL.
-- **Copy to Clipboard**: One-click copying.
-- **Recent Colors**: Remembers your recently picked colors.
+- **Webpage Color Picking**: Uses native `EyeDropper` API with a screenshot-based fallback picker.
+- **Accurate Pixel Detection**: Reads exact RGB values from the selected visible pixel.
+- **Formats**: HEX, RGB, and HSL display + real-time conversion (editable fields).
+- **Clipboard Copy**: One-click copy for any format.
+- **Preview Swatch**: Instant visual reference of the picked color.
+- **History**: Persistent recent colors stored locally, with built-in search.
+- **Palettes**: Auto/Complementary/Analogous/Monochromatic generation + export (ASE/GPL/JSON).
+- **Accessibility**: Built-in WCAG contrast ratio checker (AA/AAA badges).
+- **Theme**: Manrope typography + light/dark theme toggle + rate button.
+- **Color Panel**: Hue + saturation/brightness picker (HSV-style) for manual selection.
 
 ### 🛠️ Tech Stack
 - **HTML5**: Interface.
@@ -21,8 +25,11 @@
 ```
 color-picker-extension/
 ├── icons/             # App icons
+├── fonts/             # Manrope fonts (local)
 ├── popup.html         # Main UI
 ├── popup.js           # Picking logic
+├── content.js         # Fallback picker overlay (page)
+├── background.js       # Fallback sampler + storage
 └── manifest.json      # Config
 ```
 
@@ -34,17 +41,17 @@ color-picker-extension/
 5.  Choose `color-picker-extension`.
 
 ### 🧠 How It Works
-1.  **API**: Uses the modern `EyeDropper` API built into Chromium browsers.
-2.  **Activation**: User clicks "Pick Color", which creates a magnifying lens cursor.
-3.  **Selection**: Clicking a pixel returns the color data.
-4.  **Display**: The extension parses the color and displays it in multiple formats.
+1.  **Primary Picker**: Uses the modern `EyeDropper` API in Chromium browsers.
+2.  **Fallback Picker**: If unavailable, a page overlay captures click coordinates and the extension samples the pixel from a screenshot of the visible tab.
+3.  **Formats & Tools**: Converts to HEX/RGB/HSL, generates palettes, and checks WCAG contrast.
 
 ### 🔐 Permissions Explained
-- **`storage`**: To save your history of picked colors.
+- **`storage`**: Save recent color history locally.
+- **`activeTab` / `tabs`**: Used for the fallback visible-tab capture (`captureVisibleTab`) on the current tab.
+- **Host permissions (`<all_urls>`)**: Enables the fallback overlay picker on normal webpages (not `chrome://` pages).
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Color Picker](https://via.placeholder.com/600x400?text=Color+Picker)
+### 🔒 CSP
+`manifest.json` uses a strict `content_security_policy` for extension pages (no remote scripts). Fonts are bundled locally under `fonts/`.
 
 ### 🔒 Privacy Policy
 - **No Tracking**: We do not track what colors you pick or sites you visit.

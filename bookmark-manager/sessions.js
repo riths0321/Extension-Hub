@@ -1,31 +1,26 @@
-/* ===========================
-   Tab Session Management
-=========================== */
-
-// Delegates to showStatus defined in popup.js
 function sessionNotify(message, type = "success") {
   if (typeof window.showStatus === "function") {
     window.showStatus(message, type);
   }
 }
 
-/* ===========================
-   Save current tabs as a session
-=========================== */
-
 document.getElementById("saveSession").addEventListener("click", () => {
   chrome.tabs.query({ currentWindow: true }, (tabs) => {
     if (chrome.runtime.lastError) {
-      sessionNotify("Error reading tabs", "error");
+      sessionNotify("Could not read tabs", "error");
       return;
     }
 
-    // Filter out internal browser pages that can't be restored
     const session = tabs
-      .filter(tab => tab.url && !tab.url.startsWith("chrome://") && !tab.url.startsWith("chrome-extension://"))
-      .map(tab => ({
+      .filter(
+        (tab) =>
+          tab.url &&
+          !tab.url.startsWith("chrome://") &&
+          !tab.url.startsWith("chrome-extension://")
+      )
+      .map((tab) => ({
         title: tab.title || tab.url,
-        url:   tab.url
+        url: tab.url
       }));
 
     if (!session.length) {
@@ -33,38 +28,42 @@ document.getElementById("saveSession").addEventListener("click", () => {
       return;
     }
 
-    chrome.storage.local.set({ lastSession: session }, () => {
-      if (chrome.runtime.lastError) {
-        sessionNotify("Failed to save session", "error");
-      } else {
-        sessionNotify(`Session saved (${session.length} tab${session.length !== 1 ? "s" : ""})`);
+    chrome.storage.local.set(
+      {
+        lastSession: session,
+        lastSessionSavedAt: Date.now()
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          sessionNotify("Failed to save session", "error");
+          return;
+        }
+        sessionNotify(`Saved ${session.length} tab${session.length !== 1 ? "s" : ""}`);
+        window.refreshOverview?.();
       }
-    });
+    );
   });
 });
 
-/* ===========================
-   Restore last saved session
-=========================== */
-
 document.getElementById("restoreSession").addEventListener("click", () => {
-  chrome.storage.local.get("lastSession", (res) => {
+  chrome.storage.local.get(["lastSession"], (data) => {
     if (chrome.runtime.lastError) {
-      sessionNotify("Error reading session", "error");
+      sessionNotify("Could not read saved session", "error");
       return;
     }
 
-    if (!res.lastSession || !res.lastSession.length) {
+    const session = Array.isArray(data.lastSession) ? data.lastSession : [];
+    if (!session.length) {
       sessionNotify("No saved session found", "error");
       return;
     }
 
-    res.lastSession.forEach(tab => {
+    session.forEach((tab) => {
       if (tab.url) {
         chrome.tabs.create({ url: tab.url });
       }
     });
 
-    sessionNotify(`Restored ${res.lastSession.length} tab${res.lastSession.length !== 1 ? "s" : ""}`);
+    sessionNotify(`Restored ${session.length} tab${session.length !== 1 ? "s" : ""}`);
   });
 });

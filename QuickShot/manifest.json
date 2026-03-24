@@ -1,20 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "QuickShot - Advanced Screen Capture",
-  "version": "2.0.0",
-  "description": "Capture visible parts or selected areas. Edit and share instantly.",
+  "name": "QuickShot – Screen Capture Tool",
+  "version": "3.0.0",
+  "description": "Fast screen capture with lightweight annotation and instant export.",
   "permissions": [
     "activeTab",
+    "tabs",
     "scripting",
     "storage",
     "downloads",
-    "notifications"
+    "clipboardWrite"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "options_page": "option/options.html",
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup/popup.html",
     "default_title": "QuickShot",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -48,6 +47,6 @@
     }
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self'"
   }
 }

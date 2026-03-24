@@ -1,50 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Loan EMI Calculator</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="app">
-      <header>
-        <h3>💰 Loan EMI Calculator</h3>
-        <p class="subtitle">Quickly calculate your monthly EMI</p>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Loan EMI Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <h1>Loan EMI Calculator
+      </h1>
+      <p>Estimate monthly EMI, total repayment, and interest burden.</p>
+    </header>
 
-      <div class="field">
-        <label for="amount">Loan Amount (₹)</label>
-        <input type="number" id="amount" placeholder="e.g. 500000" />
-      </div>
-
-      <div class="field">
-        <label for="rate">Interest Rate (% / year)</label>
-        <input type="number" id="rate" placeholder="e.g. 8.5" step="0.01" />
-      </div>
-
-      <div class="field">
-        <label for="months">Tenure (months)</label>
-        <input type="number" id="months" placeholder="e.g. 60" />
-      </div>
-
-      <button id="calculate" class="primary">Calculate EMI</button>
-
-      <div class="result">
-        <div class="result-row">
-          <span>Monthly EMI</span>
-          <strong id="emi">-</strong>
+    <section class="card form-card">
+      <label class="field">
+        <span>Loan Amount</span>
+        <div class="input-wrap">
+          <span class="prefix">₹</span>
+          <input type="number" id="amount" placeholder="500000" min="1" step="1" />
         </div>
-        <div class="result-row">
-          <span>Total Interest</span>
-          <strong id="interest">-</strong>
-        </div>
-        <div class="result-row">
-          <span>Total Payment</span>
-          <strong id="total">-</strong>
-        </div>
-      </div>
-    </div>
+      </label>
 
-    <script src="popup.js"></script>
-  </body>
+      <div class="grid-2">
+        <label class="field">
+          <span>Interest Rate (p.a.)</span>
+          <div class="input-wrap">
+            <input type="number" id="rate" placeholder="8.5" min="0" step="0.01" />
+            <span class="suffix">%</span>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Tenure (months)</span>
+          <input type="number" id="months" placeholder="60" min="1" step="1" />
+        </label>
+      </div>
+
+      <div class="quick-row">
+        <button class="quick" data-months="12" type="button">1Y</button>
+        <button class="quick" data-months="36" type="button">3Y</button>
+        <button class="quick" data-months="60" type="button">5Y</button>
+        <button class="quick" data-months="120" type="button">10Y</button>
+      </div>
+
+      <div class="actions">
+        <button id="calculate" class="btn primary" type="button">Calculate EMI</button>
+        <button id="reset" class="btn ghost" type="button">Reset</button>
+      </div>
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card result-card">
+      <div class="result-row">
+        <span>Monthly EMI</span>
+        <strong id="emi">-</strong>
+      </div>
+      <div class="result-row">
+        <span>Total Interest</span>
+        <strong id="interest">-</strong>
+      </div>
+      <div class="result-row">
+        <span>Total Payment</span>
+        <strong id="total">-</strong>
+      </div>
+      <div class="result-row muted">
+        <span>Principal Share</span>
+        <strong id="principalShare">-</strong>
+      </div>
+      <div class="result-row muted">
+        <span>Interest Share</span>
+        <strong id="interestShare">-</strong>
+      </div>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
 </html>

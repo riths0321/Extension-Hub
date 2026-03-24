@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Deep Redirect Trace</title>
+<link rel="stylesheet" href="popup.css"/>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-logo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="rgba(255,255,255,.6)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><div class="hdr-name">Deep Redirect Trace <span class="hdr-ver">v5</span></div><div class="hdr-tag">Professional SEO &amp; Redirect Analyzer</div></div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-live"><span class="live-dot"></span>LIVE</div>
+    <div class="hdr-domain" id="hdrDomain">—</div>
+    <button class="hbtn" id="btnRefresh" title="Re-analyze"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="hbtn" id="btnAllTabs" title="All tracked tabs"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/></svg></button>
+    <button class="hbtn" id="btnTheme" title="Toggle theme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><path d="M12 1v6m0 6v6M23 12h-6m-6 0H1M20.485 3.515l-4.243 4.243m-8.484 0l-4.243-4.243M20.485 20.485l-4.243-4.243m-8.484 0l-4.243 4.243" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+</header>
+
+<div id="allTabsPanel" class="atp hidden">
+  <div class="atp-hd"><span>All Tracked Tabs</span><button id="atpClose">✕</button></div>
+  <div id="atpList" class="atp-list"></div>
+</div>
+
+<div class="stat-bar">
+  <div class="sb-cell"><div class="sb-v" id="st-hops">—</div><div class="sb-k">Hops</div></div>
+  <div class="sb-sep"></div><div class="sb-cell"><div class="sb-v" id="st-sc">—</div><div class="sb-k">Status</div></div>
+  <div class="sb-sep"></div><div class="sb-cell"><div class="sb-v" id="st-ms">—</div><div class="sb-k">Time</div></div>
+  <div class="sb-sep"></div><div class="sb-cell"><div class="sb-v" id="st-health">—</div><div class="sb-k">Health</div></div>
+  <div class="sb-sep"></div><div class="sb-cell"><div class="sb-v" id="st-idx">—</div><div class="sb-k">Indexed</div></div>
+  <div class="sb-sep"></div><div class="sb-cell"><div class="sb-v" id="st-links">—</div><div class="sb-k">Links</div></div>
+  <div class="sb-sep"></div><div class="sb-cell"><div class="sb-v" id="st-sec">—</div><div class="sb-k">Security</div></div>
+</div>
+
+<nav class="nav">
+  <button class="nb active" data-tab="chain"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg> Chain</button>
+  <button class="nb" data-tab="headers"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 10h12M4 14h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Headers</button>
+  <button class="nb" data-tab="seo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> SEO</button>
+  <button class="nb" data-tab="insights"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Insights</button>
+  <button class="nb" data-tab="links"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Links</button>
+  <button class="nb" data-tab="security"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Security</button>
+  <button class="nb" data-tab="health"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Health</button>
+  <button class="nb" data-tab="tools"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Tools</button>
+  <button class="nb" data-tab="history"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> History</button>
+</nav>
+
+<main class="main">
+  <div id="stLoad" class="fullstate">
+    <div class="skeleton-wrap"><div class="sk-bar w80"></div><div class="sk-bar w60" style="height:10px;margin-top:6px"></div><div class="sk-flow"><div class="sk-node"></div><div class="sk-line"></div><div class="sk-node"></div><div class="sk-line"></div><div class="sk-node"></div></div><div class="sk-bar w100" style="height:8px;margin-top:12px"></div><div class="sk-bar w80" style="height:8px;margin-top:5px"></div><div class="sk-bar w60" style="height:8px;margin-top:5px"></div></div>
+    <div class="load-ring"></div><div class="load-label" id="loadLabel">Initializing…</div><div class="load-sub">Background tracking active on all tabs</div>
+  </div>
+  <div id="stErr" class="fullstate hidden"><div class="state-ico">⚠</div><div class="state-msg" id="errMsg">Something went wrong</div><button class="btn blue sm" id="errRetry">Retry</button></div>
+
+  <!-- CHAIN -->
+  <div id="tab-chain" class="tp hidden">
+    <div class="sec-hd"><span class="sec-t"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg> Redirect Chain</span><span class="pill blue" id="hopPill">— hops</span></div>
+    <div class="chain-flow-wrap" id="chainFlowWrap"><div id="chainFlow" class="chain-flow"></div></div>
+    <div class="sec-hd" style="margin-top:10px"><span class="sec-t">Hop Details</span></div>
+    <div id="hopCards" class="hop-cards"></div>
+    <div class="sec-hd" style="margin-top:4px"><span class="sec-t">Timing Breakdown</span><span class="timing-total" id="timingTotal">—</span></div>
+    <div id="timingGrid" class="timing-grid card"></div>
+    <div class="export-row">
+      <button class="btn blue" id="btnJson"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Export JSON</button>
+      <button class="btn outline" id="btnCsv"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> CSV</button>
+      <button class="btn ghost" id="btnCopy"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Copy</button>
+    </div>
+  </div>
+
+  <!-- HEADERS -->
+  <div id="tab-headers" class="tp hidden">
+    <div class="sec-hd"><span class="sec-t">HTTP Response Headers</span><span class="pill blue" id="hdrPill">—</span></div>
+    <div class="card"><div class="hop-tabs" id="hdrHopTabs"></div><div id="hdrBody" class="hdr-table"></div></div>
+  </div>
+
+  <!-- SEO -->
+  <div id="tab-seo" class="tp hidden">
+    <div id="seoHeroBox"></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">SEO Audit</span><span class="pill blue" id="seoCount">—</span></div>
+    <div id="seoAudit" class="seo-audit card"></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">Structured Data</span><span class="pill blue" id="schemaPill">—</span></div>
+    <div id="schemaBox" class="schema-box card"></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">Heading Tree</span></div>
+    <div id="headingTree" class="heading-tree card"></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">Keyword Density (Top 10)</span></div>
+    <div id="kwGrid" class="kw-grid card"></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">hreflang Tags</span></div>
+    <div id="hreflangBox" class="hl-grid card"></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">Mixed Content</span></div>
+    <div id="mixedContentBox" class="card"></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">Social Previews</span></div>
+    <div id="socialBox" class="card" style="padding:14px"></div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div id="tab-insights" class="tp hidden">
+    <div class="sec-hd"><span class="sec-t">AI-Style SEO &amp; Technical Insights</span><span class="pill blue" id="insPill">—</span></div>
+    <div id="insightsBox" class="card"></div>
+  </div>
+
+  <!-- LINKS -->
+  <div id="tab-links" class="tp hidden">
+    <div id="linkStats" class="link-stats"></div>
+    <div class="link-filters">
+      <button class="lf active" data-f="nofollow">Nofollow</button>
+      <button class="lf" data-f="sponsored">Sponsored</button>
+      <button class="lf" data-f="ugc">UGC</button>
+      <button class="lf" data-f="external">External</button>
+      <button class="lf" data-f="internal">Internal</button>
+      <button class="lf" data-f="broken">Broken</button>
+      <button class="lf" data-f="all">All</button>
+    </div>
+    <div id="brokenProgress"></div>
+    <div id="linkList" class="link-list card" style="border-radius:0 0 10px 10px;border-top:none"></div>
+  </div>
+
+  <!-- SECURITY -->
+  <div id="tab-security" class="tp hidden">
+    <div class="sec-hd"><span class="sec-t">Security Headers</span><span class="pill" id="secPill">—</span></div>
+    <div id="secHero" class="card" style="margin-bottom:10px;padding:0"></div>
+    <div id="secRows" class="card"></div>
+  </div>
+
+  <!-- HEALTH -->
+  <div id="tab-health" class="tp hidden">
+    <div class="sec-hd"><span class="sec-t">Site Health Score</span></div>
+    <div id="healthScore" class="card" style="margin-bottom:10px"></div>
+    <div class="sec-hd"><span class="sec-t">Core Web Vitals</span></div>
+    <div id="cwvGrid" class="cwv-grid card" style="padding:12px;margin-bottom:10px"></div>
+    <div class="sec-hd"><span class="sec-t">Performance</span></div>
+    <div id="perfPanel"></div>
+  </div>
+
+  <!-- TOOLS -->
+  <div id="tab-tools" class="tp hidden">
+    <div class="sec-hd"><span class="sec-t">Robots.txt Analyzer</span><button class="btn ghost xs" id="btnFetchRobots">Fetch</button></div>
+    <div id="robotsBox" class="card"><div class="empty-info">Click Fetch to analyze robots.txt</div></div>
+    <div class="sec-hd" style="margin-top:8px"><span class="sec-t">Sitemap.xml Analyzer</span><button class="btn ghost xs" id="btnFetchSitemap">Fetch</button></div>
+    <div id="sitemapBox" class="card"><div class="empty-info">Click Fetch to analyze sitemap.xml</div></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="tab-history" class="tp hidden">
+    <div class="sec-hd"><span class="sec-t">Analysis History</span><button class="btn danger xs" id="btnClearHistory">Clear All</button></div>
+    <div id="historyList" class="card"><div class="empty-info">No analysis history yet</div></div>
+  </div>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+<script src="render-chain.js"></script>
+<script src="render-seo.js"></script>
+<script src="render-links.js"></script>
+<script src="render-analytics.js"></script>
+<script src="popup.js"></script>
+</body></html>

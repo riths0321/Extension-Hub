@@ -1,31 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>UTM Link Builder</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="top">
-    <h2 id="title"></h2>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UTM Link Builder</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Campaign Studio</p>
+          <h1 id="title">UTM Link Builder</h1>
+          <p class="subtitle">Build clean tracking URLs for campaigns, ads, and content distribution without leaving the browser.</p>
+        </div>
+        <div class="hero-badge">
+          <span>Live Builder</span>
+        </div>
+      </header>
 
-  <input id="url" placeholder="Base URL * (Ctrl+U)" />
-  <input id="source" placeholder="utm_source *" />
-  <input id="medium" placeholder="utm_medium *" />
-  <input id="campaign" placeholder="utm_campaign *" />
-  <input id="term" placeholder="utm_term" />
-  <input id="content" placeholder="utm_content" />
+      <section class="builder-card">
+        <div class="section-head">
+          <div>
+            <p class="section-label">Link details</p>
+            <h2 class="section-title">UTM parameters</h2>
+          </div>
+          <span class="hint-chip">Required fields marked *</span>
+        </div>
 
-  <textarea id="result" readonly placeholder="Generated UTM URL"></textarea>
+        <div class="field-grid">
+          <label class="field">
+            <span class="label-text">Base URL *</span>
+            <input id="url" class="input" type="url" placeholder="https://example.com/product-page" />
+          </label>
 
-  <div class="row">
-    <button id="copy" title="Copy (Ctrl+C)">Copy</button>
-    <button id="clear" title="Clear (Esc)">Clear</button>
-  </div>
+          <div class="field-row">
+            <label class="field">
+              <span class="label-text">Source *</span>
+              <input id="source" class="input" type="text" placeholder="newsletter" />
+            </label>
+            <label class="field">
+              <span class="label-text">Medium *</span>
+              <input id="medium" class="input" type="text" placeholder="email" />
+            </label>
+          </div>
 
-  <p id="message"></p>
+          <label class="field">
+            <span class="label-text">Campaign *</span>
+            <input id="campaign" class="input" type="text" placeholder="spring_launch" />
+          </label>
 
-  <script src="popup.js"></script>
-</body>
+          <div class="field-row">
+            <label class="field">
+              <span class="label-text">Term</span>
+              <input id="term" class="input" type="text" placeholder="running+shoes" />
+            </label>
+            <label class="field">
+              <span class="label-text">Content</span>
+              <input id="content" class="input" type="text" placeholder="hero_banner" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="preview-card">
+        <div class="section-head">
+          <div>
+            <p class="section-label">Preview</p>
+            <h2 class="section-title">Generated UTM URL</h2>
+          </div>
+          <span id="statusPill" class="status-pill">Waiting</span>
+        </div>
+
+        <textarea id="result" class="result-box" readonly placeholder="Your generated UTM URL will appear here."></textarea>
+
+        <div class="meta-row">
+          <span id="lengthMeta" class="meta-text">0 characters</span>
+          <span class="meta-text">Shortcuts: Ctrl+U, Ctrl+C, Esc</span>
+        </div>
+
+        <div class="action-row">
+          <button id="copy" class="btn btn-primary" type="button">Copy URL</button>
+          <button id="clear" class="btn btn-secondary" type="button">Clear Fields</button>
+        </div>
+      </section>
+
+      <p id="message" class="message" aria-live="polite"></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
 </html>

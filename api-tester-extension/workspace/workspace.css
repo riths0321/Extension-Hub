@@ -1,0 +1,251 @@
+.workspace-shell {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.workspace-topbar {
+    margin-bottom: 18px;
+}
+
+.request-grid {
+    display: grid;
+    gap: 18px;
+}
+
+.graphql-variables-input {
+    min-height: 90px;
+}
+
+.request-builder-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.8fr);
+    gap: 18px;
+}
+
+.compact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.triple-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.request-controls {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.request-url-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+    gap: 10px;
+}
+
+.toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.subpanel {
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--surface-muted);
+}
+
+.subpanel-title {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-soft);
+}
+
+.websocket-message-input {
+    min-height: 96px;
+}
+
+.websocket-log-view {
+    min-height: 220px;
+    max-height: 340px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.tree-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tree-folder {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--surface-strong);
+}
+
+.tree-folder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--surface-muted);
+}
+
+.tree-folder-name {
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.tree-folder-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.tree-request {
+    width: 100%;
+    border: 0;
+    border-top: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tree-request:hover,
+.tree-request.active {
+    background: var(--primary-soft);
+}
+
+.response-tabs,
+.builder-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.response-pane,
+.builder-pane {
+    display: none;
+}
+
+.response-pane.active,
+.builder-pane.active {
+    display: block;
+}
+
+.result-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+    gap: 18px;
+}
+
+.result-split-spaced {
+    margin-top: 16px;
+}
+
+.output-actions-row {
+    margin-bottom: 10px;
+}
+
+.rich-preview {
+    width: 100%;
+    min-height: 240px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--surface-strong);
+    color: var(--text);
+    padding: 16px;
+    overflow: auto;
+}
+
+.diff-added {
+    color: #22c55e;
+}
+
+.diff-removed {
+    color: #ef4444;
+}
+
+.toast {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 9999;
+    min-width: 220px;
+    max-width: 360px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: var(--toast-bg);
+    color: #ffffff;
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+[data-theme="dark"] .diff-added {
+    color: #4ade80;
+}
+
+[data-theme="dark"] .diff-removed {
+    color: #fca5a5;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.assertion-item {
+    margin-bottom: 8px;
+}
+
+.assertion-status {
+    font-weight: 800;
+}
+
+.assertion-pass {
+    color: #16a34a;
+}
+
+.assertion-fail {
+    color: #dc2626;
+}
+
+[data-theme="dark"] .assertion-pass {
+    color: #4ade80;
+}
+
+[data-theme="dark"] .assertion-fail {
+    color: #fca5a5;
+}
+
+@media (max-width: 1280px) {
+    .request-builder-grid,
+    .result-split {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 860px) {
+    .request-controls,
+    .request-url-grid,
+    .compact-grid,
+    .triple-grid {
+        grid-template-columns: 1fr;
+    }
+}

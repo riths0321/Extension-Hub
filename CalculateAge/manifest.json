@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Age Calculator",
-  "version": "1.0",
+  "version": "1.2.0",
   "description": "Calculate your exact age instantly.",
   "action": {
     "default_popup": "index.html",
@@ -16,5 +16,8 @@
     "48": "logo.png",
     "128": "logo.png"
   },
-  "permissions": []
+  "permissions": ["storage"],
+  "content_security_policy": {
+     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self'"
+  }
 }

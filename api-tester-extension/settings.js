@@ -1,103 +1,75 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
-    const backBtn = document.getElementById('backBtn');
-    const saveBtn = document.getElementById('saveSettings');
-    const resetBtn = document.getElementById('resetSettings');
-    
-    // Default settings - No theme needed
-    const defaultSettings = {
-        autoFormat: true,
-        showResponseTime: true,
-        autoCopy: false,
-        historyLimit: 20,
-        requestTimeout: 60,
-        defaultContentType: 'application/json'
+import { defaultSettings, ensureSeedData, getSettings, saveSettings } from "./modules/storage.js";
+
+const els = {};
+
+function $(id) {
+    return document.getElementById(id);
+}
+
+function bindElements() {
+    ["theme", "autoFormat", "autoCopy", "defaultContentType", "requestTimeout", "historyLimit", "safeMode", "allowPrivateNetwork", "enableBackgroundSchedules", "saveSettings", "resetSettings", "openWorkspace"].forEach((id) => {
+        els[id] = $(id);
+    });
+}
+
+function applyTheme(theme) {
+    document.body.setAttribute("data-theme", theme);
+}
+
+function loadIntoForm(settings) {
+    els.theme.value = settings.theme;
+    els.autoFormat.checked = settings.autoFormat;
+    els.autoCopy.checked = settings.autoCopy;
+    els.defaultContentType.value = settings.defaultContentType;
+    els.requestTimeout.value = settings.requestTimeout;
+    els.historyLimit.value = settings.historyLimit;
+    els.safeMode.checked = Boolean(settings.safeMode);
+    els.allowPrivateNetwork.checked = Boolean(settings.allowPrivateNetwork);
+    els.enableBackgroundSchedules.checked = Boolean(settings.enableBackgroundSchedules);
+    applyTheme(settings.theme);
+}
+
+function collectForm() {
+    return {
+        theme: els.theme.value,
+        autoFormat: els.autoFormat.checked,
+        autoCopy: els.autoCopy.checked,
+        defaultContentType: els.defaultContentType.value,
+        requestTimeout: Math.max(5, Number(els.requestTimeout.value || 45)),
+        historyLimit: Math.max(10, Number(els.historyLimit.value || 50)),
+        safeMode: els.safeMode.checked,
+        allowPrivateNetwork: els.allowPrivateNetwork.checked,
+        enableBackgroundSchedules: els.enableBackgroundSchedules.checked
     };
-    
-    let currentSettings = {};
-    
-    // Initialize
-    loadSettings();
-    
-    // Event Listeners
-    backBtn.addEventListener('click', function() {
-        window.close();
+}
+
+async function init() {
+    bindElements();
+    await ensureSeedData();
+    let settings = await getSettings();
+    loadIntoForm(settings);
+
+    els.theme.addEventListener("change", () => applyTheme(els.theme.value));
+
+    els.saveSettings.addEventListener("click", async () => {
+        settings = collectForm();
+        await saveSettings(settings);
+        applyTheme(settings.theme);
+        els.saveSettings.textContent = "Saved";
+        window.setTimeout(() => {
+            els.saveSettings.textContent = "Save";
+        }, 1400);
     });
-    
-    saveBtn.addEventListener('click', saveSettings);
-    resetBtn.addEventListener('click', resetSettings);
-    
-    // Functions
-    
-    function loadSettings() {
-        chrome.storage.local.get(['extensionSettings'], function(result) {
-            if (result.extensionSettings) {
-                currentSettings = {...defaultSettings, ...result.extensionSettings};
-            } else {
-                currentSettings = {...defaultSettings};
-            }
-            applySettingsToUI();
-        });
-    }
-    
-    function applySettingsToUI() {
-        // Set checkboxes and selects
-        document.getElementById('autoFormat').checked = currentSettings.autoFormat;
-        document.getElementById('showResponseTime').checked = currentSettings.showResponseTime;
-        document.getElementById('autoCopy').checked = currentSettings.autoCopy;
-        document.getElementById('historyLimit').value = currentSettings.historyLimit;
-        document.getElementById('requestTimeout').value = currentSettings.requestTimeout;
-        document.getElementById('defaultContentType').value = currentSettings.defaultContentType;
-    }
-    
-    function saveSettings() {
-        // Collect settings from UI
-        currentSettings.autoFormat = document.getElementById('autoFormat').checked;
-        currentSettings.showResponseTime = document.getElementById('showResponseTime').checked;
-        currentSettings.autoCopy = document.getElementById('autoCopy').checked;
-        currentSettings.historyLimit = parseInt(document.getElementById('historyLimit').value);
-        currentSettings.requestTimeout = parseInt(document.getElementById('requestTimeout').value);
-        currentSettings.defaultContentType = document.getElementById('defaultContentType').value;
-        
-        // Save to storage
-        chrome.storage.local.set({ extensionSettings: currentSettings }, function() {
-            // Show success message
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = '✓ Saved!';
-            saveBtn.style.background = 'linear-gradient(135deg, #10B981, #34D399)';
-            
-            setTimeout(() => {
-                saveBtn.textContent = originalText;
-                saveBtn.style.background = '';
-            }, 1500);
-            
-            // Update popup if it's open
-            chrome.runtime.sendMessage({
-                action: 'settingsUpdated',
-                settings: currentSettings
-            });
-        });
-    }
-    
-    function resetSettings() {
-        if (confirm('Reset all settings to defaults?')) {
-            currentSettings = {...defaultSettings};
-            applySettingsToUI();
-            
-            // Show reset confirmation
-            const originalText = resetBtn.textContent;
-            resetBtn.textContent = '✓ Reset!';
-            
-            setTimeout(() => {
-                resetBtn.textContent = originalText;
-            }, 1500);
-        }
-    }
-    
-    // Listen for messages from popup
-    chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-        if (message.action === 'getSettings') {
-            sendResponse(currentSettings);
-        }
+
+    els.resetSettings.addEventListener("click", async () => {
+        settings = defaultSettings();
+        await saveSettings(settings);
+        loadIntoForm(settings);
     });
-});
+
+    els.openWorkspace.addEventListener("click", () => {
+        chrome.tabs.create({ url: chrome.runtime.getURL("workspace/workspace.html") });
+    });
+}
+
+init();

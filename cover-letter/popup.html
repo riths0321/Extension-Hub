@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cover Letter Studio</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <header class="hero">
+      <p class="kicker">Application Toolkit</p>
+      <h1>Cover Letter Studio</h1>
+      <p class="subline">Choose your flow: upload resume file + JD or fill full details manually.</p>
+    </header>
+
+    <section class="card mode-card" aria-label="Generation mode">
+      <h2>Choose Mode</h2>
+      <div class="mode-switch" role="tablist" aria-label="Cover letter mode">
+        <button id="modeUpload" class="mode-btn active" type="button" data-mode="upload" role="tab" aria-selected="true">
+          Upload Resume + JD
+        </button>
+        <button id="modeManual" class="mode-btn" type="button" data-mode="manual" role="tab" aria-selected="false">
+          Manual Form Fill
+        </button>
+      </div>
+    </section>
+
+    <section id="uploadModeSection" class="card mode-section" aria-label="Upload workflow">
+      <h2>Upload Workflow</h2>
+      <div class="uploader-row">
+        <label class="file-label" for="resumeFile">Resume File (PDF, DOC, DOCX, TXT)</label>
+        <input id="resumeFile" class="file-input" type="file" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.json" />
+      </div>
+      <p id="resumeMeta" class="helper-text">No resume file selected.</p>
+
+      <label>
+        Job Description *
+        <textarea id="jobDescriptionUpload" rows="6" placeholder="Paste full job description here..."></textarea>
+      </label>
+    </section>
+
+    <section id="manualModeSection" class="card mode-section hidden" aria-label="Manual workflow">
+      <h2>Manual Workflow</h2>
+      <div class="grid two-col">
+        <label>
+          Full Name *
+          <input id="name" type="text" autocomplete="name" placeholder="Aman Sharma" />
+        </label>
+        <label>
+          Phone
+          <input id="phone" type="tel" autocomplete="tel" placeholder="+91 98XXXXXXXX" />
+        </label>
+      </div>
+
+      <div class="grid two-col">
+        <label>
+          Email
+          <input id="email" type="email" autocomplete="email" placeholder="you@email.com" />
+        </label>
+        <label>
+          Job Title *
+          <input id="job" type="text" placeholder="Frontend Developer" />
+        </label>
+      </div>
+
+      <div class="grid two-col">
+        <label>
+          Company *
+          <input id="company" type="text" placeholder="Acme Labs" />
+        </label>
+        <label>
+          Hiring Manager
+          <input id="manager" type="text" placeholder="Hiring Manager" />
+        </label>
+      </div>
+
+      <label>
+        Company Address
+        <input id="address" type="text" placeholder="City, State" />
+      </label>
+      <label>
+        Subject
+        <input id="subject" type="text" placeholder="Application for Frontend Developer" />
+      </label>
+      <label>
+        Experience
+        <textarea id="experience" rows="3" placeholder="3+ years building responsive products..."></textarea>
+      </label>
+      <label>
+        Skills
+        <textarea id="skills" rows="3" placeholder="React, TypeScript, accessibility, performance..."></textarea>
+      </label>
+      <label>
+        Job Description (optional)
+        <textarea id="jobDescriptionManual" rows="4" placeholder="Paste JD for better tailoring..."></textarea>
+      </label>
+    </section>
+
+    <section class="actions">
+      <button id="analyze" class="btn btn-accent" type="button">Analyze Inputs</button>
+      <button id="generate" class="btn btn-primary" type="button">Generate Letter</button>
+      <button id="copy" class="btn btn-secondary" type="button" disabled>Copy</button>
+      <button id="download" class="btn btn-secondary" type="button" disabled>Download .txt</button>
+      <button id="reset" class="btn btn-ghost" type="button">Reset</button>
+    </section>
+
+    <section class="card output-card" aria-label="Generated cover letter">
+      <div class="output-header">
+        <h2>Generated Letter</h2>
+        <span id="charCount" class="pill">0 chars</span>
+      </div>
+      <pre id="output">No letter generated yet.</pre>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

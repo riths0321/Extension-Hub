@@ -1,7 +1,5 @@
 # 📖 Dictionary Search
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **Dictionary Search** is your instant vocabulary companion. Double-click any word on a webpage or type it into the popup to get definitions, synonyms, and pronunciation. Expand your vocabulary without breaking your reading flow.
 

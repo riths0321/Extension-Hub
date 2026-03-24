@@ -1,5 +1,4 @@
 /* MIDNIGHT PRO PREMIUM UI - Volume Booster Ultimate */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* 1. Reset & Core Variables */
 :root {
@@ -79,6 +78,10 @@ body {
 
 /* Utility: Hidden Elements */
 .is-hidden {
+    display: none !important;
+}
+
+.u-hidden-legacy {
     display: none !important;
 }
 
@@ -353,6 +356,24 @@ body {
 /* Equalizer Sliders */
 .c-equalizer section {
     margin-bottom: 12px;
+}
+
+/* Replaces inline styles from popup.html for CSP-safe markup */
+.c-equalizer__block {
+    width: 100%;
+}
+
+.c-equalizer__control {
+    width: 100%;
+    border: 1px solid var(--border-glass);
+    margin-top: .25em;
+    padding: .5em;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card-hover);
+}
+
+.c-equalizer__control-input {
+    width: 100%;
 }
 
 .c-equalizer input[type=range] {

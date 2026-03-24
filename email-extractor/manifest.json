@@ -2,12 +2,14 @@
   "manifest_version": 3,
   "name": "Email Extractor Pro",
   "version": "2.0.0",
-  "description": "Extract and manage email addresses from any webpage with a beautiful, modern interface",
+  "description": "Extract email addresses from the current webpage only after user clicks the extension.",
+
   "permissions": [
     "activeTab",
     "storage",
     "scripting"
   ],
+
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -16,9 +18,14 @@
       "128": "icons/icon128.png"
     }
   },
+
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
   }
 }

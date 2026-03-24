@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temp Mail Vault</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Private Inbox</p>
+        <h1>Temp Mail Vault</h1>
+        <p class="subtitle">Use a disposable inbox for OTPs, signup codes, and verification emails without exposing your personal address.</p>
+      </div>
+      <div class="hero-badge">
+        <span id="statusBadge">Ready</span>
+      </div>
+    </header>
+
+    <section class="inbox-card">
+      <div class="section-head">
+        <span>Temporary Address</span>
+        <button id="newInboxBtn" class="mini-btn" type="button">New Inbox</button>
+      </div>
+      <div class="address-wrap">
+        <div id="emailAddress" class="address-value">No inbox created yet</div>
+        <button id="copyAddressBtn" class="copy-btn" type="button">Copy</button>
+      </div>
+      <div class="meta-row">
+        <span id="domainLabel">Domain unavailable</span>
+        <span id="messageCount">0 messages</span>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <button id="generateBtn" class="btn btn-primary" type="button">Generate Inbox</button>
+      <button id="refreshBtn" class="btn btn-secondary" type="button">Refresh</button>
+      <button id="resetBtn" class="btn btn-muted" type="button">Burn Inbox</button>
+    </section>
+
+    <section class="list-card">
+      <div class="section-head">
+        <span>Inbox Feed</span>
+        <span id="lastUpdated">Not synced</span>
+      </div>
+      <div id="messageList" class="message-list">
+        <div class="empty-state">Create an inbox to start receiving temporary emails.</div>
+      </div>
+    </section>
+
+    <section class="preview-card">
+      <div class="section-head">
+        <span>Message Preview</span>
+        <span id="previewMeta">No message selected</span>
+      </div>
+      <div id="otpPanel" class="otp-panel hidden"></div>
+      <h2 id="previewSubject" class="preview-subject">No message selected</h2>
+      <div id="previewBody" class="preview-body">Open an email from the inbox feed to read it here.</div>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

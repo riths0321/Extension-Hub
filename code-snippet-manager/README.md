@@ -1,7 +1,5 @@
 # 💻 Code Snippet Manager
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **Code Snippet Manager** is a personal library for your most-used code blocks. Whether it's a complex Regex, a standard CSS reset, or a reusable React component, save it here with a title and language tag. Copy it back to your clipboard with a single click.
 

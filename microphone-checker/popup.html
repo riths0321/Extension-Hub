@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Microphone Checker</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1 class="title">Microphone Checker</h1>
+                <p class="subtitle">Test your microphone</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="status-section" id="statusSection">
+                <div class="status-card">
+                    <div class="status-icon" id="statusIcon">🎤</div>
+                    <div class="status-info">
+                        <p class="status-label">Device Status</p>
+                        <p class="status-value" id="deviceStatus">Checking...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="startBtn" class="btn btn-primary" title="Start microphone test" type="button">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">Start Test</span>
+                </button>
+                <button id="stopBtn" class="btn btn-secondary" disabled title="Stop microphone test" type="button">
+                    <span class="btn-icon">⏹</span>
+                    <span class="btn-text">Stop</span>
+                </button>
+            </div>
+
+            <div class="recording-actions">
+                <button id="downloadBtn" class="btn btn-secondary" disabled title="Download last recording" type="button">
+                    <span class="btn-icon">⬇</span>
+                    <span class="btn-text">Download Recording</span>
+                </button>
+                <audio id="playback" controls style="display: none;"></audio>
+            </div>
+
+            <div class="meter-container">
+                <div class="meter-label">Audio Level</div>
+                <div class="meter-wrapper">
+                    <div class="meter-bar" id="meterBar"></div>
+                    <div class="meter-fill" id="meterFill"></div>
+                </div>
+                <div class="meter-value" id="meterValue">0 dB</div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label class="info-label">Peak Level</label>
+                        <p class="info-value" id="peakLevel">-∞ dB</p>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Average Level</label>
+                        <p class="info-value" id="averageLevel">-∞ dB</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="frequency-container" id="frequencyContainer" style="display: none;">
+                <label class="frequency-label">Frequency Response</label>
+                <canvas id="frequencyCanvas" width="280" height="100"></canvas>
+            </div>
+
+            <div class="diagnostics-section">
+                <h3 class="diagnostics-title">Diagnostics</h3>
+                <div class="diagnostics-list" id="diagnosticsList">
+                    <p class="diagnostic-item">📋 Ready to test</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <button id="settingsBtn" class="icon-btn" title="Settings" type="button">⚙️</button>
+            <span class="version">v2.2</span>
+            <button id="helpBtn" class="icon-btn" title="Help" type="button">❓</button>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="modal-close" id="closeSettingsBtn" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label for="showFrequency" class="checkbox-label">
+                        <input type="checkbox" id="showFrequency" />
+                        <span>Show Frequency Response</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Help</h2>
+                <button class="modal-close" id="closeHelpBtn" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>How to use:</h4>
+                <ol>
+                    <li>Click Start Test.</li>
+                    <li>Speak into your microphone.</li>
+                    <li>Watch real-time audio levels.</li>
+                    <li>Click Stop when done.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

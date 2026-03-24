@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuickShot – Options</title>
+    <link rel="stylesheet" href="../ui.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="qs-page">
+      <header class="qs-topbar">
+        <div class="qs-brand">
+          <h1 class="qs-title">Options</h1>
+          <p class="qs-subtitle">Preferences (stored locally)</p>
+        </div>
+        <div class="qs-iconbar">
+          <button class="qs-btn" id="btn-open-history" type="button">History</button>
+        </div>
+      </header>
+
+      <section class="qs-card">
+        <div class="qs-card-hd">
+          <div>
+            <p class="qs-card-title">Export</p>
+            <p class="qs-card-sub">Format, filename and clipboard</p>
+          </div>
+        </div>
+        <div class="qs-card-bd">
+          <div class="qs-form">
+            <div class="qs-setting">
+              <div class="qs-left">
+                <div class="qs-name">Default format</div>
+                <div class="qs-desc">Used for Copy/Download</div>
+              </div>
+              <select class="qs-select" id="format">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+              </select>
+            </div>
+
+            <div class="qs-setting">
+              <div class="qs-left">
+                <div class="qs-name">Auto-copy after capture</div>
+                <div class="qs-desc">Best-effort (browser may require gesture)</div>
+              </div>
+              <button class="qs-switch" id="autoCopy" type="button" role="switch" aria-checked="false"></button>
+            </div>
+
+            <div class="qs-setting">
+              <div class="qs-left">
+                <div class="qs-name">Filename: include date</div>
+                <div class="qs-desc">e.g. screenshot-20260317</div>
+              </div>
+              <button class="qs-switch" id="includeDate" type="button" role="switch" aria-checked="true"></button>
+            </div>
+
+            <div class="qs-setting">
+              <div class="qs-left">
+                <div class="qs-name">Filename: include time</div>
+                <div class="qs-desc">e.g. -153012</div>
+              </div>
+              <button class="qs-switch" id="includeTime" type="button" role="switch" aria-checked="true"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="qs-card">
+        <div class="qs-card-hd">
+          <div>
+            <p class="qs-card-title">Appearance</p>
+            <p class="qs-card-sub">Light/Dark theme</p>
+          </div>
+        </div>
+        <div class="qs-card-bd">
+          <div class="qs-form">
+            <div class="qs-setting">
+              <div class="qs-left">
+                <div class="qs-name">Theme</div>
+                <div class="qs-desc">Switch between Light and Dark</div>
+              </div>
+              <select class="qs-select" id="theme">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="qs-actions-row">
+        <button class="qs-btn qs-btn-danger" id="reset" type="button">Reset settings</button>
+      </div>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
+

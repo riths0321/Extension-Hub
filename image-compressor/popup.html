@@ -2,43 +2,112 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Image Compressor</title>
+    <title>Quick Image Compressor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <main class="container">
+    <div class="app">
+
+      <!-- Header -->
       <header class="header">
-        <h3 class="title">🖼 Image Compressor</h3>
-        <p class="subtitle">Compress images locally — no uploads</p>
-      </header>
-
-      <section class="card">
-        <label class="dropzone" for="fileInput">
-          <input type="file" id="fileInput" accept="image/*" hidden />
-          <span class="drop-text">Click or drag image here</span>
-          <span id="fileName" class="file-name"></span>
-        </label>
-
-        <div class="field">
-          <label for="quality">Quality</label>
-          <div class="range-row">
-            <input type="range" id="quality" min="10" max="100" value="70" />
-            <span id="qualityVal">70%</span>
+        <div class="logo-wrap">
+          <div class="logo-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="14" rx="2" stroke="#4ade80" stroke-width="1.8" fill="none"/>
+              <circle cx="8" cy="8" r="1.5" fill="#4ade80"/>
+              <path d="M3 13l5-4 4 3 3-2.5 6 4.5" stroke="#4ade80" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M12 19v-3M9 19h6" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="title">Quick Compressor</h1>
+            <p class="subtitle">Local • Private • Offline</p>
           </div>
         </div>
+      </header>
 
-        <button id="compressBtn" class="primary" disabled>
-          Compress Image
-        </button>
+      <!-- Drop Zone -->
+      <label class="dropzone" id="dropzone" for="fileInput">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <div class="drop-inner" id="dropInner">
+          <div class="drop-icon" id="dropIcon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="drop-text">Drop image here</p>
+          <p class="drop-sub">or <span class="drop-link">browse file</span></p>
+        </div>
+        <!-- Preview state -->
+        <div class="preview-inner hidden" id="previewInner">
+          <canvas id="previewCanvas"></canvas>
+          <div class="preview-overlay">
+            <span id="previewName" class="preview-name"></span>
+            <span id="previewSize" class="preview-size"></span>
+          </div>
+        </div>
+      </label>
 
-        <div id="info" class="info"></div>
-      </section>
+      <!-- Format Selector -->
+      <div class="field-row">
+        <label class="field-label">Format</label>
+        <div class="seg-control" id="formatSeg">
+          <button class="seg-btn active" data-value="image/jpeg">JPEG</button>
+          <button class="seg-btn" data-value="image/webp">WebP</button>
+          <button class="seg-btn" data-value="image/png">PNG</button>
+        </div>
+      </div>
 
-      <footer class="footer">
-        <small>Private • Offline • No tracking</small>
-      </footer>
-    </main>
+      <!-- Quality Slider -->
+      <div class="field-row" id="qualityRow">
+        <label class="field-label">Quality <span id="qualityVal" class="field-value">80%</span></label>
+        <div class="slider-track">
+          <input type="range" id="quality" min="1" max="100" value="80" />
+          <div class="slider-fill" id="sliderFill"></div>
+        </div>
+        <div class="slider-marks">
+          <span>Low</span><span>Medium</span><span>High</span>
+        </div>
+      </div>
+
+      <!-- Resize -->
+      <div class="field-row">
+        <label class="field-label">Max Width <span id="resizeVal" class="field-value">Original</span></label>
+        <div class="seg-control" id="resizeSeg">
+          <button class="seg-btn active" data-value="0">None</button>
+          <button class="seg-btn" data-value="1280">1280</button>
+          <button class="seg-btn" data-value="800">800</button>
+          <button class="seg-btn" data-value="480">480</button>
+        </div>
+      </div>
+
+      <!-- Result Bar -->
+      <div class="result-bar hidden" id="resultBar">
+        <div class="result-item">
+          <span class="result-label">Original</span>
+          <span class="result-val" id="origSize">—</span>
+        </div>
+        <div class="result-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Compressed</span>
+          <span class="result-val" id="compSize">—</span>
+        </div>
+        <div class="result-badge" id="savingsBadge"></div>
+      </div>
+
+      <!-- Compress Button -->
+      <button id="compressBtn" class="btn-primary" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M15 3H9v7l3 3 3-3V3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="btnText">Compress & Download</span>
+      </button>
+
+      <footer class="footer">🔒 All processing happens locally in your browser</footer>
+    </div>
 
     <script src="popup.js"></script>
   </body>

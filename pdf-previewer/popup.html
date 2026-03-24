@@ -8,9 +8,18 @@
 <body>
   <h3>PDF Previewer</h3>
 
-  <input type="file" id="fileInput" accept="application/pdf" style="display: none;" />
-  <button id="selectFileBtn">Select PDF File</button>
+  <!-- Hidden File Input -->
+  <input type="file" id="fileInput" accept="application/pdf" hidden />
 
+  <!-- Action Buttons -->
+  <div class="button-group">
+    <button id="selectFileBtn">Select PDF File</button>
+    <button id="openFullBtn" class="secondary-btn" disabled>
+      Open Full Screen
+    </button>
+  </div>
+
+  <!-- Small Preview Area -->
   <div id="viewerContainer">
     <embed id="pdfViewer" type="application/pdf" />
   </div>

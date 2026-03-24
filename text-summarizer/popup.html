@@ -2,17 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Text Summarizer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h3>Text Summarizer</h3>
+  <main class="editor">
+    <header class="masthead">
+      <div class="masthead-copy">
+        <p class="kicker">Briefing Mode</p>
+        <h1>Text Summarizer</h1>
+        <p class="deck">Condense reports, notes, and articles into a tighter reading brief.</p>
+      </div>
+      <div class="seal" aria-hidden="true"></div>
+    </header>
 
-  <textarea id="input" placeholder="Paste your text here..."></textarea>
+    <section class="ledger">
+      <div class="ledger-item">
+        <span class="ledger-label">Source</span>
+        <strong id="inputCount">0 words</strong>
+      </div>
+      <div class="ledger-item">
+        <span class="ledger-label">Summary</span>
+        <strong id="outputCount">0 words</strong>
+      </div>
+      <div class="ledger-item">
+        <span class="ledger-label">Compression</span>
+        <strong id="compressionValue">30%</strong>
+      </div>
+    </section>
 
-  <button id="summarize">Summarize</button>
+    <section class="sheet">
+      <div class="sheet-head">
+        <span>Original Text</span>
+        <span id="sentenceCount">0 sentences</span>
+      </div>
+      <textarea id="input" placeholder="Paste your article, notes, or long-form text here..."></textarea>
+    </section>
 
-  <div id="output" class="output"></div>
+    <section class="control-bar">
+      <div class="sheet-head">
+        <label for="summaryRatio">Summary Density</label>
+        <span id="ratioLabel">30%</span>
+      </div>
+      <input type="range" id="summaryRatio" min="10" max="60" step="5" value="30">
+    </section>
+
+    <section class="toolbar">
+      <button id="summarize" class="btn btn-primary" type="button">Generate Brief</button>
+      <button id="copy" class="btn btn-secondary" type="button">Copy</button>
+      <button id="clear" class="btn btn-muted" type="button">Reset</button>
+    </section>
+
+    <section class="summary-sheet">
+      <div class="sheet-head">
+        <span>Summary Brief</span>
+        <span id="statusText">Ready</span>
+      </div>
+      <div id="output" class="output">Your summary will appear here.</div>
+    </section>
+  </main>
 
   <script src="popup.js"></script>
 </body>

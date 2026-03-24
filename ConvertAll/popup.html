@@ -1,30 +1,45 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Unit Converter</title>
-  <link rel="stylesheet" href="popup.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ConvertAll - Calculator & Converter</title>
+  <link rel="stylesheet" href="popup.css"/>
 </head>
 <body>
   <header class="app-header">
-    <h1 class="app-title">ConvertAll</h1>
+    <div class="header-left">
+      <div class="app-icon">C</div>
+      <h1 class="app-title">ConvertAll</h1>
+      <span class="app-badge">v2.0</span>
+    </div>
+    <div class="header-actions">
+      <button id="themeToggle" class="icon-btn" title="Toggle theme">🌙</button>
+      <button id="settingsBtn" class="icon-btn" title="Settings">⚙️</button>
+    </div>
   </header>
 
-  <main class="glass-panel">
-    <section class="form-group">
+  <!-- Mode Toggle -->
+  <div class="mode-toggle">
+    <button id="modeConverter" class="mode-btn active">Converter</button>
+    <button id="modeCalculator" class="mode-btn">Calculator</button>
+  </div>
+
+  <!-- ══════════════ CONVERTER SECTION ══════════════ -->
+  <div id="converterSection" class="glass-panel">
+    <div class="form-group">
       <label for="category">Measurement Category</label>
       <select id="category" aria-label="Select Category"></select>
-    </section>
+    </div>
 
     <div class="conversion-section">
       <div class="unit-row">
         <div class="form-group">
           <label for="inputValue">Amount</label>
-          <input type="number" id="inputValue" placeholder="0.00" step="any" inputmode="decimal" />
+          <input type="number" id="inputValue" placeholder="0.00" step="any" inputmode="decimal"/>
         </div>
         <div class="form-group">
-          <label for="fromUnit">From Unit</label>
+          <label for="fromUnit">From</label>
           <select id="fromUnit"></select>
         </div>
       </div>
@@ -36,20 +51,145 @@
       <div class="unit-row">
         <div class="form-group">
           <label for="outputValue">Result</label>
-          <input type="text" id="outputValue" readonly placeholder="Result" />
+          <input type="text" id="outputValue" readonly placeholder="0.00"/>
         </div>
         <div class="form-group">
-          <label for="toUnit">To Unit</label>
+          <label for="toUnit">To</label>
           <select id="toUnit"></select>
         </div>
       </div>
     </div>
 
+    <div class="recent-section" id="recentSection">
+      <div class="recent-title">Recent Conversions <span>click to reuse</span></div>
+      <div class="recent-grid" id="recentGrid"></div>
+    </div>
+
     <button id="copyBtn" class="btn-primary" type="button">
-      📋 Copy to Clipboard
+      <span>📋</span> Copy Result
     </button>
-  </main>
+  </div>
+
+  <!-- ══════════════ CALCULATOR SECTION ══════════════ -->
+  <div id="calculatorSection" class="glass-panel hidden">
+
+    <!-- Display -->
+    <div class="calc-display">
+      <div class="calc-history" id="calcHistory"></div>
+      <div class="calc-expression" id="calcExpression">0</div>
+      <div class="calc-result" id="calcResult"></div>
+    </div>
+
+    <!-- Angle mode + memory bar -->
+    <div class="calc-topbar">
+      <div class="angle-toggle" id="angleToggle">
+        <button class="angle-btn active" data-mode="DEG">DEG</button>
+        <button class="angle-btn" data-mode="RAD">RAD</button>
+        <button class="angle-btn" data-mode="GRAD">GRAD</button>
+      </div>
+      <div class="mem-bar">
+        <button class="mem-btn" data-mem="mc"  title="Memory Clear">MC</button>
+        <button class="mem-btn" data-mem="mr"  title="Memory Recall">MR</button>
+        <button class="mem-btn" data-mem="ms"  title="Memory Store">MS</button>
+        <button class="mem-btn" data-mem="m+"  title="Memory Add">M+</button>
+        <button class="mem-btn" data-mem="m-"  title="Memory Subtract">M−</button>
+      </div>
+    </div>
+
+    <!-- Buttons grid: 6 cols, scientific + basic -->
+    <div class="calc-grid">
+
+      <!-- Row 1: Clear / parentheses / backspace -->
+      <button class="calc-btn fn wide2" data-action="clear">AC</button>
+      <button class="calc-btn fn" data-action="sign">+/−</button>
+      <button class="calc-btn fn" data-action="percent">%</button>
+      <button class="calc-btn fn" data-action="paren">(  )</button>
+      <button class="calc-btn fn" data-action="backspace">⌫</button>
+      <button class="calc-btn op" data-action="divide">÷</button>
+
+      <!-- Row 2 -->
+      <button class="calc-btn sci" data-action="inv">INV</button>
+      <button class="calc-btn sci" data-action="sin">sin</button>
+      <button class="calc-btn num" data-value="7">7</button>
+      <button class="calc-btn num" data-value="8">8</button>
+      <button class="calc-btn num" data-value="9">9</button>
+      <button class="calc-btn op" data-action="multiply">×</button>
+
+      <!-- Row 3 -->
+      <button class="calc-btn sci" data-action="sqrt">√x</button>
+      <button class="calc-btn sci" data-action="cos">cos</button>
+      <button class="calc-btn num" data-value="4">4</button>
+      <button class="calc-btn num" data-value="5">5</button>
+      <button class="calc-btn num" data-value="6">6</button>
+      <button class="calc-btn op" data-action="subtract">−</button>
+
+      <!-- Row 4 -->
+      <button class="calc-btn sci" data-action="square">x²</button>
+      <button class="calc-btn sci" data-action="tan">tan</button>
+      <button class="calc-btn num" data-value="1">1</button>
+      <button class="calc-btn num" data-value="2">2</button>
+      <button class="calc-btn num" data-value="3">3</button>
+      <button class="calc-btn op" data-action="add">+</button>
+
+      <!-- Row 5 -->
+      <button class="calc-btn sci" data-action="cube">x³</button>
+      <button class="calc-btn sci" data-action="log">log</button>
+      <button class="calc-btn num wide2" data-value="0">0</button>
+      <button class="calc-btn num" data-value=".">.</button>
+      <button class="calc-btn eq" data-action="equals">=</button>
+
+      <!-- Row 6: extra scientific -->
+      <button class="calc-btn sci" data-action="power">xʸ</button>
+      <button class="calc-btn sci" data-action="ln">ln</button>
+      <button class="calc-btn sci" data-action="exp10">10ˣ</button>
+      <button class="calc-btn sci" data-action="fact">n!</button>
+      <button class="calc-btn sci" data-action="recip">1/x</button>
+      <button class="calc-btn sci" data-action="abs">|x|</button>
+
+      <!-- Row 7: constants + more -->
+      <button class="calc-btn sci" data-action="pi">π</button>
+      <button class="calc-btn sci" data-action="e">e</button>
+      <button class="calc-btn sci" data-action="cbrt">∛x</button>
+      <button class="calc-btn sci" data-action="nthroot">ˣ√y</button>
+      <button class="calc-btn sci" data-action="log2">log₂</button>
+      <button class="calc-btn sci" data-action="exp">eˣ</button>
+
+      <!-- Row 8: hyperbolic + extra -->
+      <button class="calc-btn sci" data-action="sinh">sinh</button>
+      <button class="calc-btn sci" data-action="cosh">cosh</button>
+      <button class="calc-btn sci" data-action="tanh">tanh</button>
+      <button class="calc-btn sci" data-action="asin">sin⁻¹</button>
+      <button class="calc-btn sci" data-action="acos">cos⁻¹</button>
+      <button class="calc-btn sci" data-action="atan">tan⁻¹</button>
+
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>⚙️ Settings</h3>
+      <div class="setting-item">
+        <label>Decimal Precision: <span id="precisionValue">4</span></label>
+        <input type="range" id="precisionSlider" min="0" max="10" step="1" value="4"/>
+      </div>
+      <div class="setting-item">
+        <label class="checkbox-label">
+          <input type="checkbox" id="thousandsSeparator" checked/>
+          Use thousands separator (e.g., 1,000)
+        </label>
+      </div>
+      <div class="setting-item">
+        <label class="checkbox-label">
+          <input type="checkbox" id="autoCopy"/>
+          Auto-copy results to clipboard
+        </label>
+      </div>
+      <button id="closeSettings" class="modal-close">Save &amp; Close</button>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
+  <script src="js/dropdowns.js"></script>
 </body>
 </html>

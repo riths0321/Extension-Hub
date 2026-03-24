@@ -15,10 +15,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function init() {
         // Get current tab
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) {
-                currentTabId = tabs[0].id;
-            }
+            currentTabId = tabs?.[0]?.id || null;
         });
+
         
         // Load settings
         loadSettings();
@@ -37,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function createNewNote() {
         if (!currentTabId) {
-            alert('Please refresh and try again');
+            showButtonFeedback(newNoteBtn, 'Refresh page first');
             return;
         }
 
@@ -105,13 +104,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showButtonFeedback(button, text) {
-        const originalHTML = button.innerHTML;
-        button.innerHTML = `<i class="fas fa-check"></i> ${text}`;
-        button.disabled = true;
-        
-        setTimeout(() => {
-            button.innerHTML = originalHTML;
-            button.disabled = false;
-        }, 1500);
-    }
+    const originalText = button.textContent;
+    button.textContent = `✓ ${text}`;
+    button.disabled = true;
+
+    setTimeout(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+    }, 1500);
+}
+
 });

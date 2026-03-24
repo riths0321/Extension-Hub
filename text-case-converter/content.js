@@ -1,265 +1,221 @@
-// SIMPLE Content Script - Just Works!
-console.log('Text Case Converter content script loaded on:', window.location.href);
+let lastSelectionText = "";
+let lastSelectionRange = null;
+let lastEditableTarget = null;
 
-// Store last selection
-let lastSelection = '';
-let lastSelectionTime = 0;
+document.addEventListener("selectionchange", captureSelection);
+document.addEventListener("mouseup", () => window.setTimeout(captureSelection, 40));
+document.addEventListener("keyup", () => window.setTimeout(captureSelection, 40));
 
-// Function to detect ALL text on page
+function captureSelection() {
+  const activeElement = document.activeElement;
+  if (isTextField(activeElement)) {
+    const selectedText = getFieldSelection(activeElement);
+    if (selectedText) {
+      lastSelectionText = selectedText;
+      lastEditableTarget = activeElement;
+      notifySelection(selectedText, "Input selection");
+    }
+    return;
+  }
+
+  const selection = window.getSelection();
+  const selectedText = selection ? selection.toString().trim() : "";
+  if (!selectedText) {
+    return;
+  }
+
+  if (selection.rangeCount > 0) {
+    lastSelectionRange = selection.getRangeAt(0).cloneRange();
+  }
+
+  const anchorElement = selection.anchorNode?.nodeType === Node.TEXT_NODE
+    ? selection.anchorNode.parentElement
+    : selection.anchorNode;
+
+  if (anchorElement?.closest?.("[contenteditable='true']")) {
+    lastEditableTarget = anchorElement.closest("[contenteditable='true']");
+  } else {
+    lastEditableTarget = null;
+  }
+
+  lastSelectionText = selectedText;
+  notifySelection(selectedText, "Page selection");
+}
+
+function notifySelection(text, source) {
+  chrome.runtime.sendMessage({
+    action: "textSelected",
+    text,
+    source
+  });
+}
+
 function scanPageForText() {
-    console.log('Scanning page for text...');
-    
-    const results = [];
-    
-    // 1. First check for selected text (most important)
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-    
-    if (selectedText && selectedText.length > 0) {
-        console.log('Found selected text:', selectedText.substring(0, 50) + '...');
-        results.push({
-            text: selectedText,
-            source: 'Selected Text',
-            type: 'selection',
-            length: selectedText.length
-        });
+  const results = [];
+  const seen = new Set();
+
+  addResult(results, seen, lastSelectionText, "Selected text");
+
+  document.querySelectorAll("textarea, input[type='text'], input[type='search'], input[type='email']").forEach((element) => {
+    addResult(results, seen, element.value, element.tagName === "TEXTAREA" ? "Textarea" : "Input field");
+  });
+
+  document.querySelectorAll("[contenteditable='true']").forEach((element) => {
+    addResult(results, seen, element.innerText || element.textContent, "Editable content");
+  });
+
+  const blocks = document.querySelectorAll("h1, h2, h3, h4, h5, h6, p, li, blockquote, figcaption");
+  for (const block of blocks) {
+    if (results.length >= 18) {
+      break;
     }
-    
-    // 2. Check textareas and inputs
-    const textAreas = document.querySelectorAll('textarea');
-    textAreas.forEach((ta, index) => {
-        if (ta.value && ta.value.trim()) {
-            results.push({
-                text: ta.value.trim(),
-                source: 'Text Area',
-                type: 'textarea',
-                length: ta.value.length
-            });
-        }
-    });
-    
-    const textInputs = document.querySelectorAll('input[type="text"], input[type="search"], input[type="email"]');
-    textInputs.forEach((input, index) => {
-        if (input.value && input.value.trim()) {
-            results.push({
-                text: input.value.trim(),
-                source: 'Input Field',
-                type: 'input',
-                length: input.value.length
-            });
-        }
-    });
-    
-    // 3. Check contenteditable areas
-    const editableAreas = document.querySelectorAll('[contenteditable="true"]');
-    editableAreas.forEach((area, index) => {
-        const text = area.textContent || area.innerText;
-        if (text && text.trim()) {
-            results.push({
-                text: text.trim(),
-                source: 'Editable Content',
-                type: 'editable',
-                length: text.length
-            });
-        }
-    });
-    
-    // 4. Get some paragraphs (limit to avoid too much data)
-    const paragraphs = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, span, li');
-    let pCount = 0;
-    
-    for (const p of paragraphs) {
-        if (pCount >= 10) break; // Limit to 10 paragraphs
-        
-        const text = p.textContent || p.innerText;
-        if (text && text.trim() && text.length > 10) {
-            // Skip if text is too long
-            const cleanText = text.trim().substring(0, 500);
-            results.push({
-                text: cleanText,
-                source: p.tagName,
-                type: 'paragraph',
-                length: cleanText.length
-            });
-            pCount++;
-        }
-    }
-    
-    console.log('Scan complete. Found', results.length, 'text items');
-    
-    // Return results
-    if (results.length > 0) {
-        return {
-            items: results,
-            pageTitle: document.title,
-            url: window.location.href,
-            timestamp: Date.now()
-        };
-    }
-    
-    return null;
+
+    addResult(results, seen, block.innerText || block.textContent, block.tagName.toLowerCase());
+  }
+
+  return results;
 }
 
-// Function to replace selected text
-function replaceSelectedText(newText) {
-    console.log('Replacing text with:', newText.substring(0, 50) + '...');
-    
-    try {
-        // Try to get current selection
-        const selection = window.getSelection();
-        
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            
-            // Save the selection position
-            const startOffset = range.startOffset;
-            const endOffset = range.endOffset;
-            const startContainer = range.startContainer;
-            const endContainer = range.endContainer;
-            
-            // Replace the text
-            range.deleteContents();
-            range.insertNode(document.createTextNode(newText));
-            
-            // Try to restore selection
-            try {
-                const newRange = document.createRange();
-                newRange.setStart(startContainer, startOffset);
-                newRange.setEnd(endContainer, endOffset);
-                selection.removeAllRanges();
-                selection.addRange(newRange);
-            } catch (e) {
-                // If we can't restore selection, that's okay
-                console.log('Could not restore selection:', e.message);
-            }
-            
-            console.log('Text replaced successfully');
-            return true;
-        } else {
-            console.log('No active selection to replace');
-            return false;
-        }
-    } catch (error) {
-        console.error('Error replacing text:', error);
-        return false;
-    }
+function addResult(results, seen, rawText, source) {
+  const text = (rawText || "").replace(/\s+/g, " ").trim();
+  if (!text || text.length < 2) {
+    return;
+  }
+
+  const normalized = text.toLowerCase();
+  if (seen.has(normalized)) {
+    return;
+  }
+
+  seen.add(normalized);
+  results.push({
+    text: text.length > 900 ? `${text.slice(0, 900)}...` : text,
+    source
+  });
 }
 
-// Listen for selection changes
-document.addEventListener('selectionchange', function() {
+function applyText(newText) {
+  const activeElement = document.activeElement;
+  if (isTextField(activeElement) && replaceInField(activeElement, newText)) {
+    return { success: true, message: "Applied inside active field." };
+  }
+
+  if (lastEditableTarget && isContentEditable(lastEditableTarget) && replaceInEditable(lastEditableTarget, newText)) {
+    return { success: true, message: "Applied inside editable content." };
+  }
+
+  if (lastSelectionRange) {
     const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-    
-    // Only send if text changed and has content
-    if (selectedText && selectedText !== lastSelection) {
-        lastSelection = selectedText;
-        lastSelectionTime = Date.now();
-        
-        console.log('Selection detected:', selectedText.substring(0, 50) + '...');
-        
-        // Send to background script
-        chrome.runtime.sendMessage({
-            action: "textSelected",
-            text: selectedText,
-            source: 'Page Selection',
-            timestamp: Date.now(),
-            length: selectedText.length
-        });
-    }
-});
+    selection.removeAllRanges();
+    selection.addRange(lastSelectionRange);
+    lastSelectionRange.deleteContents();
+    lastSelectionRange.insertNode(document.createTextNode(newText));
+    selection.removeAllRanges();
+    lastSelectionText = newText;
+    return { success: true, message: "Applied to saved text selection." };
+  }
 
-// Also listen for mouseup (better detection)
-document.addEventListener('mouseup', function(e) {
-    setTimeout(() => {
-        const selection = window.getSelection();
-        const selectedText = selection.toString().trim();
-        
-        if (selectedText && selectedText !== lastSelection) {
-            lastSelection = selectedText;
-            
-            chrome.runtime.sendMessage({
-                action: "textSelected",
-                text: selectedText,
-                source: 'Page Selection',
-                timestamp: Date.now(),
-                length: selectedText.length
-            });
-        }
-    }, 100);
-});
+  return {
+    success: false,
+    message: "No editable selection found. Copy and paste manually."
+  };
+}
 
-// Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('Content script received request:', request.action);
-    
-    if (request.action === "scanPage") {
-        console.log('Starting page scan...');
-        const result = scanPageForText();
-        console.log('Scan result:', result ? result.items.length + ' items' : 'no items');
-        sendResponse({ 
-            success: !!result, 
-            data: result 
-        });
-    }
-    
-    else if (request.action === "applyText") {
-        console.log('Applying text...');
-        const success = replaceSelectedText(request.text);
-        sendResponse({ 
-            success: success,
-            message: success ? 'Text replaced' : 'Failed to replace text'
-        });
-    }
-    
-    else if (request.action === "getCurrentSelection") {
-        console.log('Getting current selection...');
-        const selection = window.getSelection();
-        const selectedText = selection.toString().trim();
-        
-        if (selectedText) {
-            console.log('Current selection:', selectedText.substring(0, 50) + '...');
-            sendResponse({
-                success: true,
-                text: selectedText,
-                source: 'Current Selection',
-                length: selectedText.length
-            });
-        } else {
-            console.log('No text currently selected');
-            sendResponse({
-                success: false,
-                message: 'No text selected'
-            });
-        }
-    }
-    
-    else if (request.action === "ping") {
-        console.log('Ping received');
-        sendResponse({
-            alive: true,
-            ready: true,
-            page: window.location.href
-        });
-    }
-    
-    else if (request.action === "test") {
-        console.log('Test request received');
-        sendResponse({
-            success: true,
-            message: 'Content script is working!',
-            pageTitle: document.title,
-            url: window.location.href
-        });
-    }
-    
-    // Important: Return true to keep message channel open for async responses
+function replaceInField(field, newText) {
+  const start = field.selectionStart;
+  const end = field.selectionEnd;
+  if (typeof start !== "number" || typeof end !== "number" || start === end) {
+    return false;
+  }
+
+  const previousValue = field.value;
+  field.value = `${previousValue.slice(0, start)}${newText}${previousValue.slice(end)}`;
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  field.selectionStart = start;
+  field.selectionEnd = start + newText.length;
+  lastSelectionText = newText;
+  lastEditableTarget = field;
+  return true;
+}
+
+function replaceInEditable(element, newText) {
+  if (lastSelectionRange) {
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(lastSelectionRange);
+    lastSelectionRange.deleteContents();
+    lastSelectionRange.insertNode(document.createTextNode(newText));
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    selection.removeAllRanges();
+    lastSelectionText = newText;
     return true;
-});
+  }
 
-// Initialize
-console.log('Text Case Converter content script initialized');
-chrome.runtime.sendMessage({
-    action: "contentScriptReady",
-    url: window.location.href,
-    timestamp: Date.now()
+  return false;
+}
+
+function getCurrentSelection() {
+  const activeElement = document.activeElement;
+  if (isTextField(activeElement)) {
+    const text = getFieldSelection(activeElement);
+    if (text) {
+      return { success: true, text, source: "Input selection" };
+    }
+  }
+
+  const text = window.getSelection()?.toString().trim() || lastSelectionText;
+  if (!text) {
+    return { success: false, message: "No text selected." };
+  }
+
+  return { success: true, text, source: "Page selection" };
+}
+
+function getFieldSelection(field) {
+  if (!field || typeof field.selectionStart !== "number" || typeof field.selectionEnd !== "number") {
+    return "";
+  }
+
+  if (field.selectionStart === field.selectionEnd) {
+    return "";
+  }
+
+  return field.value.slice(field.selectionStart, field.selectionEnd).trim();
+}
+
+function isTextField(element) {
+  return Boolean(
+    element &&
+    (element.tagName === "TEXTAREA" ||
+      (element.tagName === "INPUT" && ["text", "search", "email", "url", "tel"].includes(element.type)))
+  );
+}
+
+function isContentEditable(element) {
+  return Boolean(element && element.isContentEditable);
+}
+
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request.action === "ping") {
+    sendResponse({ success: true, alive: true });
+    return;
+  }
+
+  if (request.action === "scanPage") {
+    const items = scanPageForText();
+    sendResponse({
+      success: items.length > 0,
+      data: { items }
+    });
+    return;
+  }
+
+  if (request.action === "getCurrentSelection") {
+    sendResponse(getCurrentSelection());
+    return;
+  }
+
+  if (request.action === "applyText") {
+    sendResponse(applyText(request.text || ""));
+  }
 });

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuickShot – Captured</title>
+    <link rel="stylesheet" href="../ui.css" />
+    <link rel="stylesheet" href="captured.css" />
+  </head>
+  <body>
+    <div class="qs-captured-page">
+      <header class="qs-topbar qs-captured-topbar">
+        <div class="qs-brand">
+          <h1 class="qs-title">Captured</h1>
+          <p class="qs-subtitle" id="meta">Full page screenshot</p>
+        </div>
+        <div class="qs-iconbar">
+          <button class="qs-btn" id="btn-history" type="button">History</button>
+          <button class="qs-btn" id="btn-options" type="button">Options</button>
+          <button class="qs-btn" id="btn-edit" type="button">✏️ Open Editor</button>
+        </div>
+      </header>
+
+      <main class="qs-captured-main">
+        <section class="qs-card qs-preview">
+          <div class="qs-card-hd">
+            <div>
+              <p class="qs-card-title">Preview</p>
+              <p class="qs-card-sub">Scroll capture (stitched)</p>
+            </div>
+          </div>
+          <div class="qs-card-bd qs-preview-bd">
+            <div class="qs-canvas-wrap qs-preview-wrap">
+              <canvas id="preview-canvas" class="qs-canvas"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <aside class="qs-card qs-actions">
+          <div class="qs-card-hd">
+            <div>
+              <p class="qs-card-title">Actions</p>
+              <p class="qs-card-sub">Choose how to save</p>
+            </div>
+          </div>
+          <div class="qs-card-bd qs-actions-bd">
+            <button class="qs-action-btn" id="btn-save-image" type="button">
+              <span class="qs-action-icon">💾</span>
+              <span class="qs-action-text">Save as Image</span>
+            </button>
+            <button class="qs-action-btn" id="btn-email" type="button">
+              <span class="qs-action-icon">📧</span>
+              <span class="qs-action-text">Email</span>
+            </button>
+            <button class="qs-action-btn" id="btn-copy" type="button">
+              <span class="qs-action-icon">📋</span>
+              <span class="qs-action-text">Copy to clipboard</span>
+            </button>
+            <button class="qs-action-btn" id="btn-print" type="button">
+              <span class="qs-action-icon">🖨️</span>
+              <span class="qs-action-text">Print</span>
+            </button>
+          </div>
+        </aside>
+      </main>
+    </div>
+   
+    <script type="module" src="captured.js"></script>
+    
+  </body>
+</html>

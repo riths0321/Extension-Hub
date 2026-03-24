@@ -1,10 +1,21 @@
 /* content.css - Styles for direct sticky notes (NO IFRAMES) */
 
+/* ── Colour palette driven by [data-color] — no inline background needed ── */
+.sticky-note[data-color="yellow"] { background: #FFF9C4; }
+.sticky-note[data-color="blue"]   { background: #E3F2FD; }
+.sticky-note[data-color="green"]  { background: #E8F5E9; }
+.sticky-note[data-color="pink"]   { background: #FCE4EC; }
+.sticky-note[data-color="orange"] { background: #FFF3E0; }
+.sticky-note[data-color="purple"] { background: #F3E5F5; }
+.sticky-note[data-color="teal"]   { background: #E0F2F1; }
+.sticky-note[data-color="gray"]   { background: #F5F5F5; }
+
 .sticky-note {
     position: fixed !important;
     z-index: 1000;
     width: 320px;
     height: 380px;
+    /* fallback colour if data-color is missing */
     background: #FFF9C4;
     border-radius: 12px;
     box-shadow: 
@@ -13,12 +24,14 @@
     display: flex;
     flex-direction: column;
     border: 1px solid rgba(0, 0, 0, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                transform   0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                height      0.2s ease,
+                opacity     0.2s ease;
     overflow: hidden;
     resize: both;
     min-width: 250px;
     min-height: 180px;
-    backdrop-filter: blur(10px);
     font-family: 'Segoe UI', 'Comic Sans MS', 'Chalkboard SE', 'Segoe Print', cursive;
 }
 
@@ -27,6 +40,12 @@
         0 6px 10px rgba(0, 0, 0, 0.15),
         0 15px 30px rgba(0, 0, 0, 0.2);
     transform: translateY(-2px);
+}
+
+/* Dragging state — set via classList in JS */
+.sticky-note.dragging {
+    cursor: grabbing !important;
+    transform: translateY(-2px) scale(1.01);
 }
 
 .sticky-note.pinned {
@@ -86,7 +105,6 @@
     cursor: move;
     user-select: none;
     border-radius: 12px 12px 0 0;
-    backdrop-filter: blur(8px);
     flex-shrink: 0;
     transition: background 0.3s;
 }
@@ -170,7 +188,6 @@
     gap: 6px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     flex-wrap: wrap;
-    backdrop-filter: blur(8px);
 }
 
 /* Formatting Toolbar */
@@ -182,7 +199,6 @@
     gap: 6px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     flex-wrap: wrap;
-    backdrop-filter: blur(8px);
 }
 
 .format-btn {
@@ -257,15 +273,15 @@
     box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
 }
 
-/* Color Definitions */
-.color-option.yellow { background: #FFF9C4; }
-.color-option.blue { background: #E3F2FD; }
-.color-option.green { background: #E8F5E9; }
-.color-option.pink { background: #FCE4EC; }
-.color-option.orange { background: #FFF3E0; }
-.color-option.purple { background: #F3E5F5; }
-.color-option.teal { background: #E0F2F1; }
-.color-option.gray { background: #F5F5F5; }
+/* Color Definitions (colour swatches in picker) */
+.color-option[data-color="yellow"] { background: #FFF9C4; }
+.color-option[data-color="blue"]   { background: #E3F2FD; }
+.color-option[data-color="green"]  { background: #E8F5E9; }
+.color-option[data-color="pink"]   { background: #FCE4EC; }
+.color-option[data-color="orange"] { background: #FFF3E0; }
+.color-option[data-color="purple"] { background: #F3E5F5; }
+.color-option[data-color="teal"]   { background: #E0F2F1; }
+.color-option[data-color="gray"]   { background: #F5F5F5; }
 
 /* Note Content */
 .note-content {
@@ -293,7 +309,6 @@
     font-size: 14px;
 }
 
-/* Text Selection in Note */
 .note-content::selection {
     background: rgba(102, 126, 234, 0.3);
     color: inherit;
@@ -311,7 +326,6 @@
     color: #666;
     border-radius: 0 0 12px 12px;
     flex-shrink: 0;
-    backdrop-filter: blur(8px);
 }
 
 .footer-left, .footer-right {
@@ -384,27 +398,98 @@
 }
 
 /* Scrollbar Styling */
-.sticky-note ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+.sticky-note ::-webkit-scrollbar        { width: 8px; height: 8px; }
+.sticky-note ::-webkit-scrollbar-track  { background: rgba(0,0,0,0.05); border-radius: 4px; }
+.sticky-note ::-webkit-scrollbar-thumb  { background: rgba(0,0,0,0.15); border-radius: 4px; border: 2px solid transparent; background-clip: padding-box; }
+.sticky-note ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+.sticky-note ::-webkit-scrollbar-corner { background: transparent; }
+
+/* ================================================================
+   CSP-SAFE CUSTOM CONFIRM DIALOG
+   Replaces window.confirm() which is blocked by many page CSPs
+   ================================================================ */
+
+.sticky-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 2147483647; /* max z-index */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: sn-fade-in 0.15s ease;
 }
 
-.sticky-note ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
+@keyframes sn-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
-.sticky-note ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
+.sticky-confirm-dialog {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px 32px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    max-width: 320px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    animation: sn-slide-up 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sticky-note ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.25);
+@keyframes sn-slide-up {
+    from { transform: translateY(12px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 
-.sticky-note ::-webkit-scrollbar-corner {
-    background: transparent;
+.sticky-confirm-message {
+    margin: 0;
+    font-size: 15px;
+    color: #333;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.sticky-confirm-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.sticky-confirm-btn {
+    padding: 9px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    min-width: 90px;
+}
+
+.sticky-confirm-cancel {
+    background: rgba(0,0,0,0.07);
+    color: #555;
+}
+
+.sticky-confirm-cancel:hover {
+    background: rgba(0,0,0,0.12);
+}
+
+.sticky-confirm-ok {
+    background: #ff4757;
+    color: #fff;
+}
+
+.sticky-confirm-ok:hover {
+    background: #e03040;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255,71,87,0.35);
+}
+
+.sticky-confirm-ok:focus {
+    outline: 2px solid #ff4757;
+    outline-offset: 2px;
 }

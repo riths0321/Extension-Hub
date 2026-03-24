@@ -1,7 +1,5 @@
 # 🗣️ Text to Voice
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **Text to Voice** brings your text to life. Paste any paragraph, article, or note, and listen to it using your browser's built-in text-to-speech engine. Perfect for proofreading, accessibility, or just resting your eyes.
 

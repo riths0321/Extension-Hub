@@ -1,8 +1,7 @@
-# 📉 Quick Image Compressor
-
+# 📉 Image Compressor
 
 ### 🧩 Description
-**Quick Image Compressor** reduces image file size significantly without visible quality loss. Optimize your JPEGs and PNGs for faster web loading or email attachments. It processes everything locally in your browser.
+**Image Compressor** reduces image file size significantly without visible quality loss. Optimize your JPEGs and PNGs for faster web loading or email attachments. It processes everything locally in your browser.
 
 ### 🚀 Features
 - **Compression**: Reduce file size by up to 80%.

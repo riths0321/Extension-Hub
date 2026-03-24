@@ -1,19 +1,106 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Incognito</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
 
-  <h3>Open Incognito Tab</h3>
+<div class="app">
 
-  <button id="openIncognito">Open current tab in incognito</button>
+  <!-- ── Hero section ── -->
+  <div class="hero">
+    <div class="icon-wrap">
+      <img src="icons/icon48.png" alt="Incognito" class="hero-icon" />
+      <div class="icon-ring"></div>
+    </div>
+    <div class="hero-text">
+      <div class="title">Incognito</div>
+      <div class="subtitle">Private browsing, instantly</div>
+    </div>
+  </div>
 
-  <a href="options.html" target="_blank" class="settings">
-    Open settings
-  </a>
+  <!-- ── Current URL preview ── -->
+  <div class="url-bar" id="urlBar">
+    <span class="url-dot"></span>
+    <span class="url-text" id="urlText">Loading...</span>
+  </div>
 
-  <script src="popup.js"></script>
+  <!-- ── Main CTA ── -->
+  <button class="btn-main" id="openBtn">
+    <span class="btn-icon">
+      <!-- Hat SVG -->
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="12" cy="17" rx="9" ry="2.5" fill="currentColor" opacity="0.3"/>
+        <path d="M3 17c0-1.38 4.03-2.5 9-2.5s9 1.12 9 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M6 17V10.5C6 7.46 8.69 5 12 5s6 2.46 6 5.5V17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <ellipse cx="12" cy="10.5" rx="4" ry="2" fill="currentColor" opacity="0.2"/>
+      </svg>
+    </span>
+    <span class="btn-label">Open in Incognito</span>
+    <span class="btn-arrow">→</span>
+  </button>
+
+  <!-- ── Success badge ── -->
+  <div class="success-badge" id="successBadge">
+    <span>✓</span>
+    <span>Incognito window opened!</span>
+  </div>
+
+  <!-- ── Quick settings toggles ── -->
+  <div class="settings-card">
+    <div class="settings-title">Quick Settings</div>
+
+    <div class="toggle-row" id="toggleFullscreen">
+      <div class="toggle-info">
+        <span class="toggle-icon">⛶</span>
+        <div>
+          <div class="toggle-label">Fullscreen</div>
+          <div class="toggle-desc">Open incognito in fullscreen</div>
+        </div>
+      </div>
+      <div class="toggle-switch" id="switchFullscreen">
+        <div class="toggle-thumb"></div>
+      </div>
+    </div>
+
+    <div class="toggle-row" id="toggleHistory">
+      <div class="toggle-info">
+        <span class="toggle-icon">🗑</span>
+        <div>
+          <div class="toggle-label">Clear History</div>
+          <div class="toggle-desc">Deletes this page from Chrome history after opening</div>
+        </div>
+      </div>
+      <div class="toggle-switch" id="switchHistory">
+        <div class="toggle-thumb"></div>
+      </div>
+    </div>
+
+    <div class="toggle-row" id="toggleClose">
+      <div class="toggle-info">
+        <span class="toggle-icon">✕</span>
+        <div>
+          <div class="toggle-label">Close Tab</div>
+          <div class="toggle-desc">Close original tab after</div>
+        </div>
+      </div>
+      <div class="toggle-switch" id="switchClose">
+        <div class="toggle-thumb"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="footer">
+    <span class="kbd">Alt+I</span>
+    <span class="footer-sep">·</span>
+    Right-click page for menu
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
 </body>
 </html>

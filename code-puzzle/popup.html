@@ -2,85 +2,90 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Daily Code Puzzle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Code Puzzle</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <header>
-      <div class="header-content">
-        <h2>🧩 Code Puzzle</h2>
-      </div>
+    <main class="app">
+      <header class="hero">
+        <p class="eyebrow">Daily Practice Arena</p>
+        <h1>Code Puzzle</h1>
+        <p class="subtitle">Solve one challenge daily and build your streak.</p>
 
-      <div class="streak-display">
-        <div class="streak-item">
-          <span>🔥</span>
-          <span><strong id="streakCount">0</strong> day streak</span>
+        <div class="streak-strip">
+          <div class="streak-pill">
+            <span class="pill-label">Streak</span>
+            <span id="streakCount" class="pill-value">0</span>
+          </div>
+          <div class="streak-pill">
+            <span class="pill-label">Solved</span>
+            <span id="totalSolved" class="pill-value">0</span>
+          </div>
+          <div class="streak-pill">
+            <span class="pill-label">Best</span>
+            <span id="bestStreak" class="pill-value">0</span>
+          </div>
         </div>
-        <div class="streak-item">
-          <span>✅</span>
-          <span><strong id="totalSolved">0</strong> solved</span>
-        </div>
-      </div>
+      </header>
 
-      <div class="controls-row">
+      <section class="panel filters">
+        <label for="language">Language</label>
         <select id="language">
           <option value="javascript">JavaScript</option>
           <option value="python">Python</option>
         </select>
+
+        <label for="difficulty">Difficulty</label>
         <select id="difficulty">
           <option value="all">All Levels</option>
           <option value="easy">Easy</option>
           <option value="medium">Medium</option>
           <option value="hard">Hard</option>
         </select>
-      </div>
-    </header>
+      </section>
 
-    <main>
-      <div id="question-card">
-        <div class="question-header">
-          <span class="question-meta">Daily Challenge</span>
-          <span id="difficultyBadge" class="difficulty-badge">Easy</span>
+      <section id="question-card" class="panel question-panel">
+        <div class="question-head">
+          <span id="questionMode" class="meta-chip">Daily Challenge</span>
+          <span id="difficultyBadge" class="difficulty-badge">easy</span>
         </div>
-        <div id="question">Loading...</div>
-      </div>
+        <p id="question" class="question-text">Loading puzzle...</p>
+        <p id="solvedChip" class="solved-chip hidden">Solved</p>
+      </section>
 
-      <div class="controls">
-        <button id="showSolution" class="primary-btn">Show Solution</button>
-        <button id="newPuzzle" class="secondary-btn">🎲 Random</button>
-        <button id="markSolved" class="success-btn hidden">
-          ✓ Mark Solved
-        </button>
-      </div>
+      <section class="actions">
+        <button id="showSolution" class="btn btn-primary">Show Solution</button>
+        <button id="newPuzzle" class="btn btn-soft">Random Puzzle</button>
+        <button id="markSolved" class="btn btn-success hidden">Mark As Solved</button>
+      </section>
 
-      <div id="solutionContainer" class="hidden">
-        <div class="code-header">
-          <span>Solution</span>
-          <button id="copyBtn" title="Copy to Clipboard">📋 Copy</button>
+      <section id="solutionContainer" class="panel code-panel hidden">
+        <div class="code-head">
+          <span>Reference Solution</span>
+          <button id="copyBtn" class="copy-btn" title="Copy solution">Copy</button>
         </div>
         <pre id="solution"></pre>
-      </div>
+      </section>
 
-      <div class="stats-section">
+      <section class="panel stats-panel">
         <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-value" id="easySolved">0</span>
-            <span class="stat-label">Easy Solved</span>
+          <div class="stat-box">
+            <span id="easySolved" class="stat-value">0</span>
+            <span class="stat-label">Easy</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-value" id="mediumSolved">0</span>
-            <span class="stat-label">Medium Solved</span>
+          <div class="stat-box">
+            <span id="mediumSolved" class="stat-value">0</span>
+            <span class="stat-label">Medium</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-value" id="hardSolved">0</span>
-            <span class="stat-label">Hard Solved</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value" id="bestStreak">0</span>
-            <span class="stat-label">Best Streak</span>
+          <div class="stat-box">
+            <span id="hardSolved" class="stat-value">0</span>
+            <span class="stat-label">Hard</span>
           </div>
         </div>
-      </div>
+      </section>
+
+      <p id="statusBar" class="status-bar" aria-live="polite"></p>
     </main>
 
     <script src="puzzles.js"></script>

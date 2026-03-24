@@ -4,148 +4,96 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bookmark Manager</title>
-
-    <!-- Local fonts only (CSP safe) -->
     <link rel="stylesheet" href="popup.css" />
   </head>
-
   <body>
-    <!-- Ambient background blobs -->
-    <div class="bg-blob blob-1"></div>
-    <div class="bg-blob blob-2"></div>
-    <div class="bg-blob blob-3"></div>
-
-    <div class="glass-panel">
-      <!-- Header -->
-      <header class="app-header">
-        <div class="logo-mark">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5 3h14a2 2 0 012 2v16l-7-3-7 3V5a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Reading Shelf</p>
+          <h1>Bookmark Manager</h1>
+          <p class="subtitle">Search saved links, archive current tabs, and keep your browser shelf clean and easy to restore.</p>
         </div>
-        <div class="header-text">
-          <h1 class="app-title">Bookmark Manager</h1>
-          <p class="app-sub">Organize. Search. Clean.</p>
-        </div>
+        <div class="hero-mark">Shelf</div>
       </header>
 
-      <!-- Status -->
-      <div id="status" role="alert" aria-live="polite" class="status-bar hidden"></div>
+      <div id="status" class="status-bar hidden" role="alert" aria-live="polite"></div>
 
-      <!-- Search -->
-      <section class="section search-section">
-        <div class="input-wrap">
-          <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-            <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <input
-            id="search"
-            type="text"
-            placeholder="Search bookmarks…"
-            autocomplete="off"
-            spellcheck="false"
-          />
+      <section class="overview-card">
+        <div class="overview-block">
+          <span class="overview-label">Bookmarks</span>
+          <strong id="bookmarkCount">0</strong>
         </div>
+        <div class="overview-block">
+          <span class="overview-label">Last session</span>
+          <strong id="sessionCount">0</strong>
+        </div>
+        <div class="overview-block">
+          <span class="overview-label">Saved at</span>
+          <strong id="sessionSavedAt">Not saved</strong>
+        </div>
+      </section>
+
+      <section class="search-card">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Find bookmarks</p>
+            <h2 class="section-title">Search your library</h2>
+          </div>
+        </div>
+        <input id="search" class="text-input" type="search" placeholder="Search title or URL" autocomplete="off" spellcheck="false" />
         <ul id="results" class="results-list" role="list" aria-label="Search results"></ul>
       </section>
 
-      <div class="divider"></div>
+      <section class="grid-card">
+        <article class="tool-card">
+          <p class="section-kicker">Sessions</p>
+          <h2 class="section-title">Tab shelf snapshot</h2>
+          <div class="button-stack">
+            <button id="saveSession" class="primary-btn" type="button">Save current tabs</button>
+            <button id="restoreSession" class="secondary-btn" type="button">Restore saved tabs</button>
+          </div>
+        </article>
 
-      <!-- Sessions -->
-      <section class="section">
-        <h2 class="section-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <rect x="2" y="3" width="20" height="5" rx="2" stroke="currentColor" stroke-width="2"/>
-            <rect x="2" y="10" width="20" height="5" rx="2" stroke="currentColor" stroke-width="2"/>
-            <rect x="2" y="17" width="20" height="5" rx="2" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Tab Sessions
-        </h2>
-        <div class="btn-row">
-          <button id="saveSession" class="btn btn-primary">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-            Save tabs
-          </button>
-          <button id="restoreSession" class="btn btn-ghost">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><polyline points="1 4 1 10 7 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Restore
-          </button>
+        <article class="tool-card">
+          <p class="section-kicker">Current page</p>
+          <h2 class="section-title">Add bookmark</h2>
+          <div class="button-stack">
+            <button id="openBookmarkOverlay" class="primary-btn" type="button">Bookmark active page</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="cleanup-card">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Cleanup</p>
+            <h2 class="section-title">Library maintenance</h2>
+          </div>
+        </div>
+        <div class="button-stack two-col">
+          <button id="removeDuplicates" class="secondary-btn" type="button">Remove duplicates</button>
+          <button id="cleanFolders" class="secondary-btn" type="button">Delete empty folders</button>
         </div>
       </section>
+    </main>
 
-      <div class="divider"></div>
-
-      <!-- Add Bookmark -->
-      <section class="section">
-        <h2 class="section-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <path d="M5 3h14a2 2 0 012 2v16l-7-3-7 3V5a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
-          Add Bookmark
-        </h2>
-        <button id="openBookmarkOverlay" class="btn btn-primary btn-full">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Bookmark current page
-        </button>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- Cleanup -->
-      <section class="section">
-        <h2 class="section-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          Cleanup Tools
-        </h2>
-        <div class="btn-row">
-          <button id="removeDuplicates" class="btn btn-ghost">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="8" y="2" width="8" height="4" rx="1" stroke="currentColor" stroke-width="2"/></svg>
-            Duplicates
-          </button>
-          <button id="cleanFolders" class="btn btn-ghost">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Empty folders
-          </button>
-        </div>
-      </section>
-    </div>
-
-    <!-- Bookmark Overlay -->
-    <div id="bookmarkOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Add bookmark">
+    <div id="bookmarkOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Save bookmark">
       <div class="overlay-card">
-        <div class="overlay-header">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M5 3h14a2 2 0 012 2v16l-7-3-7 3V5a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
-          <h3>Save Bookmark</h3>
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Save bookmark</p>
+            <h2 class="section-title">Choose a folder name</h2>
+          </div>
         </div>
-        <p class="overlay-hint">Choose a category or leave blank for "Unsorted"</p>
-        <div class="input-wrap">
-          <svg class="input-icon" width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <input
-            id="category"
-            type="text"
-            placeholder="e.g. Work, Study, Reading…"
-            autocomplete="off"
-            spellcheck="false"
-          />
-        </div>
+        <p class="overlay-note">Leave blank to save inside <strong>Unsorted</strong>.</p>
+        <input id="category" class="text-input" type="text" placeholder="Work, Research, Reading List..." autocomplete="off" spellcheck="false" />
         <div class="overlay-actions">
-          <button id="confirmAddBookmark" class="btn btn-primary">Save bookmark</button>
-          <button id="cancelOverlay" class="btn btn-ghost">Cancel</button>
+          <button id="confirmAddBookmark" class="primary-btn" type="button">Save bookmark</button>
+          <button id="cancelOverlay" class="secondary-btn" type="button">Cancel</button>
         </div>
       </div>
     </div>
-
-    <!-- Hidden trigger (used by bookmarks.js) -->
-    <button id="addBookmark" style="display:none" aria-hidden="true"></button>
 
     <script src="popup.js"></script>
     <script src="sessions.js"></script>

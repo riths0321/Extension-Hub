@@ -114,7 +114,7 @@ function startGame() {
         if (timeLeft > 0) {
             timeLeft--;
             timerElement.innerText = formatTime(timeLeft);
-            if (timeLeft % 1 === 0) calculateWPM(); // Update WPM every second mostly
+            calculateWPM(); 
         } else {
             endGame();
         }
@@ -192,18 +192,35 @@ inputField.addEventListener('input', (e) => {
 
     // Handle Backspace
     if (e.inputType === 'deleteContentBackward') {
-        if (charIndex > 0) {
-            charIndex--;
-            const charSpan = currentWordSpan.children[charIndex];
-            charSpan.classList.remove('correct', 'incorrect');
+    if (charIndex > 0) {
+        charIndex--;
 
-            if (charIndex + 1 < currentWordSpan.children.length) {
-                currentWordSpan.children[charIndex + 1].classList.remove('current');
-            }
-            charSpan.classList.add('current');
+        const charSpan = currentWordSpan.children[charIndex];
+
+        // Adjust stats BEFORE removing classes
+        if (charSpan.classList.contains('correct')) {
+            correctKeyStrokes--;
+            totalKeyStrokes--;
+        } 
+        else if (charSpan.classList.contains('incorrect')) {
+            errorCount--;
+            totalKeyStrokes--;
         }
-        return;
+
+        // Remove styling
+        charSpan.classList.remove('correct', 'incorrect');
+
+        // Move current cursor
+        if (charIndex + 1 < currentWordSpan.children.length) {
+            currentWordSpan.children[charIndex + 1].classList.remove('current');
+        }
+
+        charSpan.classList.add('current');
+
+        calculateWPM();
     }
+    return;
+}
 
     // Handle Character Typing
     if (e.data) {

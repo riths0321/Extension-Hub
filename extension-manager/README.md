@@ -1,299 +1,132 @@
-📦 Extension Manager
-A sleek, professional browser extension to manage all your other extensions from a single popup interface. Enable, disable, search, and filter extensions with ease.
+# Extension Manager Pro
 
-https://via.placeholder.com/400x600/1a1a2e/ffffff?text=Extension+Manager
+`Extension Manager Pro` is a lightweight Chrome extension that helps users manage installed extensions from a single popup.
 
-✨ Features
-🎯 Core Functionality
-One-Click Management - Enable/disable extensions directly from popup
+It is built with:
 
-Instant Search - Find extensions quickly by name
+- Manifest V3
+- pure HTML, CSS, and JavaScript
+- Chrome `management` API
+- Chrome `storage` API
 
-Smart Filtering - View all, enabled only, or disabled only extensions
+## Current Product Scope
 
-Bulk Actions - Enable or disable all extensions at once
+The extension is focused on quick extension management, not a full multi-page dashboard.
 
-Real-time Stats - See enabled/disabled counts at a glance
+Core workflow:
 
-🎨 Design Highlights
-Dark Theme - Easy on the eyes with professional indigo color scheme
+1. Open popup
+2. Search or filter installed extensions
+3. Enable or disable quickly
+4. Open settings, inspect details, or remove when needed
 
-Clean Interface - Minimalist design focusing on functionality
+## Current Features
 
-Toggle Switches - Intuitive on/off controls
+### Extension Management
 
-Hover Effects - Smooth animations and transitions
+- list installed Chrome extensions using `chrome.management.getAll()`
+- exclude the manager extension itself
+- show extension icon, name, version, status, and summary details
+- enable or disable extensions with a toggle
+- uninstall extensions with a simple remove action
+- open extension settings/options page when available
 
-Responsive Layout - Optimized for 400px width popup
+### Search, Filter, and Sort
 
-⚡ Performance
-Instant Loading - Extensions load in under 1 second
+- search extensions by name, description, and developer
+- filter by:
+  - all
+  - enabled
+  - disabled
+  - favorites
+- sort by:
+  - name
+  - install date surrogate (`first seen`)
+  - enabled status
+  - developer
 
-No Side Panel - Direct management from popup
+### Details and Organization
 
-Keyboard Friendly - Quick shortcuts for power users
+- extension details modal
+- permission list display
+- risky permission highlighting
+- favorite extensions
+- custom tags stored in `chrome.storage.local`
 
-Lightweight - Minimal memory footprint
+### Batch and Backup
 
-🚀 Installation
-Method 1: Load Unpacked (Development)
-Download or clone this repository
+- multi-select extensions
+- batch enable
+- batch disable
+- export extension state and saved metadata as JSON
+- import saved JSON and restore supported states
 
-Open Chrome/Edge and go to chrome://extensions/
+### UI and UX
 
-Enable Developer mode (toggle in top-right)
+- clean popup layout
+- loading state
+- empty state
+- extension statistics
+- responsive popup design
+- blue/white product-aligned theme
+- Manrope-first typography
 
-Click "Load unpacked"
+## Theme
 
-Select the extension-manager folder
+The extension follows the shared design system documented in:
 
-Pin the extension to your toolbar
+- [THEME_DESIGN.md](./THEME_DESIGN.md)
 
-Method 2: From Chrome Web Store
-(Coming soon)
+Theme baseline:
 
-🎮 How to Use
-Basic Usage
-Click the Extension Manager icon in your toolbar
+- background: `#FFFFFF`
+- primary blue: `#2563EB`
+- primary text: `#111111`
+- secondary text: `#6B7280`
+- font family: `Manrope`
 
-Browse your extensions in the clean list
+## Permissions
 
-Toggle extensions on/off using the switches
+The extension currently uses:
 
-Search for specific extensions using the search bar
+- `management`
+- `storage`
 
-Filter by status using the dropdown filter
+## File Structure
 
-Use bulk actions to enable/disable all at once
-
-Keyboard Shortcuts
-Ctrl+Shift+E (Windows/Linux) or Cmd+Shift+E (Mac) - Open Extension Manager
-
-/ or Ctrl+F - Focus search bar
-
-Escape - Close popup
-
-Features Breakdown
-🔍 Search
-Type in the search box to instantly filter extensions by name. Works in real-time as you type.
-
-🎯 Filters
-All Extensions - View everything (default)
-
-Enabled Only - See only active extensions
-
-Disabled Only - See only inactive extensions
-
-⚡ Quick Actions
-Refresh Button - Reload extension list
-
-Enable All - Turn on every extension
-
-Disable All - Turn off every enabled extension (with confirmation)
-
-🛠️ Technical Details
-Browser Compatibility
-✅ Chrome 88+
-
-✅ Edge 88+
-
-✅ Brave 1.20+
-
-✅ Opera 74+
-
-Permissions Required
-management - To view and manage extensions
-
-(No other permissions needed)
-
-File Structure
-text
+```text
 extension-manager/
-├── manifest.json          # Extension configuration
-├── popup.html            # Main interface
-├── popup.js              # Core logic
-├── background.js         # Background service worker
+├── manifest.json
+├── popup.html
+├── popup.css
+├── popup.js
+├── details-modal.js
+├── storage.js
+├── background.js
+├── THEME_DESIGN.md
+├── DOCUMENTATION.md
 └── icons/
-    ├── icon16.png        # Toolbar icon (small)
-    ├── icon48.png        # Extension icon (medium)
-    └── icon128.png       # Store icon (large)
-🔧 Development
-Prerequisites
-Basic knowledge of HTML, CSS, JavaScript
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
 
-Chrome/Edge browser
+## Installation
 
-Text editor (VS Code recommended)
+1. Open `chrome://extensions/`
+2. Enable Developer mode
+3. Click `Load unpacked`
+4. Select the `extension-manager` folder
 
-Building from Source
-Clone repository:
+## Notes
 
-bash
-git clone https://github.com/yourusername/extension-manager.git
-cd extension-manager
-Install dependencies (if any):
+- some extensions cannot be disabled or removed if Chrome or policy restrictions apply
+- true install date is not exposed by the Chrome Management API, so sorting uses a local `first seen` value
+- settings button opens the extension options page when available, otherwise falls back to the Chrome extensions page
 
-bash
-npm install
-Load extension in browser as described above
+## Documentation
 
-Customizing
-Change Colors: Modify CSS variables in popup.html
+For deeper implementation notes, see:
 
-Add Features: Extend popup.js functionality
+- [DOCUMENTATION.md](./DOCUMENTATION.md)
 
-Update Icons: Replace files in icons/ folder
-
-🤝 Contributing
-Contributions are welcome! Here's how:
-
-Fork the repository
-
-Create a feature branch: git checkout -b feature-name
-
-Make your changes
-
-Test thoroughly
-
-Commit: git commit -m 'Add some feature'
-
-Push: git push origin feature-name
-
-Open a Pull Request
-
-Code Guidelines
-Use meaningful variable names
-
-Comment complex logic
-
-Follow existing code style
-
-Test on multiple browsers
-
-Ensure accessibility compliance
-
-📝 Changelog
-v1.0.0 (Current)
-Initial release
-
-Complete extension management
-
-Dark theme interface
-
-Search and filter functionality
-
-Bulk enable/disable actions
-
-Keyboard shortcuts
-
-🚨 Known Issues & Limitations
-Cannot manage extensions marked as "Required by browser"
-
-Some enterprise-managed extensions may be restricted
-
-Extension icons may not load for some extensions
-
-No export/import functionality for extension lists
-
-🔮 Roadmap
-Planned Features
-Export/import extension configurations
-
-Extension grouping/categorization
-
-Startup delay configuration
-
-Extension usage statistics
-
-Backup/restore functionality
-
-Light theme option
-
-Multi-language support
-
-In Progress
-Chrome Web Store submission
-
-Firefox compatibility
-
-Safari compatibility
-
-📊 Privacy Policy
-Extension Manager does NOT:
-
-Collect any personal data
-
-Track your browsing activity
-
-Send data to external servers
-
-Store extension data in the cloud
-
-Extension Manager does:
-
-Operate entirely locally in your browser
-
-Use Chrome's built-in management API
-
-Store preferences locally using Chrome storage
-
-Respect your browser's privacy settings
-
-⚖️ License
-MIT License - See LICENSE file for details.
-
-🙏 Acknowledgments
-Chrome Extensions API documentation
-
-Icons from Material Design Icons
-
-Inspired by various extension managers
-
-Testers and contributors
-
-📧 Support
-Having issues? Here's how to get help:
-
-Check Known Issues section above
-
-Search GitHub Issues for similar problems
-
-Create a new Issue with:
-
-Browser version
-
-Extension version
-
-Steps to reproduce
-
-Screenshots if applicable
-
-Quick Troubleshooting
-Extension not loading? Check browser compatibility
-
-Permissions denied? Reinstall the extension
-
-Icons not showing? Some extensions restrict icon access
-
-Toggle not working? Extension may be required by browser
-
-🌟 Why Choose Extension Manager?
-🏆 For Users
-Save Time - Manage all extensions in one place
-
-Reduce Clutter - Quickly disable unused extensions
-
-Improve Performance - Disable heavy extensions when not needed
-
-Stay Organized - Find extensions instantly
-
-🛠️ For Developers
-Clean Codebase - Well-structured and documented
-
-Easy to Extend - Modular design for new features
-
-Best Practices - Follows Chrome extension guidelines
-
-Active Development - Regular updates and improvements
-
-Made with ❤️ for the browser extension community

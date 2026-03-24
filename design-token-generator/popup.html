@@ -1,30 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <link rel="stylesheet" href="styles/popup.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Design Token Generator</title>
+  <link rel="stylesheet" href="styles/popup.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>🎨 Design Token Generator</h1>
-    
-    <div class="token-categories">
-      <label>
-        <input type="checkbox" id="colors" checked> Colors
-      </label>
-      <label>
-        <input type="checkbox" id="typography" checked> Typography
-      </label>
-      <label>
-        <input type="checkbox" id="spacing" checked> Spacing
-      </label>
-      <label>
-        <input type="checkbox" id="shadows" checked> Shadows
-      </label>
-    </div>
-    
-    <div class="export-format">
-      <h3>Export Format:</h3>
+  <main class="shell" aria-live="polite">
+    <header class="hero">
+      <h1>Design Token Generator</h1>
+      <p>Extract clean tokens from the active page and export instantly.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Token Scope</h2>
+      <div class="checks">
+        <label><input type="checkbox" id="colors" checked />Colors</label>
+        <label><input type="checkbox" id="typography" checked />Typography</label>
+        <label><input type="checkbox" id="spacing" checked />Spacing</label>
+        <label><input type="checkbox" id="shadows" checked />Shadows</label>
+        <label><input type="checkbox" id="borderRadius" checked />Border Radius</label>
+        <label><input type="checkbox" id="breakpoints" checked />Breakpoints</label>
+      </div>
+    </section>
+
+    <section class="panel compact">
+      <label class="field-label" for="format">Export Format</label>
       <select id="format">
         <option value="css">CSS Variables</option>
         <option value="tailwind">Tailwind Config</option>
@@ -32,33 +34,24 @@
         <option value="scss">SCSS Variables</option>
         <option value="figma">Figma Tokens</option>
       </select>
-    </div>
-    
-    <button id="scanBtn" class="scan-btn">
-      🔍 Scan Current Page
-    </button>
-    
-    <div class="loading" id="loading" style="display: none;">
-      Scanning page for design tokens...
-    </div>
-    
-    <div id="results" class="results">
-      <textarea id="output" readonly placeholder="Extracted tokens will appear here..."></textarea>
-      
+    </section>
+
+    <button id="scanBtn" class="scan-btn" type="button">Scan Active Tab</button>
+
+    <p id="loading" class="loading hidden">Scanning page styles...</p>
+
+    <section id="results" class="results hidden">
+      <textarea id="output" readonly placeholder="Generated tokens will appear here."></textarea>
       <div class="actions">
-        <button id="copyBtn" class="action-btn">📋 Copy</button>
-        <button id="downloadBtn" class="action-btn">💾 Download</button>
-        <button id="clearBtn" class="action-btn">🗑️ Clear</button>
+        <button id="copyBtn" class="action-btn" type="button">Copy</button>
+        <button id="downloadBtn" class="action-btn" type="button">Download</button>
+        <button id="clearBtn" class="action-btn danger" type="button">Clear</button>
       </div>
-    </div>
-    
-    <div class="stats" id="stats"></div>
-  </div>
+      <p class="stats" id="stats">No scan yet.</p>
+    </section>
+  </main>
 
-  <!-- LOAD template-generator.js FIRST -->
   <script src="templates/template-generator.js"></script>
-
-    <!-- THEN load popup.js -->
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,7 +1,5 @@
 # ⏱️ Time Spent Tracker
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **Time Spent Tracker** helps you regain control of your digital life. It automatically tracks how much time you spend on each website you visit, giving you clear insights into your browsing habits. Whether you want to improve productivity or limit social media usage, this extension provides the data you need.
 

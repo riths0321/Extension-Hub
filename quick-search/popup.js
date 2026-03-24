@@ -1,185 +1,214 @@
-// popup.js - Extension popup functionality
+// ── popup.js — CSP-safe: no innerHTML, no eval ────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', function() {
-  // Get search history from storage
-  chrome.storage.local.get(['searchHistory', 'customEngines'], function(data) {
-    const history = data.searchHistory || [];
-    const customEngines = data.customEngines || [];
-    
-    // Display recent searches if any
-    if (history.length > 0) {
-      displayRecentSearches(history);
-    }
-    
-    // Display custom engines if any
-    if (customEngines.length > 0) {
-      displayCustomEngines(customEngines);
-    }
-  });
-  
-  // Add Custom Engine Button
-  document.getElementById('addCustomEngineBtn').addEventListener('click', function() {
-    const engineName = document.getElementById('engineName').value.trim();
-    const engineUrl = document.getElementById('engineUrl').value.trim();
-    
-    if (!engineName || !engineUrl) {
-      alert('Please enter both name and URL');
-      return;
-    }
-    
-    if (!engineUrl.includes('%s')) {
-      alert('URL must contain %s as placeholder for search text');
-      return;
-    }
-    
-    const newEngine = {
-      id: engineName.toLowerCase().replace(/\s+/g, '-'),
-      name: engineName,
-      url: engineUrl,
-      icon: '🔗'
-    };
-    
-    chrome.storage.local.get(['customEngines'], function(data) {
-      const engines = data.customEngines || [];
-      engines.push(newEngine);
-      
-      chrome.storage.local.set({ customEngines: engines }, function() {
-        alert('Custom engine added!');
-        document.getElementById('engineName').value = '';
-        document.getElementById('engineUrl').value = '';
-        displayCustomEngines(engines);
-      });
-    });
-  });
-  
-  // Clear History Button
-  document.getElementById('clearHistoryBtn').addEventListener('click', function() {
-    if (confirm('Clear all search history?')) {
-      chrome.storage.local.set({ searchHistory: [] }, function() {
-        document.getElementById('historyList').innerHTML = '<p style="color:#666;text-align:center;">No recent searches</p>';
-      });
-    }
-  });
-  
-  // Test Custom Search
-  document.getElementById('testCustomBtn').addEventListener('click', function() {
-    const testUrl = document.getElementById('engineUrl').value.trim();
-    const testText = "test search";
-    
-    if (!testUrl) {
-      alert('Please enter a URL first');
-      return;
-    }
-    
-    let finalUrl = testUrl;
-    if (testUrl.includes('%s')) {
-      finalUrl = testUrl.replace('%s', encodeURIComponent(testText));
-    }
-    
-    // Open test search in new tab
-    chrome.tabs.create({ url: finalUrl });
+const ENGINES = [
+  { id: "google",        label: "Google",      icon: "🔍", url: "https://www.google.com/search?q=%s" },
+  { id: "youtube",       label: "YouTube",     icon: "▶",  url: "https://www.youtube.com/results?search_query=%s" },
+  { id: "wikipedia",     label: "Wikipedia",   icon: "📖", url: "https://en.wikipedia.org/wiki/Special:Search?search=%s" },
+  { id: "amazon",        label: "Amazon",      icon: "🛒", url: "https://www.amazon.com/s?k=%s" },
+  { id: "github",        label: "GitHub",      icon: "💻", url: "https://github.com/search?q=%s" },
+  { id: "stackoverflow", label: "S.Overflow",  icon: "💬", url: "https://stackoverflow.com/search?q=%s" },
+  { id: "twitter",       label: "Twitter/X",   icon: "✦",  url: "https://twitter.com/search?q=%s" },
+  { id: "reddit",        label: "Reddit",      icon: "🔮", url: "https://www.reddit.com/search/?q=%s" },
+  { id: "translate",     label: "Translate",   icon: "🌐", url: "https://translate.google.com/?sl=auto&tl=en&text=%s" },
+  { id: "images",        label: "Images",      icon: "🖼",  url: "https://www.google.com/search?tbm=isch&q=%s" }
+];
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+    if (tab.dataset.tab === "history") loadHistory();
+    if (tab.dataset.tab === "custom") loadCustomEngines();
   });
 });
 
-function displayRecentSearches(history) {
-  const historyList = document.getElementById('historyList');
-  historyList.innerHTML = '';
-  
-  // Show only last 5 searches
-  const recent = history.slice(-5).reverse();
-  
-  recent.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'history-item';
-    div.innerHTML = `
-      <div class="history-text">${item.text.substring(0, 30)}${item.text.length > 30 ? '...' : ''}</div>
-      <div class="history-engine">${item.engine}</div>
-      <div class="history-time">${formatTime(item.timestamp)}</div>
-    `;
-    
-    // Click to search again
-    div.addEventListener('click', function() {
-      searchAgain(item.text, item.engine);
-    });
-    
-    historyList.appendChild(div);
-  });
-}
+// ── Home: build engine grid ───────────────────────────────────────────────────
+function buildHomeGrid() {
+  const grid = document.getElementById("homeEngineGrid");
+  grid.replaceChildren();
 
-function displayCustomEngines(engines) {
-  const customList = document.getElementById('customEnginesList');
-  customList.innerHTML = '';
-  
-  engines.forEach(engine => {
-    const div = document.createElement('div');
-    div.className = 'custom-engine-item';
-    div.innerHTML = `
-      <span class="engine-icon">${engine.icon || '🔗'}</span>
-      <span class="engine-name">${engine.name}</span>
-      <button class="remove-engine" data-id="${engine.id}">×</button>
-    `;
-    
-    customList.appendChild(div);
-    
-    // Remove button event
-    div.querySelector('.remove-engine').addEventListener('click', function(e) {
-      e.stopPropagation();
-      removeCustomEngine(engine.id);
-    });
-    
-    // Click to use engine
-    div.addEventListener('click', function() {
-      // Get current tab and selected text
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'useCustomEngine',
-          engine: engine
-        });
+  ENGINES.forEach(engine => {
+    const card = el("button", "eng-card");
+    card.setAttribute("title", engine.label);
+
+    const icon = el("span", "eng-icon", engine.icon);
+    const name = el("span", "eng-name", engine.label);
+    card.appendChild(icon);
+    card.appendChild(name);
+
+    card.addEventListener("click", () => {
+      // Notify content script of active tab to trigger search with current selection
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, {
+            type: "searchWithEngine",
+            url: engine.url,
+            label: engine.label
+          });
+        }
       });
     });
+
+    grid.appendChild(card);
   });
 }
 
-function removeCustomEngine(engineId) {
-  chrome.storage.local.get(['customEngines'], function(data) {
-    const engines = data.customEngines || [];
-    const filtered = engines.filter(engine => engine.id !== engineId);
-    
-    chrome.storage.local.set({ customEngines: filtered }, function() {
-      displayCustomEngines(filtered);
+// ── History ───────────────────────────────────────────────────────────────────
+function loadHistory() {
+  chrome.storage.local.get(["searchHistory"], (data) => {
+    const history = (data.searchHistory || []).slice().reverse().slice(0, 20);
+    const list = document.getElementById("historyList");
+    list.replaceChildren();
+
+    if (!history.length) {
+      list.appendChild(el("div", "empty-state", "No recent searches yet"));
+      return;
+    }
+
+    history.forEach(item => {
+      const row = el("div", "history-row");
+
+      const left = el("div", "history-left");
+      const text = el("div", "history-text", item.text.length > 40 ? item.text.slice(0, 40) + "…" : item.text);
+      const meta = el("div", "history-meta", `${item.engine} · ${formatTime(item.timestamp)}`);
+      left.appendChild(text);
+      left.appendChild(meta);
+
+      const reBtn = el("button", "history-re-btn", "↗");
+      reBtn.setAttribute("title", "Search again");
+      reBtn.addEventListener("click", () => {
+        const engine = ENGINES.find(e => e.label === item.engine);
+        if (engine) {
+          chrome.tabs.create({
+            url: engine.url.replace("%s", encodeURIComponent(item.text)),
+            active: true
+          });
+        }
+      });
+
+      row.appendChild(left);
+      row.appendChild(reBtn);
+      list.appendChild(row);
     });
   });
 }
 
-function searchAgain(text, engine) {
-  const searchUrls = {
-    google: `https://www.google.com/search?q=${encodeURIComponent(text)}`,
-    youtube: `https://www.youtube.com/results?search_query=${encodeURIComponent(text)}`,
-    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(text)}`,
-    amazon: `https://www.amazon.com/s?k=${encodeURIComponent(text)}`,
-    github: `https://github.com/search?q=${encodeURIComponent(text)}`,
-    stackoverflow: `https://stackoverflow.com/search?q=${encodeURIComponent(text)}`,
-    twitter: `https://twitter.com/search?q=${encodeURIComponent(text)}`,
-    reddit: `https://www.reddit.com/search/?q=${encodeURIComponent(text)}`,
-    translate: `https://translate.google.com/?sl=auto&tl=en&text=${encodeURIComponent(text)}`,
-    images: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(text)}`
-  };
-  
-  if (searchUrls[engine]) {
-    chrome.tabs.create({ url: searchUrls[engine] });
-  }
+document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ type: "clearHistory" }, () => {
+    const list = document.getElementById("historyList");
+    list.replaceChildren();
+    list.appendChild(el("div", "empty-state", "No recent searches yet"));
+  });
+});
+
+// ── Custom Engines ────────────────────────────────────────────────────────────
+function loadCustomEngines() {
+  chrome.storage.local.get(["customEngines"], (data) => {
+    const engines = data.customEngines || [];
+    const list = document.getElementById("customEnginesList");
+    list.replaceChildren();
+
+    if (!engines.length) {
+      list.appendChild(el("div", "empty-state", "No custom engines yet"));
+      return;
+    }
+
+    engines.forEach(engine => {
+      const row = el("div", "custom-row");
+
+      const icon = el("span", "custom-icon", "🔗");
+      const name = el("span", "custom-name", engine.name);
+
+      const removeBtn = el("button", "remove-btn", "×");
+      removeBtn.setAttribute("title", "Remove");
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        chrome.runtime.sendMessage({ type: "removeCustomEngine", id: engine.id }, () => {
+          loadCustomEngines();
+        });
+      });
+
+      row.appendChild(icon);
+      row.appendChild(name);
+      row.appendChild(removeBtn);
+      list.appendChild(row);
+    });
+  });
 }
 
-function formatTime(timestamp) {
-  const now = new Date();
-  const then = new Date(timestamp);
-  const diff = now - then;
-  
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
+document.getElementById("addCustomEngineBtn").addEventListener("click", () => {
+  const nameInput = document.getElementById("engineName");
+  const urlInput  = document.getElementById("engineUrl");
+  const name = nameInput.value.trim();
+  const url  = urlInput.value.trim();
+
+  if (!name || !url) { showToast("Enter both name and URL"); return; }
+  if (!url.includes("%s")) { showToast("URL must contain %s"); return; }
+
+  const engine = {
+    id:   "custom-" + name.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now(),
+    name,
+    url
+  };
+
+  chrome.runtime.sendMessage({ type: "saveCustomEngine", engine }, () => {
+    nameInput.value = "";
+    urlInput.value  = "";
+    showToast("Engine added!");
+    loadCustomEngines();
+  });
+});
+
+document.getElementById("testCustomBtn").addEventListener("click", () => {
+  const url = document.getElementById("engineUrl").value.trim();
+  if (!url) { showToast("Enter a URL first"); return; }
+  const final = url.replace("%s", encodeURIComponent("test query"));
+  chrome.tabs.create({ url: final, active: true });
+});
+
+// ── Toast notification ────────────────────────────────────────────────────────
+function showToast(msg) {
+  const existing = document.getElementById("qs-toast");
+  if (existing) existing.remove();
+
+  const toast = el("div", "toast", msg);
+  toast.id = "qs-toast";
+  document.body.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.classList.add("toast-show");
+    setTimeout(() => {
+      toast.classList.remove("toast-show");
+      setTimeout(() => toast.remove(), 300);
+    }, 2200);
+  });
 }
+
+// ── Time formatter ────────────────────────────────────────────────────────────
+function formatTime(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  if (m < 1)  return "just now";
+  if (m < 60) return `${m}m ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${d}d ago`;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  buildHomeGrid();
+});
