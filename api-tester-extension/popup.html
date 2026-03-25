@@ -5,118 +5,449 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Tester Pro</title>
     <link rel="stylesheet" href="themes.css">
+    <style>
+        /* ── Popup-specific overrides ── */
+        body { min-height: unset; }
+
+        .popup-root {
+            width: 340px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Header bar */
+        .p-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 10px 14px;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .p-logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .p-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-primary);
+        }
+
+        .p-logo-icon svg { display: block; }
+
+        .p-logo-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .p-app-name {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .p-app-version {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-faint);
+            letter-spacing: 0.02em;
+        }
+
+        .p-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .p-icon-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface-muted);
+            color: var(--text-soft);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 14px;
+            outline: none;
+        }
+        .p-icon-btn:hover {
+            border-color: var(--border-strong);
+            color: var(--primary);
+            background: var(--primary-soft);
+        }
+
+        /* Primary CTA */
+        .p-cta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%);
+            border: none;
+            border-radius: var(--radius-lg);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: var(--shadow-primary);
+            transition: all var(--transition);
+            width: 100%;
+        }
+        .p-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 36px var(--primary-glow);
+        }
+        .p-cta-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .p-cta-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .p-cta-text { text-align: left; }
+        .p-cta-label {
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.01em;
+        }
+        .p-cta-sub {
+            font-size: 11px;
+            opacity: 0.78;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .p-cta-arrow {
+            font-size: 18px;
+            opacity: 0.7;
+            font-weight: 300;
+        }
+
+        /* Quick actions row */
+        .p-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .p-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            color: var(--text-soft);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 12px;
+            font-weight: 700;
+            font-family: var(--font-ui);
+            backdrop-filter: blur(12px);
+        }
+        .p-action-btn:hover {
+            border-color: var(--border-strong);
+            color: var(--text);
+            background: var(--surface-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-xs);
+        }
+        .p-action-btn .p-action-icon {
+            font-size: 15px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        /* Steps */
+        .p-steps-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 12px 14px;
+            backdrop-filter: blur(18px);
+        }
+        .p-steps-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-faint);
+            margin-bottom: 10px;
+        }
+        .p-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .p-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .p-step:last-child { border-bottom: none; padding-bottom: 0; }
+        .p-step:first-child { padding-top: 0; }
+        .p-step-num {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            font-size: 10px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .p-step-info { flex: 1; min-width: 0; }
+        .p-step-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .p-step-desc {
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-top: 1px;
+            line-height: 1.4;
+        }
+
+        /* Recent requests */
+        .p-recent-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 12px 14px;
+            backdrop-filter: blur(18px);
+        }
+        .p-recent-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .p-recent-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-faint);
+        }
+        .p-recent-count {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-soft);
+            border-radius: var(--radius-pill);
+            padding: 2px 7px;
+        }
+        #recentList {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 160px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+        .p-recent-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 9px;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            background: var(--surface-muted);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: left;
+            width: 100%;
+            font-family: var(--font-ui);
+        }
+        .p-recent-item:hover {
+            border-color: var(--border-strong);
+            background: var(--primary-soft);
+            transform: translateX(2px);
+        }
+        .p-recent-name {
+            flex: 1;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .p-recent-time {
+            font-size: 10px;
+            color: var(--text-faint);
+            flex-shrink: 0;
+        }
+        .p-empty {
+            text-align: center;
+            padding: 14px;
+            font-size: 12px;
+            color: var(--text-faint);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Tiny badge */
+        .m-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: var(--radius-pill);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .m-get    { background: var(--success-soft); color: var(--success); }
+        .m-post   { background: var(--primary-soft); color: var(--primary); }
+        .m-put    { background: rgba(124,58,237,0.12); color: #7c3aed; }
+        .m-patch  { background: var(--warning-soft); color: var(--warning); }
+        .m-delete { background: var(--danger-soft); color: var(--danger); }
+        [data-theme="dark"] .m-get    { background: rgba(52,211,153,0.14); color: #6ee7b7; }
+        [data-theme="dark"] .m-post   { background: rgba(129,140,248,0.16); color: #a5b4fc; }
+        [data-theme="dark"] .m-put    { background: rgba(167,139,250,0.16); color: #c4b5fd; }
+        [data-theme="dark"] .m-patch  { background: rgba(251,191,36,0.16); color: #fde68a; }
+        [data-theme="dark"] .m-delete { background: rgba(248,113,113,0.16); color: #fca5a5; }
+    </style>
 </head>
 <body>
-    <div class="app-shell popup-shell">
-        <div class="glass-panel topbar">
-            <div class="brand popup-brand">
-                <div class="brand-heading-row">
-                    <h1 class="brand-title">API Tester Pro</h1>
-                    <div class="brand-inline-actions">
-                        <button id="openSettings" class="icon-button icon-button-large" aria-label="Settings" title="Settings">
-                            <span aria-hidden="true">⚙</span>
-                        </button>
-                        <button id="toggleTheme" class="icon-button icon-button-large" type="button" aria-label="Toggle theme" title="Toggle theme">
-                            <span id="themeIcon" aria-hidden="true">☾</span>
-                        </button>
-                    </div>
-                </div>
-                <p class="brand-subtitle">Launch a premium API workspace in one click</p>
+<div class="popup-root">
+
+    <!-- ── Header ── -->
+    <div class="p-header">
+        <div class="p-logo">
+            <div class="p-logo-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+            </div>
+            <div class="p-logo-text">
+                <div class="p-app-name">API Tester Pro</div>
+                <div class="p-app-version">v2.0 · Professional</div>
             </div>
         </div>
-
-        <div class="grid-layout popup-grid">
-            <section class="glass-panel section-card">
-                <div class="section-header">
-                    <div>
-                        <h2 class="section-title">Quick Start</h2>
-                        <p class="section-copy">Start in one click, then do the real API work in the full workspace.</p>
-                    </div>
-                </div>
-                <div class="stack">
-                    <button id="openWorkspace" class="primary-button">Open API Workspace</button>
-                    <div class="button-row quickstart-row">
-                        <button id="loadStarter" class="secondary-button">Load starter request</button>
-                        <button id="newRequest" class="ghost-button">Reset current draft</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="glass-panel section-card">
-                <div class="section-header">
-                    <div>
-                        <h2 class="section-title">How It Works</h2>
-                        <p class="section-copy">A simple flow so new users understand the extension immediately.</p>
-                    </div>
-                </div>
-                <div class="popup-steps">
-                    <div class="step-card">
-                        <div class="step-number">1</div>
-                        <div class="step-copy">
-                            <div class="step-title">Open workspace</div>
-                            <div class="step-text">Launch the full API testing screen from the popup.</div>
-                        </div>
-                    </div>
-                    <div class="step-card">
-                        <div class="step-number">2</div>
-                        <div class="step-copy">
-                            <div class="step-title">Build request</div>
-                            <div class="step-text">Add method, URL, headers, params, auth, body, or GraphQL data.</div>
-                        </div>
-                    </div>
-                    <div class="step-card">
-                        <div class="step-number">3</div>
-                        <div class="step-copy">
-                            <div class="step-title">Inspect response</div>
-                            <div class="step-text">Check pretty output, raw data, headers, assertions, history, and snippets.</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="glass-panel section-card">
-                <div class="section-header">
-                    <div>
-                        <h2 class="section-title">Workspace Preview</h2>
-                        <p class="section-copy">What you get after clicking `Open API Workspace`.</p>
-                    </div>
-                </div>
-                <div class="popup-preview">
-                    <div class="preview-window">
-                        <div class="preview-toolbar">
-                            <span class="preview-pill preview-method">GET</span>
-                            <span class="preview-url">api.example.com/users</span>
-                        </div>
-                        <div class="preview-body">
-                            <div class="preview-panel">
-                                <div class="preview-heading">Request Builder</div>
-                                <div class="preview-line"></div>
-                                <div class="preview-line short"></div>
-                                <div class="preview-line"></div>
-                            </div>
-                            <div class="preview-panel">
-                                <div class="preview-heading">Response Viewer</div>
-                                <div class="preview-code">{ "status": "ok" }</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="glass-panel section-card">
-                <div class="section-header">
-                    <div>
-                        <h2 class="section-title">Recent Requests</h2>
-                        <p class="section-copy">Jump back into your latest work.</p>
-                    </div>
-                </div>
-                <div id="recentList" class="list-box">
-                    <div class="empty-state">No recent requests yet.</div>
-                </div>
-            </section>
+        <div class="p-header-actions">
+            <button id="toggleTheme" class="p-icon-btn" title="Toggle theme" aria-label="Toggle theme">
+                <span id="themeIcon">☾</span>
+            </button>
+            <button id="openSettings" class="p-icon-btn" title="Settings" aria-label="Settings">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
         </div>
     </div>
 
-    <script type="module" src="popup.js"></script>
+    <!-- ── Primary CTA ── -->
+    <button id="openWorkspace" class="p-cta">
+        <div class="p-cta-left">
+            <div class="p-cta-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                    <path d="M8 21h8M12 17v4"/>
+                </svg>
+            </div>
+            <div class="p-cta-text">
+                <div class="p-cta-label">Open Workspace</div>
+                <div class="p-cta-sub">Full API testing environment</div>
+            </div>
+        </div>
+        <div class="p-cta-arrow">→</div>
+    </button>
+
+    <!-- ── Quick Actions ── -->
+    <div class="p-actions">
+        <button id="loadStarter" class="p-action-btn">
+            <span class="p-action-icon">⚡</span>
+            <span>Load Starter</span>
+        </button>
+        <button id="newRequest" class="p-action-btn">
+            <span class="p-action-icon">✦</span>
+            <span>New Request</span>
+        </button>
+    </div>
+
+    <!-- ── How It Works ── -->
+    <div class="p-steps-card">
+        <div class="p-steps-title">How It Works</div>
+        <div class="p-steps">
+            <div class="p-step">
+                <div class="p-step-num">1</div>
+                <div class="p-step-info">
+                    <div class="p-step-name">Open Workspace</div>
+                    <div class="p-step-desc">Launch the full testing environment</div>
+                </div>
+            </div>
+            <div class="p-step">
+                <div class="p-step-num">2</div>
+                <div class="p-step-info">
+                    <div class="p-step-name">Build &amp; Send</div>
+                    <div class="p-step-desc">Set method, URL, headers, auth &amp; body</div>
+                </div>
+            </div>
+            <div class="p-step">
+                <div class="p-step-num">3</div>
+                <div class="p-step-info">
+                    <div class="p-step-name">Inspect Response</div>
+                    <div class="p-step-desc">Pretty view, assertions, snippets &amp; history</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Recent Requests ── -->
+    <div class="p-recent-card">
+        <div class="p-recent-header">
+            <div class="p-recent-title">Recent Requests</div>
+            <div id="recentCount" class="p-recent-count hidden">0</div>
+        </div>
+        <div id="recentList">
+            <div class="p-empty">No recent requests yet</div>
+        </div>
+    </div>
+
+</div>
+<script type="module" src="popup.js"></script>
 </body>
 </html>

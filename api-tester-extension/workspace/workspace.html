@@ -3,42 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Tester Pro Workspace</title>
+    <title>API Tester Pro — Workspace</title>
     <link rel="stylesheet" href="../themes.css">
     <link rel="stylesheet" href="workspace.css">
 </head>
 <body>
     <div class="app-shell workspace-shell">
+
+        <!-- Topbar -->
         <header class="glass-panel topbar workspace-topbar">
             <div class="brand">
-                <h1 class="brand-title">API Tester Pro Workspace</h1>
-                <p class="brand-subtitle">REST, GraphQL, WebSocket, collections, assertions, snippets, docs, schedules</p>
+                <h1 class="brand-title">API Tester Pro</h1>
+                <p class="brand-subtitle">REST · GraphQL · WebSocket · Collections · Assertions · Snippets · Schedules</p>
             </div>
             <div class="topbar-actions">
                 <button id="openSettings" class="secondary-button">Settings</button>
-                <button id="toggleTheme" class="ghost-button">Dark theme</button>
+                <button id="toggleTheme" class="ghost-button" aria-label="Toggle theme">
+                    <span id="themeIcon" aria-hidden="true">☾</span> Theme
+                </button>
             </div>
         </header>
 
         <div class="panel-split">
+
+            <!-- ── SIDEBAR ── -->
             <aside class="sidebar-column">
+
+                <!-- Search -->
                 <section class="glass-panel section-card">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">Workspace Search</h2>
+                            <h2 class="section-title">Search</h2>
                             <p class="section-copy">Search collections, history and favorites.</p>
                         </div>
                     </div>
                     <div class="stack">
-                        <input id="globalSearch" class="input" placeholder="Search by request name, URL or folder">
+                        <input id="globalSearch" class="input" placeholder="Search by name, URL or folder…">
                         <div class="button-row">
                             <button id="exportAll" class="secondary-button">Export JSON</button>
                             <button id="importAll" class="secondary-button">Import JSON</button>
-                            <input id="importFile" type="file" accept=".json" class="hidden">
+                            <input id="importFile" type="file" accept=".json" class="hidden" aria-hidden="true">
                         </div>
                     </div>
                 </section>
 
+                <!-- Environments -->
                 <section class="glass-panel section-card">
                     <div class="section-header">
                         <div>
@@ -48,36 +57,41 @@
                         <button id="saveEnvironment" class="secondary-button">Save env</button>
                     </div>
                     <div class="stack">
-                        <select id="environmentSelect" class="select"></select>
+                        <select id="environmentSelect" class="select" aria-label="Select environment"></select>
                         <div id="environmentRows" class="table-stack"></div>
-                        <button id="addEnvironmentVar" class="ghost-button">Add variable</button>
+                        <button id="addEnvironmentVar" class="ghost-button">+ Add variable</button>
                     </div>
                 </section>
 
+                <!-- Collections -->
                 <section class="glass-panel section-card">
-                    <div class="section-header">
-                        <div>
+                    <div class="section-header collections-header">
+                        <div class="section-header-text">
                             <h2 class="section-title">Collections</h2>
                             <p class="section-copy">Folders, templates, favorites and reusable requests.</p>
                         </div>
-                        <button id="saveRequest" class="primary-button">Save request</button>
+                        <button id="saveRequest" class="primary-button save-request-btn">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Save
+                        </button>
                     </div>
                     <div class="stack">
-                        <input id="collectionSearch" class="input" placeholder="Filter collections">
+                        <input id="collectionSearch" class="input" placeholder="Filter collections…">
                         <div id="collectionTree" class="tree-group"></div>
                     </div>
                 </section>
 
+                <!-- Batch & Schedule -->
                 <section class="glass-panel section-card">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">Batch & Schedule</h2>
+                            <h2 class="section-title">Batch &amp; Schedule</h2>
                             <p class="section-copy">Queue requests, chain variables, and schedule runs.</p>
                         </div>
                     </div>
                     <div class="stack">
                         <div class="button-row">
-                            <button id="addToBatch" class="secondary-button">Add current to batch</button>
+                            <button id="addToBatch" class="secondary-button">Add to batch</button>
                             <button id="runBatch" class="primary-button">Run batch</button>
                         </div>
                         <div id="batchList" class="list-box">
@@ -99,24 +113,30 @@
                         </div>
                     </div>
                 </section>
-            </aside>
 
+            </aside><!-- /sidebar -->
+
+            <!-- ── MAIN ── -->
             <main class="content-column">
+
+                <!-- Request Builder -->
                 <section class="glass-panel section-card">
                     <div class="section-header">
                         <div>
                             <h2 class="section-title">Request Builder</h2>
-                            <p class="section-copy">Advanced request building with auth, params, body, assertions and extractors.</p>
+                            <p class="section-copy">Build, auth, assert and chain requests with full protocol support.</p>
                         </div>
-                        <div class="pill-tabs" id="protocolTabs">
-                            <button class="pill-tab active" data-protocol="rest">REST</button>
-                            <button class="pill-tab" data-protocol="graphql">GraphQL</button>
-                            <button class="pill-tab" data-protocol="websocket">WebSocket</button>
-                            <button class="pill-tab" data-protocol="webhook">Webhook</button>
+                        <div class="pill-tabs" id="protocolTabs" role="tablist" aria-label="Protocol">
+                            <button class="pill-tab active" data-protocol="rest" role="tab" aria-selected="true">REST</button>
+                            <button class="pill-tab" data-protocol="graphql" role="tab" aria-selected="false">GraphQL</button>
+                            <button class="pill-tab" data-protocol="websocket" role="tab" aria-selected="false">WebSocket</button>
+                            <button class="pill-tab" data-protocol="webhook" role="tab" aria-selected="false">Webhook</button>
                         </div>
                     </div>
 
                     <div class="request-grid">
+
+                        <!-- Name / Folder -->
                         <div class="compact-grid">
                             <div class="field">
                                 <label class="field-label" for="requestName">Request name</label>
@@ -128,10 +148,11 @@
                             </div>
                         </div>
 
+                        <!-- Method + URL + Send -->
                         <div class="request-controls">
                             <div id="methodField" class="field">
                                 <label class="field-label" for="method">Method</label>
-                                <select id="method" class="select">
+                                <select id="method" class="select" aria-label="HTTP method">
                                     <option>GET</option>
                                     <option>POST</option>
                                     <option>PUT</option>
@@ -158,6 +179,7 @@
                             <button id="sendRequest" class="primary-button">Send</button>
                         </div>
 
+                        <!-- WebSocket Panel -->
                         <div id="websocketPanel" class="subpanel hidden">
                             <h3 class="subpanel-title">WebSocket Session</h3>
                             <div class="toolbar-row">
@@ -175,28 +197,32 @@
                             <pre id="websocketLog" class="code-view websocket-log-view">Connect to a WebSocket URL to view incoming and outgoing messages.</pre>
                         </div>
 
-                        <div class="builder-tabs" id="builderTabs">
-                            <button class="pill-tab active" data-pane="paramsPane">Params</button>
-                            <button class="pill-tab" data-pane="headersPane">Headers</button>
-                            <button class="pill-tab" data-pane="bodyPane">Body</button>
-                            <button class="pill-tab" data-pane="authPane">Auth</button>
-                            <button class="pill-tab" data-pane="testsPane">Assertions</button>
-                            <button class="pill-tab" data-pane="extractPane">Chaining</button>
+                        <!-- Builder Tabs -->
+                        <div class="builder-tabs" id="builderTabs" role="tablist" aria-label="Request sections">
+                            <button class="pill-tab active" data-pane="paramsPane"  role="tab" aria-selected="true">Params</button>
+                            <button class="pill-tab" data-pane="headersPane" role="tab" aria-selected="false">Headers</button>
+                            <button class="pill-tab" data-pane="bodyPane"    role="tab" aria-selected="false">Body</button>
+                            <button class="pill-tab" data-pane="authPane"    role="tab" aria-selected="false">Auth</button>
+                            <button class="pill-tab" data-pane="testsPane"   role="tab" aria-selected="false">Assertions</button>
+                            <button class="pill-tab" data-pane="extractPane" role="tab" aria-selected="false">Chaining</button>
                         </div>
 
-                        <div id="paramsPane" class="builder-pane active subpanel">
+                        <!-- Params -->
+                        <div id="paramsPane" class="builder-pane active subpanel" role="tabpanel">
                             <h3 class="subpanel-title">Query parameters</h3>
                             <div id="paramsRows" class="table-stack"></div>
-                            <button id="addParam" class="ghost-button">Add parameter</button>
+                            <button id="addParam" class="ghost-button">+ Add parameter</button>
                         </div>
 
-                        <div id="headersPane" class="builder-pane subpanel">
+                        <!-- Headers -->
+                        <div id="headersPane" class="builder-pane subpanel" role="tabpanel">
                             <h3 class="subpanel-title">Headers</h3>
                             <div id="headersRows" class="table-stack"></div>
-                            <button id="addHeader" class="ghost-button">Add header</button>
+                            <button id="addHeader" class="ghost-button">+ Add header</button>
                         </div>
 
-                        <div id="bodyPane" class="builder-pane subpanel">
+                        <!-- Body -->
+                        <div id="bodyPane" class="builder-pane subpanel" role="tabpanel">
                             <h3 class="subpanel-title">Request body</h3>
                             <div class="compact-grid">
                                 <div class="field">
@@ -209,7 +235,7 @@
                                 </div>
                                 <div class="field">
                                     <label class="field-label" for="graphqlQuery">GraphQL query</label>
-                                    <textarea id="graphqlQuery" class="textarea graphql-variables-input" placeholder='query { countries { code name } }'></textarea>
+                                    <textarea id="graphqlQuery" class="textarea graphql-variables-input" placeholder="query { countries { code name } }"></textarea>
                                 </div>
                                 <div class="field" id="graphqlVariablesField">
                                     <label class="field-label" for="graphqlVariables">GraphQL variables</label>
@@ -219,8 +245,9 @@
                             <textarea id="requestBody" class="textarea" placeholder='{"message":"hello"}'></textarea>
                         </div>
 
-                        <div id="authPane" class="builder-pane subpanel">
-                            <h3 class="subpanel-title">Authentication helpers</h3>
+                        <!-- Auth -->
+                        <div id="authPane" class="builder-pane subpanel" role="tabpanel">
+                            <h3 class="subpanel-title">Authentication</h3>
                             <div class="triple-grid">
                                 <div class="field">
                                     <label class="field-label" for="authType">Auth type</label>
@@ -238,7 +265,7 @@
                                 </div>
                                 <div class="field">
                                     <label class="field-label" for="authValue">Secret / token</label>
-                                    <input id="authValue" class="input" placeholder="token / password">
+                                    <input id="authValue" class="input" type="password" placeholder="token / password">
                                 </div>
                             </div>
                             <div class="compact-grid">
@@ -259,8 +286,9 @@
                             </div>
                         </div>
 
-                        <div id="testsPane" class="builder-pane subpanel">
-                            <h3 class="subpanel-title">Assertions and schema checks</h3>
+                        <!-- Assertions -->
+                        <div id="testsPane" class="builder-pane subpanel" role="tabpanel">
+                            <h3 class="subpanel-title">Assertions &amp; schema checks</h3>
                             <div class="compact-grid">
                                 <div class="field">
                                     <label class="field-label" for="expectedStatus">Expected status</label>
@@ -277,15 +305,18 @@
                             </div>
                         </div>
 
-                        <div id="extractPane" class="builder-pane subpanel">
+                        <!-- Chaining -->
+                        <div id="extractPane" class="builder-pane subpanel" role="tabpanel">
                             <h3 class="subpanel-title">Request chaining</h3>
                             <p class="hint">Extract response values into environment variables for later requests. Use paths like <code>data.token</code>.</p>
                             <div id="extractRows" class="table-stack"></div>
-                            <button id="addExtractor" class="ghost-button">Add extractor</button>
+                            <button id="addExtractor" class="ghost-button">+ Add extractor</button>
                         </div>
-                    </div>
+
+                    </div><!-- /request-grid -->
                 </section>
 
+                <!-- Response Intelligence -->
                 <section class="glass-panel section-card">
                     <div class="section-header">
                         <div>
@@ -294,59 +325,63 @@
                         </div>
                     </div>
 
+                    <!-- Metrics -->
                     <div class="metric-strip">
                         <div class="metric-card">
                             <div class="metric-label">Status</div>
-                            <div id="metricStatus" class="metric-value">-</div>
+                            <div id="metricStatus" class="metric-value">—</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">Response time</div>
-                            <div id="metricTime" class="metric-value">-</div>
+                            <div id="metricTime" class="metric-value">—</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">Size</div>
-                            <div id="metricSize" class="metric-value">-</div>
+                            <div id="metricSize" class="metric-value">—</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">Format</div>
-                            <div id="metricFormat" class="metric-value">-</div>
+                            <div id="metricFormat" class="metric-value">—</div>
                         </div>
                     </div>
 
+                    <!-- Split: Response + Output -->
                     <div class="result-split result-split-spaced">
+                        <!-- Left: Response views -->
                         <div class="stack">
-                            <div class="response-tabs" id="responseTabs">
-                                <button class="pill-tab active" data-pane="responsePrettyPane">Pretty</button>
-                                <button class="pill-tab" data-pane="responseHeadersPane">Headers</button>
-                                <button class="pill-tab" data-pane="responseRawPane">Raw</button>
-                                <button class="pill-tab" data-pane="responseTestsPane">Assertions</button>
-                                <button class="pill-tab" data-pane="responseDiffPane">Diff</button>
+                            <div class="response-tabs" id="responseTabs" role="tablist" aria-label="Response views">
+                                <button class="pill-tab active" data-pane="responsePrettyPane"  role="tab" aria-selected="true">Pretty</button>
+                                <button class="pill-tab" data-pane="responseHeadersPane" role="tab" aria-selected="false">Headers</button>
+                                <button class="pill-tab" data-pane="responseRawPane"     role="tab" aria-selected="false">Raw</button>
+                                <button class="pill-tab" data-pane="responseTestsPane"  role="tab" aria-selected="false">Assertions</button>
+                                <button class="pill-tab" data-pane="responseDiffPane"   role="tab" aria-selected="false">Diff</button>
                             </div>
-                            <div id="responsePrettyPane" class="response-pane response-pane-left active">
+                            <div id="responsePrettyPane" class="response-pane response-pane-left active" role="tabpanel">
                                 <pre id="responsePretty" class="code-view">Send a request to see the response.</pre>
                             </div>
-                            <div id="responseHeadersPane" class="response-pane response-pane-left">
+                            <div id="responseHeadersPane" class="response-pane response-pane-left" role="tabpanel">
                                 <pre id="responseHeaders" class="code-view"></pre>
                             </div>
-                            <div id="responseRawPane" class="response-pane response-pane-left">
+                            <div id="responseRawPane" class="response-pane response-pane-left" role="tabpanel">
                                 <pre id="responseRaw" class="code-view"></pre>
                             </div>
-                            <div id="responseTestsPane" class="response-pane response-pane-left">
+                            <div id="responseTestsPane" class="response-pane response-pane-left" role="tabpanel">
                                 <div id="assertionResults" class="rich-preview">Assertions will run after each request.</div>
                             </div>
-                            <div id="responseDiffPane" class="response-pane response-pane-left">
+                            <div id="responseDiffPane" class="response-pane response-pane-left" role="tabpanel">
                                 <pre id="responseDiff" class="code-view">Run multiple requests to compare responses.</pre>
                             </div>
                         </div>
 
+                        <!-- Right: Output tools -->
                         <div class="stack">
-                            <div class="response-tabs" id="outputTabs">
-                                <button class="pill-tab active" data-pane="snippetPane">Snippets</button>
-                                <button class="pill-tab" data-pane="docsPane">Docs</button>
-                                <button class="pill-tab" data-pane="ciPane">CI/CD</button>
-                                <button class="pill-tab" data-pane="mockPane">Mock</button>
+                            <div class="response-tabs" id="outputTabs" role="tablist" aria-label="Output tools">
+                                <button class="pill-tab active" data-pane="snippetPane" role="tab" aria-selected="true">Snippets</button>
+                                <button class="pill-tab" data-pane="docsPane"    role="tab" aria-selected="false">Docs</button>
+                                <button class="pill-tab" data-pane="ciPane"      role="tab" aria-selected="false">CI/CD</button>
+                                <button class="pill-tab" data-pane="mockPane"    role="tab" aria-selected="false">Mock</button>
                             </div>
-                            <div id="snippetPane" class="response-pane response-pane-right active">
+                            <div id="snippetPane" class="response-pane response-pane-right active" role="tabpanel">
                                 <div class="button-row output-actions-row">
                                     <button id="copySnippetCurl" class="secondary-button">cURL</button>
                                     <button id="copySnippetPython" class="secondary-button">Python</button>
@@ -354,19 +389,19 @@
                                 </div>
                                 <pre id="snippetOutput" class="code-view"></pre>
                             </div>
-                            <div id="docsPane" class="response-pane response-pane-right">
+                            <div id="docsPane" class="response-pane response-pane-right" role="tabpanel">
                                 <div class="button-row output-actions-row">
                                     <button id="copyDocs" class="secondary-button">Copy docs</button>
                                 </div>
                                 <pre id="docsOutput" class="code-view"></pre>
                             </div>
-                            <div id="ciPane" class="response-pane response-pane-right">
+                            <div id="ciPane" class="response-pane response-pane-right" role="tabpanel">
                                 <div class="button-row output-actions-row">
                                     <button id="copyCi" class="secondary-button">Copy CI snippet</button>
                                 </div>
                                 <pre id="ciOutput" class="code-view"></pre>
                             </div>
-                            <div id="mockPane" class="response-pane response-pane-right">
+                            <div id="mockPane" class="response-pane response-pane-right" role="tabpanel">
                                 <div class="field">
                                     <label class="field-label" for="mockPath">Mock route</label>
                                     <input id="mockPath" class="input" placeholder="/users/:id">
@@ -375,20 +410,21 @@
                                     <label class="field-label" for="mockStatus">Mock status</label>
                                     <input id="mockStatus" class="input" type="number" value="200">
                                 </div>
-                                <div class="button-row">
-                                    <button id="generateMock" class="secondary-button">Generate mock config</button>
+                                <div class="button-row" style="margin-top:8px;">
+                                    <button id="generateMock" class="secondary-button">Generate config</button>
                                     <button id="copyMock" class="secondary-button">Copy config</button>
                                 </div>
-                                <pre id="mockOutput" class="code-view"></pre>
+                                <pre id="mockOutput" class="code-view" style="margin-top:8px;"></pre>
                             </div>
                         </div>
                     </div>
                 </section>
 
+                <!-- History & Favorites -->
                 <section class="glass-panel section-card">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">History & Favorites</h2>
+                            <h2 class="section-title">History &amp; Favorites</h2>
                             <p class="section-copy">Search previous runs, favorite requests and export response history.</p>
                         </div>
                         <div class="button-row">
@@ -397,17 +433,19 @@
                         </div>
                     </div>
                     <div class="stack">
-                        <input id="historySearch" class="input" placeholder="Search history">
+                        <input id="historySearch" class="input" placeholder="Search history…">
                         <div id="historyList" class="list-box">
                             <div class="empty-state">History will appear here after requests run.</div>
                         </div>
                     </div>
                 </section>
-            </main>
-        </div>
-    </div>
 
-    <div id="toast" class="toast"></div>
+            </main><!-- /main -->
+        </div><!-- /panel-split -->
+    </div><!-- /workspace-shell -->
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="dropdown.js"></script>
     <script type="module" src="workspace.js"></script>
 </body>
 </html>
