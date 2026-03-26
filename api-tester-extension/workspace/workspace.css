@@ -1,108 +1,199 @@
+/* ─── Workspace Shell ──────────────────────────────────── */
 .workspace-shell {
-    max-width: 1600px;
+    max-width: 1640px;
     margin: 0 auto;
 }
 
 .workspace-topbar {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 20px;
 }
 
+/* ─── Request Layout ───────────────────────────────────── */
 .request-grid {
     display: grid;
-    gap: 18px;
+    gap: 14px;
 }
 
+/* ─── Graphql fields ───────────────────────────────────── */
 .graphql-variables-input {
-    min-height: 90px;
+    min-height: 82px;
 }
 
-.request-builder-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.8fr);
-    gap: 18px;
-}
-
+/* ─── Compact grids ────────────────────────────────────── */
 .compact-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px;
 }
 
 .triple-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px;
 }
 
+/* ─── Request Controls row ─────────────────────────────── */
 .request-controls {
     display: grid;
-    grid-template-columns: 130px minmax(0, 1fr) auto;
-    gap: 10px;
+    grid-template-columns: 120px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: end;
+}
+
+.request-controls .primary-button {
+    height: 40px;
+    min-width: 80px;
+    align-self: end;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.request-controls .primary-button::before {
+    content: '↑';
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1;
 }
 
 .request-url-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
-    gap: 10px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(200px, 0.85fr);
+    gap: 8px;
 }
 
+/* ─── Toolbar row ──────────────────────────────────────── */
 .toolbar-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
+/* ─── Subpanel ─────────────────────────────────────────── */
 .subpanel {
     padding: 14px;
-    border-radius: 18px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--border);
     background: var(--surface-muted);
 }
 
 .subpanel-title {
-    margin: 0 0 10px 0;
-    font-size: 13px;
-    font-weight: 800;
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 700;
     color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
+/* ─── WebSocket ────────────────────────────────────────── */
 .websocket-message-input {
-    min-height: 96px;
+    min-height: 90px;
 }
 
 .websocket-log-view {
-    min-height: 220px;
-    max-height: 340px;
+    min-height: 200px;
+    max-height: 320px;
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-word;
 }
 
+/* ─── Builder / Response Tabs ──────────────────────────── */
+.response-tabs,
+.builder-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.response-pane,
+.builder-pane {
+    display: none;
+}
+
+.response-pane.active,
+.builder-pane.active {
+    display: block;
+}
+
+/* ─── Result split ─────────────────────────────────────── */
+.result-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+    gap: 16px;
+}
+
+.result-split-spaced {
+    margin-top: 0;
+}
+
+.output-actions-row {
+    margin-bottom: 10px;
+}
+
+/* ─── Rich Preview ─────────────────────────────────────── */
+.rich-preview {
+    width: 100%;
+    min-height: 240px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-strong);
+    color: var(--text);
+    padding: 14px;
+    overflow: auto;
+    font-size: 13px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+}
+
+/* ─── Collection Tree ──────────────────────────────────── */
 .tree-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .tree-folder {
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     background: var(--surface-strong);
+    transition: border-color var(--transition);
+}
+
+.tree-folder:hover {
+    border-color: var(--border-strong);
 }
 
 .tree-folder-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 8px;
+    padding: 10px 12px;
     background: var(--surface-muted);
+    cursor: pointer;
+    user-select: none;
 }
 
 .tree-folder-name {
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .tree-folder-body {
@@ -117,125 +208,94 @@
     background: transparent;
     color: var(--text);
     text-align: left;
-    padding: 12px 14px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
 }
 
-.tree-request:hover,
+.tree-request:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
 .tree-request.active {
     background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 700;
 }
 
-.response-tabs,
-.builder-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-}
+/* ─── Diff colors ──────────────────────────────────────── */
+.diff-added   { color: var(--success); }
+.diff-removed { color: var(--danger); }
 
-.response-pane,
-.builder-pane {
-    display: none;
-}
+[data-theme="dark"] .diff-added   { color: #4ade80; }
+[data-theme="dark"] .diff-removed { color: #fca5a5; }
 
-.response-pane.active,
-.builder-pane.active {
-    display: block;
-}
-
-.result-split {
-    display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
-    gap: 18px;
-}
-
-.result-split-spaced {
-    margin-top: 16px;
-}
-
-.output-actions-row {
-    margin-bottom: 10px;
-}
-
-.rich-preview {
-    width: 100%;
-    min-height: 240px;
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    background: var(--surface-strong);
-    color: var(--text);
-    padding: 16px;
-    overflow: auto;
-}
-
-.diff-added {
-    color: #22c55e;
-}
-
-.diff-removed {
-    color: #ef4444;
-}
-
+/* ─── Toast ────────────────────────────────────────────── */
 .toast {
     position: fixed;
-    right: 22px;
-    bottom: 22px;
+    right: 20px;
+    bottom: 20px;
     z-index: 9999;
-    min-width: 220px;
-    max-width: 360px;
-    padding: 14px 16px;
-    border-radius: 16px;
+    min-width: 200px;
+    max-width: 340px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
     background: var(--toast-bg);
     color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
     box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255,255,255,0.08);
     opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-[data-theme="dark"] .diff-added {
-    color: #4ade80;
-}
-
-[data-theme="dark"] .diff-removed {
-    color: #fca5a5;
+    transform: translateY(8px) scale(0.98);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
 }
 
 .toast.show {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
 }
 
+/* ─── Assertion items ──────────────────────────────────── */
 .assertion-item {
-    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    background: var(--surface-muted);
+    font-size: 12px;
 }
 
-.assertion-status {
-    font-weight: 800;
+.assertion-status { font-weight: 800; }
+
+.assertion-pass { color: var(--success); }
+.assertion-fail { color: var(--danger); }
+
+[data-theme="dark"] .assertion-pass { color: #4ade80; }
+[data-theme="dark"] .assertion-fail { color: #fca5a5; }
+
+/* ─── Response pane heights ────────────────────────────── */
+.response-pane-left .code-view {
+    min-height: 320px;
+    max-height: 480px;
 }
 
-.assertion-pass {
-    color: #16a34a;
+.response-pane-right .code-view {
+    min-height: 240px;
+    max-height: 380px;
 }
 
-.assertion-fail {
-    color: #dc2626;
-}
-
-[data-theme="dark"] .assertion-pass {
-    color: #4ade80;
-}
-
-[data-theme="dark"] .assertion-fail {
-    color: #fca5a5;
-}
-
+/* ─── Responsive ───────────────────────────────────────── */
 @media (max-width: 1280px) {
-    .request-builder-grid,
     .result-split {
         grid-template-columns: 1fr;
     }
@@ -248,4 +308,36 @@
     .triple-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ─── Collections header fix ───────────────────────────── */
+.collections-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: nowrap;
+}
+
+.section-header-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.save-request-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* ─── Workspace topbar theme button ─────────────────────── */
+.workspace-topbar .ghost-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
 }

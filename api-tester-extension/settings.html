@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Tester Pro Settings</title>
+    <title>API Tester Pro — Settings</title>
     <link rel="stylesheet" href="themes.css">
     <link rel="stylesheet" href="settings.css">
 </head>
 <body>
     <div class="app-shell settings-shell">
+
+        <!-- Topbar -->
         <header class="glass-panel topbar">
             <div class="brand">
-                <h1 class="brand-title">API Tester Pro Settings</h1>
+                <h1 class="brand-title">Settings</h1>
                 <p class="brand-subtitle">Personalize theme, history, formatting and request timeouts.</p>
             </div>
             <div class="topbar-actions">
                 <button id="openWorkspace" class="secondary-button">Workspace</button>
-                <button id="saveSettings" class="primary-button">Save</button>
+                <button id="saveSettings" class="primary-button">Save settings</button>
             </div>
         </header>
 
         <main class="grid-layout settings-grid">
+
+            <!-- Appearance -->
             <section class="glass-panel section-card">
                 <div class="section-header">
                     <div>
@@ -47,6 +51,7 @@
                 </div>
             </section>
 
+            <!-- Request Defaults -->
             <section class="glass-panel section-card">
                 <div class="section-header">
                     <div>
@@ -71,21 +76,10 @@
                         <label class="field-label" for="historyLimit">History limit</label>
                         <input id="historyLimit" class="input" type="number" min="10" max="500">
                     </div>
-                    <label class="toggle-row">
-                        <input id="safeMode" type="checkbox">
-                        <span>Safe mode: prefer secure protocols and stricter request checks</span>
-                    </label>
-                    <label class="toggle-row">
-                        <input id="allowPrivateNetwork" type="checkbox">
-                        <span>Allow localhost and private/internal network APIs</span>
-                    </label>
-                    <label class="toggle-row">
-                        <input id="enableBackgroundSchedules" type="checkbox">
-                        <span>Enable scheduled background requests</span>
-                    </label>
                 </div>
             </section>
 
+            <!-- Maintenance -->
             <section class="glass-panel section-card">
                 <div class="section-header">
                     <div>
@@ -94,9 +88,10 @@
                     </div>
                 </div>
                 <div class="button-row">
-                    <button id="resetSettings" class="danger-button">Reset settings</button>
+                    <button id="resetSettings" class="danger-button">Reset to defaults</button>
                 </div>
             </section>
+
         </main>
     </div>
 

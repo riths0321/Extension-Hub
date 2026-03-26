@@ -15,60 +15,6 @@ function joinBaseUrlAndEndpoint(baseUrl, endpoint) {
     return `${base}/${path}`;
 }
 
-function validateHttpUrl(rawUrl) {
-    let parsedUrl;
-    try {
-        parsedUrl = new URL(String(rawUrl || "").trim());
-    } catch (error) {
-        throw new Error("Scheduled request URL is invalid");
-    }
-
-    if (!["http:", "https:"].includes(parsedUrl.protocol.toLowerCase())) {
-        throw new Error("Scheduled requests must use http:// or https://");
-    }
-
-    return parsedUrl.toString();
-}
-
-function isPrivateHostname(hostname) {
-    const host = String(hostname || "").toLowerCase();
-    if (!host) return false;
-    if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
-    if (/^127\./.test(host)) return true;
-    if (/^10\./.test(host)) return true;
-    if (/^192\.168\./.test(host)) return true;
-    const match172 = host.match(/^172\.(\d{1,3})\./);
-    if (match172) {
-        const second = Number(match172[1]);
-        if (second >= 16 && second <= 31) return true;
-    }
-    return false;
-}
-
-async function getMergedSettings() {
-    const result = await getStorage([STORAGE_KEYS.settings]);
-    return { ...defaultSettings(), ...(result[STORAGE_KEYS.settings] || {}) };
-}
-
-function enforceScheduledSafety(url, settings) {
-    const normalized = validateHttpUrl(url);
-    const parsedUrl = new URL(normalized);
-
-    if (!settings.enableBackgroundSchedules) {
-        throw new Error("Background schedules are disabled in settings");
-    }
-
-    if (!settings.allowPrivateNetwork && isPrivateHostname(parsedUrl.hostname)) {
-        throw new Error("Private or localhost schedules are blocked");
-    }
-
-    if (settings.safeMode && parsedUrl.protocol.toLowerCase() === "http:" && !isPrivateHostname(parsedUrl.hostname)) {
-        throw new Error("Safe mode requires HTTPS for external scheduled APIs");
-    }
-
-    return normalized;
-}
-
 async function getStorage(keys) {
     return await chrome.storage.local.get(keys);
 }
@@ -103,7 +49,6 @@ function rowsToHeaders(rows) {
 }
 
 async function executeScheduledRequest(request) {
-    const settings = await getMergedSettings();
     const environment = await getEnvironmentById(request.environmentId);
     const protocol = request.protocol || "rest";
     const params = (request.params || []).map((row) => ({
@@ -129,7 +74,7 @@ async function executeScheduledRequest(request) {
     const resolvedEndpoint = replaceEnvVars(request.endpoint || "", environment);
     const query = protocol === "rest" ? buildQueryString(params) : "";
     const baseRequestUrl = protocol === "rest" ? joinBaseUrlAndEndpoint(resolvedBaseUrl, resolvedEndpoint) : resolvedUrl;
-    const url = enforceScheduledSafety(query ? `${baseRequestUrl}${baseRequestUrl.includes("?") ? "&" : "?"}${query}` : baseRequestUrl, settings);
+    const url = query ? `${baseRequestUrl}${baseRequestUrl.includes("?") ? "&" : "?"}${query}` : baseRequestUrl;
     const body = replaceEnvVars(request.body || "", environment);
     const graphqlQuery = replaceEnvVars(request.graphqlQuery || "", environment);
 
@@ -158,8 +103,9 @@ async function executeScheduledRequest(request) {
     const startedAt = Date.now();
     const response = await fetch(url, options);
     const text = await response.text();
-    const historyResult = await getStorage([STORAGE_KEYS.history]);
+    const historyResult = await getStorage([STORAGE_KEYS.history, STORAGE_KEYS.settings]);
     const history = historyResult[STORAGE_KEYS.history] || [];
+    const settings = { ...defaultSettings(), ...(historyResult[STORAGE_KEYS.settings] || {}) };
     const entry = {
         id: `scheduled_${Date.now()}`,
         createdAt: Date.now(),

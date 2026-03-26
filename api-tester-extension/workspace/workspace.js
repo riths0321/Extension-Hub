@@ -21,6 +21,7 @@ import {
     buildQueryString,
     bytesToSize,
     debounce,
+    escapeHtml,
     formatTimestamp,
     lineDiff,
     normalizeRows,
@@ -103,87 +104,6 @@ function getRequestDisplayUrl(request) {
     return getRequestPrimaryUrl(request) || request.url || "";
 }
 
-function validateUrlByProtocol(rawUrl, protocol) {
-    let parsedUrl;
-    try {
-        parsedUrl = new URL(String(rawUrl || "").trim());
-    } catch (error) {
-        return { ok: false, message: "Enter a valid URL" };
-    }
-
-    const value = parsedUrl.protocol.toLowerCase();
-    if (protocol === "websocket") {
-        if (!["ws:", "wss:"].includes(value)) {
-            return { ok: false, message: "WebSocket URL must start with ws:// or wss://" };
-        }
-        return { ok: true, value: parsedUrl.toString() };
-    }
-
-    if (!["http:", "https:"].includes(value)) {
-        return { ok: false, message: "Request URL must start with http:// or https://" };
-    }
-
-    return { ok: true, value: parsedUrl.toString() };
-}
-
-function isPrivateHostname(hostname) {
-    const host = String(hostname || "").toLowerCase();
-    if (!host) return false;
-    if (host === "localhost" || host === "127.0.0.1" || host === "::1") return true;
-    if (/^127\./.test(host)) return true;
-    if (/^10\./.test(host)) return true;
-    if (/^192\.168\./.test(host)) return true;
-    const match172 = host.match(/^172\.(\d{1,3})\./);
-    if (match172) {
-        const second = Number(match172[1]);
-        if (second >= 16 && second <= 31) return true;
-    }
-    return false;
-}
-
-function enforceNetworkSafety(url, protocol, options = {}) {
-    const validation = validateUrlByProtocol(url, protocol);
-    if (!validation.ok) return validation;
-
-    let parsedUrl;
-    try {
-        parsedUrl = new URL(validation.value);
-    } catch (error) {
-        return validation;
-    }
-
-    if (!state.settings.allowPrivateNetwork && isPrivateHostname(parsedUrl.hostname)) {
-        return {
-            ok: false,
-            message: "Private or localhost APIs are blocked. Enable them in Settings if needed."
-        };
-    }
-
-    if (state.settings.safeMode) {
-        if (protocol === "websocket" && parsedUrl.protocol.toLowerCase() === "ws:") {
-            return {
-                ok: false,
-                message: "Safe mode requires secure WebSocket URLs (wss://)."
-            };
-        }
-        if (protocol !== "websocket" && parsedUrl.protocol.toLowerCase() === "http:" && !isPrivateHostname(parsedUrl.hostname)) {
-            return {
-                ok: false,
-                message: "Safe mode requires HTTPS for external APIs."
-            };
-        }
-    }
-
-    if (options.schedule && !state.settings.enableBackgroundSchedules) {
-        return {
-            ok: false,
-            message: "Background schedules are disabled in Settings."
-        };
-    }
-
-    return { ok: true, value: validation.value };
-}
-
 function resetWebSocketState() {
     if (state.ws) {
         state.ws.close();
@@ -201,6 +121,10 @@ function appendWebSocketLog(kind, message) {
 
 function setTheme(theme) {
     document.body.setAttribute("data-theme", theme);
+    const icon = document.getElementById("themeIcon");
+    if (icon) icon.textContent = theme === "dark" ? "☀" : "☾";
+    const btn = document.getElementById("toggleTheme");
+    if (btn) btn.setAttribute("aria-label", theme === "dark" ? "Switch to light theme" : "Switch to dark theme");
 }
 
 function createKeyValueRow(row, options = {}) {
@@ -212,17 +136,19 @@ function createKeyValueRow(row, options = {}) {
     keyInput.placeholder = options.keyPlaceholder || "Key";
     keyInput.value = row.key || "";
 
-    const valueInput = document.createElement("input");
-    valueInput.className = "input row-value";
-    valueInput.placeholder = options.valuePlaceholder || "Value";
-    valueInput.value = row.value || "";
+    const valInput = document.createElement("input");
+    valInput.className = "input row-value";
+    valInput.placeholder = options.valuePlaceholder || "Value";
+    valInput.value = row.value || "";
 
-    const removeButton = document.createElement("button");
-    removeButton.className = "danger-button row-remove";
-    removeButton.type = "button";
-    removeButton.textContent = "Remove";
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "danger-button row-remove";
+    removeBtn.type = "button";
+    removeBtn.textContent = "Remove";
 
-    wrap.append(keyInput, valueInput, removeButton);
+    wrap.appendChild(keyInput);
+    wrap.appendChild(valInput);
+    wrap.appendChild(removeBtn);
     return wrap;
 }
 
@@ -235,17 +161,19 @@ function createExtractorRow(row) {
     pathInput.placeholder = "response path e.g. data.token";
     pathInput.value = row.path || "";
 
-    const variableInput = document.createElement("input");
-    variableInput.className = "input extractor-variable";
-    variableInput.placeholder = "env variable name";
-    variableInput.value = row.variable || "";
+    const varInput = document.createElement("input");
+    varInput.className = "input extractor-variable";
+    varInput.placeholder = "env variable name";
+    varInput.value = row.variable || "";
 
-    const removeButton = document.createElement("button");
-    removeButton.className = "danger-button extractor-remove";
-    removeButton.type = "button";
-    removeButton.textContent = "Remove";
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "danger-button extractor-remove";
+    removeBtn.type = "button";
+    removeBtn.textContent = "Remove";
 
-    wrap.append(pathInput, variableInput, removeButton);
+    wrap.appendChild(pathInput);
+    wrap.appendChild(varInput);
+    wrap.appendChild(removeBtn);
     return wrap;
 }
 
@@ -496,26 +424,32 @@ function renderBatchList() {
     state.batchQueue.forEach((item) => {
         const row = document.createElement("div");
         row.className = "list-item";
+
         const main = document.createElement("div");
         main.className = "list-item-main";
-        const title = document.createElement("div");
-        title.className = "list-item-title";
-        title.textContent = item.name || getRequestDisplayUrl(item) || "Queued request";
-        const meta = document.createElement("div");
-        meta.className = "list-item-meta";
-        meta.textContent = `${item.method} • ${item.protocol || "rest"}`;
-        const removeButton = document.createElement("button");
-        removeButton.className = "danger-button";
-        removeButton.type = "button";
-        removeButton.textContent = "Remove";
 
-        main.append(title, meta);
-        row.append(main, removeButton);
+        const titleEl = document.createElement("div");
+        titleEl.className = "list-item-title";
+        titleEl.textContent = item.name || getRequestDisplayUrl(item) || "Queued request";
 
-        removeButton.addEventListener("click", () => {
+        const metaEl = document.createElement("div");
+        metaEl.className = "list-item-meta";
+        metaEl.textContent = `${item.method} • ${item.protocol || "rest"}`;
+
+        main.appendChild(titleEl);
+        main.appendChild(metaEl);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "danger-button";
+        removeBtn.type = "button";
+        removeBtn.textContent = "Remove";
+        removeBtn.addEventListener("click", () => {
             state.batchQueue = state.batchQueue.filter((entry) => entry.id !== item.id);
             renderBatchList();
         });
+
+        row.appendChild(main);
+        row.appendChild(removeBtn);
         list.appendChild(row);
     });
 }
@@ -531,29 +465,35 @@ function renderScheduleList() {
     state.schedules.forEach((item) => {
         const row = document.createElement("div");
         row.className = "list-item";
+
         const main = document.createElement("div");
         main.className = "list-item-main";
-        const title = document.createElement("div");
-        title.className = "list-item-title";
-        title.textContent = item.name;
-        const meta = document.createElement("div");
-        meta.className = "list-item-meta";
-        meta.textContent = `Every ${item.minutes} min • ${item.request.method || "POST"} ${getRequestDisplayUrl(item.request)}`;
-        const deleteButton = document.createElement("button");
-        deleteButton.className = "danger-button";
-        deleteButton.type = "button";
-        deleteButton.textContent = "Delete";
 
-        main.append(title, meta);
-        row.append(main, deleteButton);
+        const titleEl = document.createElement("div");
+        titleEl.className = "list-item-title";
+        titleEl.textContent = item.name;
 
-        deleteButton.addEventListener("click", async () => {
+        const metaEl = document.createElement("div");
+        metaEl.className = "list-item-meta";
+        metaEl.textContent = `Every ${item.minutes} min • ${item.request.method || "POST"} ${getRequestDisplayUrl(item.request)}`;
+
+        main.appendChild(titleEl);
+        main.appendChild(metaEl);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "danger-button";
+        deleteBtn.type = "button";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.addEventListener("click", async () => {
             state.schedules = state.schedules.filter((entry) => entry.id !== item.id);
             await saveSchedules(state.schedules);
             chrome.runtime.sendMessage({ action: "deleteSchedule", scheduleId: item.id });
             renderScheduleList();
             showToast("Schedule removed");
         });
+
+        row.appendChild(main);
+        row.appendChild(deleteBtn);
         list.appendChild(row);
     });
 }
@@ -576,30 +516,40 @@ function renderHistory(filterText = "") {
         const isFavorite = state.favorites.includes(item.id);
         const row = document.createElement("div");
         row.className = "list-item";
+
         const main = document.createElement("div");
         main.className = "list-item-main";
-        const title = document.createElement("div");
-        title.className = "list-item-title";
-        title.textContent = item.name || item.url || "Untitled request";
-        const meta = document.createElement("div");
-        meta.className = "list-item-meta";
-        meta.textContent = `${item.method} • ${item.statusLabel || "-"} • ${formatTimestamp(item.createdAt)}`;
-        const actions = document.createElement("div");
-        actions.className = "button-row";
-        const loadButton = document.createElement("button");
-        loadButton.className = "ghost-button";
-        loadButton.type = "button";
-        loadButton.textContent = "Load";
-        const favoriteButton = document.createElement("button");
-        favoriteButton.className = "secondary-button";
-        favoriteButton.type = "button";
-        favoriteButton.textContent = isFavorite ? "Unfavorite" : "Favorite";
 
-        main.append(title, meta);
-        actions.append(loadButton, favoriteButton);
-        row.append(main, actions);
+        const titleEl = document.createElement("div");
+        titleEl.className = "list-item-title";
+        titleEl.textContent = item.name || item.url || "Untitled request";
 
-        loadButton.addEventListener("click", async () => {
+        const metaEl = document.createElement("div");
+        metaEl.className = "list-item-meta";
+        metaEl.textContent = `${item.method} • ${item.statusLabel || "-"} • ${formatTimestamp(item.createdAt)}`;
+
+        main.appendChild(titleEl);
+        main.appendChild(metaEl);
+
+        const btnRow = document.createElement("div");
+        btnRow.className = "button-row";
+
+        const loadBtn = document.createElement("button");
+        loadBtn.className = "ghost-button load-btn";
+        loadBtn.type = "button";
+        loadBtn.textContent = "Load";
+
+        const favBtn = document.createElement("button");
+        favBtn.className = "secondary-button fav-btn";
+        favBtn.type = "button";
+        favBtn.textContent = isFavorite ? "Unfavorite" : "Favorite";
+
+        btnRow.appendChild(loadBtn);
+        btnRow.appendChild(favBtn);
+        row.appendChild(main);
+        row.appendChild(btnRow);
+
+        loadBtn.addEventListener("click", async () => {
             state.workspace = {
                 ...defaultWorkspace(),
                 ...(item.requestSnapshot || {})
@@ -609,7 +559,7 @@ function renderHistory(filterText = "") {
             showToast("Loaded from history");
         });
 
-        favoriteButton.addEventListener("click", async () => {
+        favBtn.addEventListener("click", async () => {
             if (isFavorite) {
                 state.favorites = state.favorites.filter((entry) => entry !== item.id);
             } else {
@@ -1032,14 +982,6 @@ async function connectWebSocket(url) {
         showToast("Enter a WebSocket URL first");
         return;
     }
-    const validation = validateUrlByProtocol(url, "websocket");
-    if (!validation.ok) {
-        throw new Error(validation.message);
-    }
-    const safety = enforceNetworkSafety(validation.value, "websocket");
-    if (!safety.ok) {
-        throw new Error(safety.message);
-    }
 
     if (state.ws) {
         state.ws.close();
@@ -1050,9 +992,9 @@ async function connectWebSocket(url) {
 
     await new Promise((resolve, reject) => {
         const startedAt = performance.now();
-        const socket = new WebSocket(safety.value);
+        const socket = new WebSocket(url);
         state.ws = socket;
-        state.wsReconnectUrl = safety.value;
+        state.wsReconnectUrl = url;
 
         socket.addEventListener("open", () => {
             appendWebSocketLog("system", "Connection opened");
@@ -1199,15 +1141,9 @@ async function runCurrentRequest() {
         showToast("Enter a GraphQL query");
         return;
     }
-    const safety = enforceNetworkSafety(requiredUrl, state.workspace.protocol);
-    if (!safety.ok) {
-        showToast(safety.message);
-        return;
-    }
 
     try {
         const requestSnapshot = buildResolvedRequest();
-        requestSnapshot.finalUrl = safety.value;
         const response = await executeRequest(requestSnapshot);
         state.previousResponseText = state.currentResponse?.body || "";
         state.currentResponse = response;
@@ -1273,14 +1209,9 @@ async function fetchOAuthToken() {
         showToast("Add token URL and client ID");
         return;
     }
-    const safety = enforceNetworkSafety(tokenUrl, "rest");
-    if (!safety.ok) {
-        showToast(safety.message);
-        return;
-    }
 
     try {
-        const response = await fetch(safety.value, {
+        const response = await fetch(tokenUrl, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
@@ -1353,7 +1284,7 @@ function generateJsSnippet(request) {
         return `const socket = new WebSocket("${resolved.finalUrl || resolved.url}");\nsocket.addEventListener("open", () => console.log("connected"));\nsocket.addEventListener("message", (event) => console.log(event.data));`;
     }
     if (resolved.request.protocol === "graphql") {
-        return `const response = await fetch("${resolved.finalUrl}", {\n  method: "POST",\n  headers: ${JSON.stringify({ ...resolved.headers, "Content-Type": "application/json" }, null, 2)},\n  body: JSON.stringify(${JSON.stringify({ query: resolved.graphqlQuery, variables: resolved.graphqlVariables ? parseJsonSafe(resolved.graphqlVariables).value || {} : {} }, null, 2)})\n});\n\nconsole.log(response.status);\nconsole.log(await response.text());`;
+        return `const response = await fetch("${resolved.finalUrl}", {\n  method: "POST",\n  headers: ${JSON.stringify({ ...resolved.headers, "Content-Type": "application/json" }, null, 2)},\n  body: ${JSON.stringify(JSON.stringify({ query: resolved.graphqlQuery, variables: resolved.graphqlVariables ? parseJsonSafe(resolved.graphqlVariables).value || {} : {} }))}\n});\n\nconsole.log(response.status);\nconsole.log(await response.text());`;
     }
     const method = resolved.request.protocol === "webhook" ? "POST" : resolved.request.method;
     const body = buildRequestBodyByType(resolved.request.bodyType, resolved.body);
@@ -1472,19 +1403,6 @@ async function scheduleCurrentRequest() {
     collectWorkspaceForm();
     if (state.workspace.protocol === "websocket") {
         showToast("WebSocket requests cannot be scheduled");
-        return;
-    }
-    const requiredUrl =
-        state.workspace.protocol === "rest"
-            ? joinBaseUrlAndEndpoint(state.workspace.baseUrl, state.workspace.endpoint)
-            : state.workspace.url.trim();
-    const safety = enforceNetworkSafety(requiredUrl, state.workspace.protocol, { schedule: true });
-    if (!safety.ok) {
-        showToast(safety.message);
-        return;
-    }
-    const confirmed = window.confirm("Scheduled requests run in the background. Continue?");
-    if (!confirmed) {
         return;
     }
     const name = els.scheduleName.value.trim() || state.workspace.name || "Scheduled request";
