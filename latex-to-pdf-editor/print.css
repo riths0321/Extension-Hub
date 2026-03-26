@@ -1,0 +1,204 @@
+
+        :root {
+            --page-width: 210mm;
+            --page-min-height: 297mm;
+            --page-margin: 18mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background-color: #525659;
+        }
+
+        .page-container {
+            width: var(--page-width);
+            min-height: var(--page-min-height);
+            margin: 20px auto;
+            background: white;
+            padding: var(--page-margin);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .paper-preview {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.42;
+            color: #151515;
+            font-size: 12.5px;
+            min-height: calc(var(--page-min-height) - (var(--page-margin) * 2));
+            background: #ffffff;
+        }
+
+        .paper-preview h1 {
+            font-size: 17px;
+            font-weight: 400;
+            text-align: center;
+            margin: 6px 0 5px;
+        }
+
+        .paper-preview h2 {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+            margin: 22px 0 8px;
+            color: #111111;
+        }
+
+        .paper-preview h3 {
+            font-size: 13px;
+            font-weight: 700;
+            margin: 14px 0 5px;
+            color: #111111;
+        }
+
+        .paper-preview h4 {
+            font-size: 12px;
+            font-weight: 700;
+            margin: 12px 0 4px;
+            color: #111111;
+        }
+
+        .paper-preview p {
+            margin: 0 0 8px;
+            text-align: justify;
+            text-indent: 1.4em;
+        }
+
+        .paper-preview h2 + p,
+        .paper-preview h3 + p,
+        .paper-preview h4 + p,
+        .paper-preview .title-block + p,
+        .paper-preview .math-display + p {
+            text-indent: 0;
+        }
+
+        .paper-preview ul,
+        .paper-preview ol {
+            margin-left: 14px;
+            margin-bottom: 5px;
+            padding-left: 16px;
+        }
+
+        .paper-preview li {
+            margin-bottom: 2px;
+        }
+
+        .paper-preview a {
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+
+        .title-block {
+            text-align: center;
+            margin: 24px 0 34px;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .title-h1 {
+            font-size: 1.75em;
+            font-weight: 400;
+            margin-bottom: 0.9em;
+            color: #111111;
+        }
+
+        .title-author {
+            font-size: 1.05em;
+            margin-bottom: 0.8em;
+            color: #1a1a1a;
+        }
+
+        .title-date {
+            font-size: 0.98em;
+            color: #1a1a1a;
+        }
+
+        .section-number {
+            display: inline-block;
+            min-width: 1.4em;
+            margin-right: 0.35em;
+            font-weight: 700;
+        }
+
+        .center-env {
+            text-align: center;
+        }
+
+        .math-inline {
+            font-style: italic;
+        }
+
+        .math-display {
+            position: relative;
+            text-align: center;
+            margin: 14px 0 10px;
+            padding-right: 40px;
+            font-style: italic;
+        }
+
+        .eq-number {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            font-style: normal;
+        }
+
+        .small-caps {
+            font-variant: small-caps;
+        }
+
+        .resume-subheading {
+            margin-bottom: 4px;
+        }
+
+        .resume-project {
+            margin-bottom: 8px;
+        }
+
+        .rs-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 12px;
+        }
+
+        .abstract {
+            font-size: 12.5px;
+            margin: 12px 20px;
+            padding: 10px 14px;
+            background: rgba(37, 99, 235, 0.05);
+            border-left: 3px solid rgba(37, 99, 235, 0.4);
+            border-radius: 0 4px 4px 0;
+            line-height: 1.6;
+            color: #334155;
+        }
+
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+            }
+
+            .page-container {
+                width: auto;
+                min-height: auto;
+                margin: 0;
+                box-shadow: none;
+                padding: 0;
+            }
+
+            @page {
+                size: A4;
+                margin: var(--page-margin);
+            }
+        }
+    
