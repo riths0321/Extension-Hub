@@ -165,7 +165,18 @@ function setUrl(url) {
   } catch { el.textContent = url; }
 }
 
+function canLoadPageFavicon(url) {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function loadFavicon(url) {
+  if (!canLoadPageFavicon(url)) return;
+
   try {
     const { origin } = new URL(url);
     const img = document.createElement('img');
@@ -175,7 +186,8 @@ function loadFavicon(url) {
     };
     img.onerror = () => {}; // keep SVG fallback
     img.src = `${origin}/favicon.ico`;
-    img.width = 20; img.height = 20;
+    img.width = 20;
+    img.height = 20;
   } catch {}
 }
 
@@ -593,11 +605,20 @@ function renderHistory() {
 
     const fav = document.createElement('div');
     fav.className = 'history-favicon';
-    const img = document.createElement('img');
-    img.width = 14; img.height = 14;
-    img.onerror = () => { fav.textContent = '🌐'; };
-    try { img.src = new URL(entry.url).origin + '/favicon.ico'; } catch { fav.textContent = '🌐'; }
-    fav.appendChild(img);
+    if (canLoadPageFavicon(entry.url)) {
+      const img = document.createElement('img');
+      img.width = 14;
+      img.height = 14;
+      img.onerror = () => { fav.textContent = '🌐'; };
+      try {
+        img.src = new URL(entry.url).origin + '/favicon.ico';
+        fav.appendChild(img);
+      } catch {
+        fav.textContent = '🌐';
+      }
+    } else {
+      fav.textContent = '🌐';
+    }
 
     const main = document.createElement('div');
     main.className = 'history-main';
