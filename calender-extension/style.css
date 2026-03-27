@@ -1124,7 +1124,7 @@ textarea { resize: none; line-height: 1.5; }
     border-radius: var(--r2);
     width: 220px;
     max-height: 240px;
-    z-index: 90;
+    z-index: 140;
     box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     display: flex;
     flex-direction: column;
@@ -1192,6 +1192,14 @@ textarea { resize: none; line-height: 1.5; }
 }
 
 .day-popup-add:hover { background: var(--bg-hover); }
+
+.day-popup.anchor-above {
+    transform-origin: bottom center;
+}
+
+.day-popup.anchor-below {
+    transform-origin: top center;
+}
 
 /* ── RECURRING BADGE ─────────────────────────────────────────────── */
 .recur-icon {

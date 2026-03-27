@@ -22,6 +22,6 @@
   ],
   "host_permissions": [],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; style-src 'self'; object-src 'none'; connect-src 'self' blob:;"
+    "extension_pages": "script-src 'self'; style-src 'self'; object-src 'none'; connect-src 'self';"
   }
 }

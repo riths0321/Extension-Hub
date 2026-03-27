@@ -1016,14 +1016,39 @@ function showDayPopup(dateStr, anchorEl) {
         });
     }
 
-    const rect = anchorEl.getBoundingClientRect(), bodyR = document.body.getBoundingClientRect();
-    const pw = 230, ph = 280;
-    let left = rect.left - bodyR.left + rect.width/2 - pw/2;
-    let top  = rect.bottom - bodyR.top + 4;
-    left = Math.max(4, Math.min(left, bodyR.width-pw-4));
-    if (top+ph > bodyR.height) top = rect.top - bodyR.top - ph - 4;
-    popup.style.left = left+"px"; popup.style.top = top+"px";
     popup.hidden = false;
+    popup.style.visibility = "hidden";
+    popup.classList.remove("anchor-above", "anchor-below");
+
+    const rect = anchorEl.getBoundingClientRect();
+    const popupRect = popup.getBoundingClientRect();
+    const popupWidth = popupRect.width || 220;
+    const popupHeight = popupRect.height || 240;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const headerBottom = document.querySelector(".app-header")?.getBoundingClientRect().bottom ?? 0;
+    const gap = 8;
+
+    let left = rect.left + rect.width / 2 - popupWidth / 2;
+    left = Math.max(6, Math.min(left, viewportWidth - popupWidth - 6));
+
+    let top = rect.top - popupHeight - gap;
+    let anchoredBelow = false;
+
+    if (top < headerBottom + 6) {
+        top = rect.bottom + gap;
+        anchoredBelow = true;
+    }
+
+    if (top + popupHeight > viewportHeight - 6) {
+        top = Math.max(headerBottom + 6, viewportHeight - popupHeight - 6);
+        anchoredBelow = true;
+    }
+
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+    popup.style.visibility = "";
+    popup.classList.add(anchoredBelow ? "anchor-below" : "anchor-above");
 }
 function hideDayPopup() {
     document.getElementById("day-popup").hidden = true;
