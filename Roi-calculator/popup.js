@@ -1112,11 +1112,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!template) return;
     const el = id => document.getElementById(id);
     if (el("category")) el("category").value = template.category;
+    if (el("status") && template.status) el("status").value = template.status;
     if (el("rate")) el("rate").value = template.rate;
     if (el("notes")) el("notes").value = template.notes || "";
     if (el("riskSlider") && template.riskLevel) el("riskSlider").value = template.riskLevel;
     if (el("timeHorizon") && template.timeHorizon) el("timeHorizon").value = template.timeHorizon;
     if (template.tags) setTagsFromArray(template.tags);
+    window.ROIDropdowns?.sync("category");
+    window.ROIDropdowns?.sync("status");
+    window.ROIDropdowns?.sync("timeHorizon");
     closeAllModals();
     showNotification(`"${template.name}" loaded`, "success");
   }
@@ -1276,6 +1280,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (el("timeHorizon") && project.timeHorizon) el("timeHorizon").value = project.timeHorizon;
     if (project.tags) setTagsFromArray(project.tags);
+    window.ROIDropdowns?.sync("category");
+    window.ROIDropdowns?.sync("status");
+    window.ROIDropdowns?.sync("timeHorizon");
 
     currentProjectId = id;
     updateFavoriteIcon(project.favorite);
