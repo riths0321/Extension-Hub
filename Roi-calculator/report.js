@@ -33,36 +33,69 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const hero = document.getElementById("reportHero");
   if (report.best) {
-    hero.innerHTML =
-      `Best Performer: <strong>${report.best.name}</strong> — ${report.best.roi}% ROI · ${formatCurrency(report.best.netProfit)} profit`;
+    hero.replaceChildren();
+    hero.appendChild(document.createTextNode("Best Performer: "));
+    const strong = document.createElement("strong");
+    strong.textContent = report.best.name;
+    hero.appendChild(strong);
+    hero.appendChild(document.createTextNode(` — ${report.best.roi}% ROI · ${formatCurrency(report.best.netProfit)} profit`));
     hero.classList.remove("hidden");
   }
 
   const summary = document.getElementById("reportSummary");
-  summary.innerHTML = [
+  summary.replaceChildren();
+  [
     { label: "Total Projects", value: report.projects.length },
     { label: "Average ROI", value: `${report.avgROI}%` },
     { label: "Total Profit", value: formatCurrency(report.totalProfit) }
-  ].map(card => `
-    <div class="report-card">
-      <h3>${card.label}</h3>
-      <div class="value">${card.value}</div>
-    </div>
-  `).join("");
+  ].forEach(card => {
+    const cardEl = document.createElement("div");
+    cardEl.className = "report-card";
+
+    const heading = document.createElement("h3");
+    heading.textContent = card.label;
+    const value = document.createElement("div");
+    value.className = "value";
+    value.textContent = card.value;
+
+    cardEl.append(heading, value);
+    summary.appendChild(cardEl);
+  });
 
   const rows = document.getElementById("reportRows");
-  rows.innerHTML = report.projects.map(item => `
-    <tr>
-      <td>${item.favorite ? "⭐ " : ""}${item.name}</td>
-      <td>${item.category || "-"}</td>
-      <td class="${item.roi >= 0 ? "report-positive" : "report-negative"}">${item.roi}%</td>
-      <td>${item.adjustedROI || item.roi}%</td>
-      <td class="${(item.netProfit || 0) >= 0 ? "report-positive" : "report-negative"}">${formatCurrency(item.netProfit || 0)}</td>
-      <td>${item.irr ? `${item.irr.toFixed(1)}%` : "-"}</td>
-      <td>${["", "Very Low", "Low", "Medium", "High", "Very High"][item.riskLevel || 3]}</td>
-      <td>${item.date}</td>
-    </tr>
-  `).join("");
+  rows.replaceChildren();
+  report.projects.forEach(item => {
+    const tr = document.createElement("tr");
+
+    const feature = document.createElement("td");
+    feature.textContent = `${item.favorite ? "⭐ " : ""}${item.name}`;
+
+    const category = document.createElement("td");
+    category.textContent = item.category || "-";
+
+    const roi = document.createElement("td");
+    roi.className = item.roi >= 0 ? "report-positive" : "report-negative";
+    roi.textContent = `${item.roi}%`;
+
+    const adjusted = document.createElement("td");
+    adjusted.textContent = `${item.adjustedROI || item.roi}%`;
+
+    const netProfit = document.createElement("td");
+    netProfit.className = (item.netProfit || 0) >= 0 ? "report-positive" : "report-negative";
+    netProfit.textContent = formatCurrency(item.netProfit || 0);
+
+    const irr = document.createElement("td");
+    irr.textContent = item.irr ? `${item.irr.toFixed(1)}%` : "-";
+
+    const risk = document.createElement("td");
+    risk.textContent = ["", "Very Low", "Low", "Medium", "High", "Very High"][item.riskLevel || 3];
+
+    const date = document.createElement("td");
+    date.textContent = item.date;
+
+    tr.append(feature, category, roi, adjusted, netProfit, irr, risk, date);
+    rows.appendChild(tr);
+  });
 
   await storage.set({ pendingReport: null });
 

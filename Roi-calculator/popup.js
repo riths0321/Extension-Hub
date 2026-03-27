@@ -222,11 +222,18 @@ document.addEventListener("DOMContentLoaded", () => {
     tags.forEach(tag => {
       const chip = document.createElement("span");
       chip.className = "tag-chip";
-      chip.innerHTML = `${tag} <span class="remove-tag" data-tag="${tag}">×</span>`;
-      chip.querySelector(".remove-tag").addEventListener("click", e => {
+      chip.appendChild(document.createTextNode(`${tag} `));
+
+      const remove = document.createElement("span");
+      remove.className = "remove-tag";
+      remove.dataset.tag = tag;
+      remove.textContent = "×";
+      remove.addEventListener("click", e => {
         e.stopPropagation();
         removeTag(tag);
       });
+
+      chip.appendChild(remove);
       container.insertBefore(chip, input);
     });
   }
@@ -393,21 +400,37 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!recBox) return;
 
     const { roi, adjustedROI, riskScore, paybackMonths, roas, irr } = metrics;
+    let title = "";
     let recommendation = "";
 
     if (roi > 200 && riskScore > 70) {
-      recommendation = `<strong>🚀 High Priority</strong> "${name}" shows exceptional ROI with manageable risk. Prioritize immediately — expected ${roas.toFixed(1)}x return on investment.`;
+      title = "🚀 High Priority";
+      recommendation = `"${name}" shows exceptional ROI with manageable risk. Prioritize immediately — expected ${roas.toFixed(1)}x return on investment.`;
     } else if (roi > 100 && riskScore > 50) {
-      recommendation = `<strong>📈 Build It</strong> Solid ROI with acceptable risk profile. IRR of ${irr.toFixed(0)}% exceeds typical hurdle rates. Recommend proceeding.`;
+      title = "📈 Build It";
+      recommendation = `Solid ROI with acceptable risk profile. IRR of ${irr.toFixed(0)}% exceeds typical hurdle rates. Recommend proceeding.`;
     } else if (roi > 50) {
-      recommendation = `<strong>🤔 Consider Carefully</strong> Decent returns but moderate risk. Risk-adjusted ROI of ${adjustedROI}% is lower than headline. Validate assumptions first.`;
+      title = "🤔 Consider Carefully";
+      recommendation = `Decent returns but moderate risk. Risk-adjusted ROI of ${adjustedROI}% is lower than headline. Validate assumptions first.`;
     } else if (roi > 0) {
-      recommendation = `<strong>⚠️ Marginal</strong> Low ROI — only proceed if strategically necessary. Consider renegotiating scope to reduce ${formatCurrency(metrics.cost)} cost.`;
+      title = "⚠️ Marginal";
+      recommendation = `Low ROI — only proceed if strategically necessary. Consider renegotiating scope to reduce ${formatCurrency(metrics.cost)} cost.`;
     } else {
-      recommendation = `<strong>❌ Don't Build</strong> Negative ROI. Cost exceeds projected gain. Either increase revenue potential or reduce dev hours significantly.`;
+      title = "❌ Don't Build";
+      recommendation = "Negative ROI. Cost exceeds projected gain. Either increase revenue potential or reduce dev hours significantly.";
     }
 
-    recBox.innerHTML = `<div class="rec-title">💡 AI Recommendation</div>${recommendation}`;
+    recBox.replaceChildren();
+    const recTitle = document.createElement("div");
+    recTitle.className = "rec-title";
+    recTitle.textContent = "💡 AI Recommendation";
+
+    const strong = document.createElement("strong");
+    strong.textContent = title;
+
+    recBox.appendChild(recTitle);
+    recBox.appendChild(strong);
+    recBox.appendChild(document.createTextNode(` ${recommendation}`));
     recBox.classList.add("visible");
   }
 
@@ -667,14 +690,16 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTrendChart(currentHistory);
     renderCategoryBreakdown(currentHistory);
 
+    const bestFeatureDetails = document.getElementById("bestFeatureDetails");
     if (best) {
-      document.getElementById("bestFeatureDetails").innerHTML = `
-        <div class="best-feature-row"><span class="label">Feature</span><span class="value">${best.name}</span></div>
-        <div class="best-feature-row"><span class="label">ROI</span><span class="value best-feature-positive">${best.roi}%</span></div>
-        <div class="best-feature-row"><span class="label">Net Profit</span><span class="value">${formatCurrency(best.netProfit)}</span></div>
-        <div class="best-feature-row"><span class="label">Category</span><span class="value">${best.category}</span></div>
-        <div class="best-feature-row"><span class="label">Status</span><span class="value">${best.status}</span></div>
-      `;
+      if (!bestFeatureDetails) return;
+      bestFeatureDetails.replaceChildren(
+        createBestFeatureRow("Feature", best.name),
+        createBestFeatureRow("ROI", `${best.roi}%`, "best-feature-positive"),
+        createBestFeatureRow("Net Profit", formatCurrency(best.netProfit)),
+        createBestFeatureRow("Category", best.category),
+        createBestFeatureRow("Status", best.status)
+      );
     }
   }
 
@@ -682,7 +707,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("categoryBreakdown");
     if (!container) return;
 
-    if (!history.length) { container.innerHTML = '<div class="no-data">No data</div>'; return; }
+    container.replaceChildren();
+    if (!history.length) { container.appendChild(createNoDataElement("No data")); return; }
 
     const categories = {};
     history.forEach(item => {
@@ -695,22 +721,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const maxCount = Math.max(...Object.values(categories).map(c => c.count));
     const catColors = { Product: "var(--accent)", Marketing: "var(--green)", Development: "var(--blue)", Sales: "var(--orange)", Support: "var(--purple)", Infrastructure: "#06b6d4", Security: "#f43f5e" };
 
-    container.innerHTML = Object.entries(categories)
+    Object.entries(categories)
       .sort((a, b) => b[1].count - a[1].count)
-      .map(([name, data]) => `
-        <div class="category-row">
-          <span class="category-name">${name}</span>
-          <div class="category-bar-bg">
-            <div class="category-bar-fill" data-width="${(data.count / maxCount) * 100}" data-color="${catColors[name] || "var(--accent)"}"></div>
-          </div>
-          <span class="category-roi ${data.totalROI / data.count >= 0 ? "positive" : "negative"}">${(data.totalROI / data.count).toFixed(0)}%</span>
-        </div>
-      `).join('');
+      .forEach(([name, data]) => {
+        const row = document.createElement("div");
+        row.className = "category-row";
 
-    container.querySelectorAll(".category-bar-fill").forEach(bar => {
-      bar.style.width = `${bar.dataset.width}%`;
-      bar.style.background = bar.dataset.color;
-    });
+        const label = document.createElement("span");
+        label.className = "category-name";
+        label.textContent = name;
+
+        const bg = document.createElement("div");
+        bg.className = "category-bar-bg";
+
+        const fill = document.createElement("div");
+        fill.className = "category-bar-fill";
+        fill.style.width = `${(data.count / maxCount) * 100}%`;
+        fill.style.background = catColors[name] || "var(--accent)";
+        bg.appendChild(fill);
+
+        const roi = document.createElement("span");
+        roi.className = `category-roi ${data.totalROI / data.count >= 0 ? "positive" : "negative"}`;
+        roi.textContent = `${(data.totalROI / data.count).toFixed(0)}%`;
+
+        row.append(label, bg, roi);
+        container.appendChild(row);
+      });
   }
 
   // ============ INSIGHTS TAB ============
@@ -738,12 +774,15 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(quadrants).forEach(([key, items]) => {
       const el = document.getElementById(`q${key.charAt(0).toUpperCase() + key.slice(1)}`);
       if (!el) return;
-      el.innerHTML = items.slice(0, 6).map((item, i) =>
-        `<div class="q-dot" data-color="${colors[key]}" title="${item.name}: ${item.roi}%">${i + 1}</div>`
-      ).join('');
-
-      el.querySelectorAll(".q-dot").forEach(dot => {
+      el.replaceChildren();
+      items.slice(0, 6).forEach((item, i) => {
+        const dot = document.createElement("div");
+        dot.className = "q-dot";
+        dot.title = `${item.name}: ${item.roi}%`;
+        dot.textContent = String(i + 1);
         dot.style.background = dot.dataset.color;
+        dot.style.background = colors[key];
+        el.appendChild(dot);
       });
     });
   }
@@ -753,7 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!container) return;
 
     if (!currentHistory.length) {
-      container.innerHTML = '<div class="no-data">Calculate some features to see recommendations</div>';
+      container.replaceChildren(createNoDataElement("Calculate some features to see recommendations"));
       return;
     }
 
@@ -793,12 +832,25 @@ document.addEventListener("DOMContentLoaded", () => {
       recs.push({ type: "good", icon: "✅", title: "Portfolio Looks Healthy", text: "Your features show positive ROI and balanced risk. Keep building!" });
     }
 
-    container.innerHTML = recs.map(r => `
-      <div class="rec-card ${r.type}">
-        <span class="rec-icon">${r.icon}</span>
-        <div class="rec-text"><strong>${r.title}</strong>${r.text}</div>
-      </div>
-    `).join('');
+    container.replaceChildren();
+    recs.forEach(r => {
+      const card = document.createElement("div");
+      card.className = `rec-card ${r.type}`;
+
+      const icon = document.createElement("span");
+      icon.className = "rec-icon";
+      icon.textContent = r.icon;
+
+      const text = document.createElement("div");
+      text.className = "rec-text";
+
+      const strong = document.createElement("strong");
+      strong.textContent = r.title;
+      text.append(strong, document.createTextNode(r.text));
+
+      card.append(icon, text);
+      container.appendChild(card);
+    });
   }
 
   function updateROIDistribution() {
@@ -842,21 +894,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!chart) return;
 
     const recent = history.slice(0, 6).reverse();
-    if (!recent.length) { chart.innerHTML = '<div class="no-data">No trend data</div>'; return; }
+    chart.replaceChildren();
+    if (!recent.length) { chart.appendChild(createNoDataElement("No trend data")); return; }
 
     const maxROI = Math.max(...recent.map(p => Math.abs(p.roi)), 1);
 
-    chart.innerHTML = recent.map(p => {
+    recent.forEach(p => {
       const height = Math.max((Math.abs(p.roi) / maxROI) * 90, 5);
-      return `
-        <div class="trend-bar ${p.roi >= 0 ? "" : "negative"}" data-height="${height}">
-          <div class="bar-tooltip">${p.name}<br>${p.roi}%</div>
-        </div>
-      `;
-    }).join('');
+      const bar = document.createElement("div");
+      bar.className = `trend-bar ${p.roi >= 0 ? "" : "negative"}`.trim();
+      bar.style.height = `${height}%`;
 
-    chart.querySelectorAll(".trend-bar").forEach(bar => {
-      bar.style.height = `${bar.dataset.height}%`;
+      const tooltip = document.createElement("div");
+      tooltip.className = "bar-tooltip";
+      tooltip.append(document.createTextNode(p.name), document.createElement("br"), document.createTextNode(`${p.roi}%`));
+
+      bar.appendChild(tooltip);
+      chart.appendChild(bar);
     });
 
     const trendEl = document.getElementById("trendIndicator");
@@ -883,16 +937,30 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!container) return;
 
     if (!currentHistory.length) {
-      container.innerHTML = '<div class="no-data">No history to compare</div>';
+      container.replaceChildren(createNoDataElement("No history to compare"));
       return;
     }
 
-    container.innerHTML = currentHistory.slice(0, 15).map(item => `
-      <div class="compare-item" data-id="${item.id}">
-        <input type="checkbox" data-id="${item.id}" ${selectedCompareIds.includes(item.id) ? 'checked' : ''}>
-        <span>${item.name} — <strong>${item.roi}% ROI</strong></span>
-      </div>
-    `).join('');
+    container.replaceChildren();
+    currentHistory.slice(0, 15).forEach(item => {
+      const compareItem = document.createElement("div");
+      compareItem.className = "compare-item";
+      compareItem.dataset.id = item.id;
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.dataset.id = item.id;
+      checkbox.checked = selectedCompareIds.includes(item.id);
+
+      const label = document.createElement("span");
+      label.append(document.createTextNode(`${item.name} — `));
+      const strong = document.createElement("strong");
+      strong.textContent = `${item.roi}% ROI`;
+      label.appendChild(strong);
+
+      compareItem.append(checkbox, label);
+      container.appendChild(compareItem);
+    });
 
     container.querySelectorAll("input[type='checkbox']").forEach(cb => {
       cb.addEventListener("change", () => {
@@ -910,10 +978,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderCompareTable() {
     const container = document.getElementById("compareTable");
-    if (!container || !selectedCompareIds.length) { if (container) container.innerHTML = ""; return; }
+    if (!container || !selectedCompareIds.length) { if (container) container.replaceChildren(); return; }
 
     const items = selectedCompareIds.map(id => currentHistory.find(i => i.id === id)).filter(Boolean);
-    if (items.length < 2) { container.innerHTML = ""; return; }
+    if (items.length < 2) { container.replaceChildren(); return; }
 
     const metrics = [
       { key: "roi", label: "ROI", fmt: v => `${v}%`, higherBetter: true },
@@ -924,33 +992,42 @@ document.addEventListener("DOMContentLoaded", () => {
       { key: "roas", label: "ROAS", fmt: v => `${v}x`, higherBetter: true }
     ];
 
-    const tableHTML = `
-      <table>
-        <thead>
-          <tr>
-            <th>Metric</th>
-            ${items.map(i => `<th>${i.name.slice(0, 12)}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${metrics.map(m => {
-            const vals = items.map(i => parseFloat(i[m.key]) || 0);
-            const best = m.higherBetter ? Math.max(...vals) : Math.min(...vals);
-            return `
-              <tr>
-                <td class="metric-label-cell">${m.label}</td>
-                ${items.map((item, idx) => {
-                  const isWinner = vals[idx] === best;
-                  return `<td class="${isWinner ? 'winner' : ''}">${m.fmt(item[m.key] || 0)}</td>`;
-                }).join('')}
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    `;
+    container.replaceChildren();
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    const metricHead = document.createElement("th");
+    metricHead.textContent = "Metric";
+    headRow.appendChild(metricHead);
+    items.forEach(i => {
+      const th = document.createElement("th");
+      th.textContent = i.name.slice(0, 12);
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
 
-    container.innerHTML = tableHTML;
+    const tbody = document.createElement("tbody");
+    metrics.forEach(m => {
+      const vals = items.map(i => parseFloat(i[m.key]) || 0);
+      const best = m.higherBetter ? Math.max(...vals) : Math.min(...vals);
+      const row = document.createElement("tr");
+      const label = document.createElement("td");
+      label.className = "metric-label-cell";
+      label.textContent = m.label;
+      row.appendChild(label);
+
+      items.forEach((item, idx) => {
+        const cell = document.createElement("td");
+        if (vals[idx] === best) cell.className = "winner";
+        cell.textContent = m.fmt(item[m.key] || 0);
+        row.appendChild(cell);
+      });
+
+      tbody.appendChild(row);
+    });
+
+    table.append(thead, tbody);
+    container.appendChild(table);
   }
 
   // ============ TEMPLATES ============
@@ -991,19 +1068,43 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = document.getElementById("templateList");
     if (!list) return;
 
-    if (!templates.length) { list.innerHTML = '<div class="no-data">No templates yet</div>'; return; }
+    list.replaceChildren();
 
-    list.innerHTML = templates.map(t => `
-      <div class="template-item">
-        <button class="template-info template-info-button" data-template-load="${t.id}" type="button">
-          <strong>${t.name}</strong>
-          <small>${t.category} • Rate: $${t.rate}/hr • ${t.date}</small>
-        </button>
-        <button class="template-delete" data-template-delete="${t.id}" title="Delete" type="button">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-        </button>
-      </div>
-    `).join('');
+    if (!templates.length) {
+      const empty = document.createElement("div");
+      empty.className = "no-data";
+      empty.textContent = "No templates yet";
+      list.appendChild(empty);
+      return;
+    }
+
+    templates.forEach(t => {
+      const item = document.createElement("div");
+      item.className = "template-item";
+
+      const infoButton = document.createElement("button");
+      infoButton.className = "template-info template-info-button";
+      infoButton.dataset.templateLoad = t.id;
+      infoButton.type = "button";
+
+      const strong = document.createElement("strong");
+      strong.textContent = t.name;
+      const meta = document.createElement("small");
+      meta.textContent = `${t.category} • Rate: $${t.rate}/hr • ${t.date}`;
+
+      infoButton.append(strong, meta);
+
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "template-delete";
+      deleteButton.dataset.templateDelete = t.id;
+      deleteButton.title = "Delete";
+      deleteButton.type = "button";
+      deleteButton.setAttribute("aria-label", `Delete template ${t.name}`);
+      deleteButton.appendChild(createTrashIcon());
+
+      item.append(infoButton, deleteButton);
+      list.appendChild(item);
+    });
   }
 
   function loadTemplate(id) {
@@ -1089,38 +1190,67 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!historyList) return;
 
     if (!history.length) {
-      historyList.innerHTML = '<li class="history-empty-item">No features found</li>';
+      historyList.replaceChildren();
+      const empty = document.createElement("li");
+      empty.className = "history-empty-item";
+      empty.textContent = "No features found";
+      historyList.appendChild(empty);
       document.getElementById("historyCount").textContent = "0 projects";
       return;
     }
 
     const roiColors = { high: "var(--green)", medium: "var(--blue)", low: "var(--orange)", negative: "var(--red)" };
+    historyList.replaceChildren();
 
-    historyList.innerHTML = history.map(item => {
+    history.forEach(item => {
       const roiClass = item.roi >= 0 ? "positive" : "negative";
       const barColor = item.roi > 100 ? roiColors.high : item.roi > 50 ? roiColors.medium : item.roi > 0 ? roiColors.low : roiColors.negative;
-      const tagHtml = item.tags?.length ? item.tags.slice(0, 2).map(t => `<span class="hist-tag">${t}</span>`).join('') : "";
 
-      return `
-        <li data-project-id="${item.id}">
-          <div class="hist-color" data-color="${barColor}"></div>
-          <div class="hist-info">
-            <div class="hist-name">${item.favorite ? "⭐ " : ""}${item.name}</div>
-            <div class="hist-meta">
-              <span>${item.category || "Product"}</span>
-              <span>•</span>
-              <span>${item.status || "Idea"}</span>
-              ${tagHtml}
-            </div>
-            <div class="history-date">${item.date}</div>
-          </div>
-          <div class="hist-roi ${roiClass}">${item.roi}%</div>
-        </li>
-      `;
-    }).join('');
+      const li = document.createElement("li");
+      li.dataset.projectId = item.id;
 
-    historyList.querySelectorAll(".hist-color").forEach(colorBar => {
-      colorBar.style.background = colorBar.dataset.color;
+      const colorBar = document.createElement("div");
+      colorBar.className = "hist-color";
+      colorBar.style.background = barColor;
+
+      const info = document.createElement("div");
+      info.className = "hist-info";
+
+      const name = document.createElement("div");
+      name.className = "hist-name";
+      name.textContent = `${item.favorite ? "⭐ " : ""}${item.name}`;
+
+      const meta = document.createElement("div");
+      meta.className = "hist-meta";
+
+      const category = document.createElement("span");
+      category.textContent = item.category || "Product";
+      const separator = document.createElement("span");
+      separator.textContent = "•";
+      const status = document.createElement("span");
+      status.textContent = item.status || "Idea";
+
+      meta.append(category, separator, status);
+
+      (item.tags || []).slice(0, 2).forEach(tag => {
+        const tagEl = document.createElement("span");
+        tagEl.className = "hist-tag";
+        tagEl.textContent = tag;
+        meta.appendChild(tagEl);
+      });
+
+      const date = document.createElement("div");
+      date.className = "history-date";
+      date.textContent = item.date;
+
+      info.append(name, meta, date);
+
+      const roi = document.createElement("div");
+      roi.className = `hist-roi ${roiClass}`;
+      roi.textContent = `${item.roi}%`;
+
+      li.append(colorBar, info, roi);
+      historyList.appendChild(li);
     });
 
     document.getElementById("historyCount").textContent = `${history.length} project${history.length !== 1 ? "s" : ""}`;
@@ -1299,7 +1429,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const icons = { success: "✓", error: "✕", info: "ℹ" };
     const n = document.createElement("div");
     n.className = `notification ${type}`;
-    n.innerHTML = `<span>${icons[type] || "ℹ"}</span><span>${message}</span>`;
+    const icon = document.createElement("span");
+    icon.textContent = icons[type] || "ℹ";
+    const text = document.createElement("span");
+    text.textContent = message;
+    n.append(icon, text);
     document.body.appendChild(n);
 
     setTimeout(() => {
@@ -1325,6 +1459,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function dateStr() {
     return new Date().toISOString().split("T")[0];
+  }
+
+  function createTrashIcon() {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "12");
+    svg.setAttribute("height", "12");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+
+    const polyline = document.createElementNS(svgNS, "polyline");
+    polyline.setAttribute("points", "3 6 5 6 21 6");
+
+    const path1 = document.createElementNS(svgNS, "path");
+    path1.setAttribute("d", "M19 6l-1 14H6L5 6");
+
+    const path2 = document.createElementNS(svgNS, "path");
+    path2.setAttribute("d", "M10 11v6M14 11v6");
+
+    const path3 = document.createElementNS(svgNS, "path");
+    path3.setAttribute("d", "M9 6V4h6v2");
+
+    svg.append(polyline, path1, path2, path3);
+    return svg;
+  }
+
+  function createNoDataElement(message) {
+    const el = document.createElement("div");
+    el.className = "no-data";
+    el.textContent = message;
+    return el;
+  }
+
+  function createBestFeatureRow(labelText, valueText, valueClass = "") {
+    const row = document.createElement("div");
+    row.className = "best-feature-row";
+
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = labelText;
+
+    const value = document.createElement("span");
+    value.className = `value ${valueClass}`.trim();
+    value.textContent = valueText ?? "-";
+
+    row.append(label, value);
+    return row;
   }
 
 });
