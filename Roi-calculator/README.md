@@ -1,106 +1,63 @@
-📊 Feature ROI Pro
+# Feature ROI Pro
 
-Feature ROI Pro is a lightweight Chrome extension that helps product managers, founders, and teams calculate, compare, and track ROI for product features—so you can make smarter, data-driven decisions.
+Feature ROI Pro is a Manifest V3 Chrome extension for evaluating product and business initiatives with ROI, risk, portfolio insights, scenario analysis, and export tools.
 
-🚀 Features
+## Highlights
 
-📈 Calculate ROI for individual product features
+- Calculate ROI, cost, net profit, profit margin, payback, NPV, IRR, CAGR, ROAS, and 3-year profit
+- Track projects with category, status, notes, tags, confidence, risk level, and time horizon
+- Compare saved features side-by-side
+- Run best-case, worst-case, realistic, and custom scenarios
+- Save and reuse templates
+- View portfolio summaries, category breakdowns, trend charts, and smart recommendations
+- Export data as CSV, JSON, Excel, and printable PDF report
+- Toggle light and dark mode
+- Store history locally with `chrome.storage.local`
 
-⚖️ Compare multiple features side-by-side
+## Accessibility and UI
 
-💾 Save feature data locally using browser storage
+- Improved contrast for labels, helper text, badges, and status colors
+- Restored extension icons in the manifest for toolbar and extension management visibility
+- Strict CSP-compatible popup implementation with no inline event handlers or inline styles
 
-🎯 Simple, distraction-free popup UI
+## Installation
 
-⚡ Fast and lightweight (no external APIs)
+1. Open `chrome://extensions`
+2. Enable Developer mode
+3. Click Load unpacked
+4. Select the `Roi-calculator` folder
 
-🧠 Who Is It For?
+## Project Structure
 
-Product Managers
-
-Startup Founders
-
-Business Analysts
-
-Indie Hackers
-
-Agile / Scrum Teams
-
-🛠️ Tech Stack
-
-Chrome Extension (Manifest V3)
-
-JavaScript
-
-HTML / CSS
-
-Chrome Storage API
-
-📦 Installation (Local)
-
-Clone this repository:
-
-git clone https://github.com/your-username/feature-roi-pro.git
-
-Open Google Chrome and go to:
-
-chrome://extensions
-
-Enable Developer mode (top right)
-
-Click Load unpacked
-
-Select the project folder
-
-✅ Extension will appear in the Chrome toolbar.
-
-📁 Project Structure
-Feature-ROI-Pro/
-│
+```text
+Roi-calculator/
 ├── manifest.json
 ├── popup.html
 ├── popup.js
+├── style.css
+├── report.html
+├── report.css
+├── report.js
+├── README.md
+├── DOCUMENTATION.md
 └── icons/
-├── icon16.png
-├── icon48.png
-└── icon128.png
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
 
-🔐 Permissions Explained
+## Permissions
 
-storage → Used to save ROI data locally in your browser
+- `storage`: used to persist project history, templates, theme choice, and report handoff data locally in the browser
 
-No tracking, no analytics, no external data sharing.
+No external APIs, analytics, or remote code are required.
 
-🌟 Future Enhancements (Planned)
+## Notes
 
-⭐ Priority scoring models (ICE, RICE)
+- Built for Chrome Manifest V3
+- Minimum Chrome version: `114`
+- Current version: `2.0.0`
 
-📊 ROI trend history
+## License
 
-📤 Export to CSV / PDF
-
-☁️ Optional cloud sync
-
-🎨 Dark mode
-
-🧩 Chrome Web Store
-
-Coming soon 🚀
-(Optimized for Manifest V3 and Chrome Web Store guidelines)
-
-🤝 Contributing
-
-Contributions are welcome!
-
-Fork the repo
-
-Create a new branch
-
-Commit your changes
-
-Open a pull request
-
-📄 License
-
-MIT License
-Free to use, modify, and distribute.
+MIT

@@ -1,338 +1,163 @@
-# ROI Calculator - Extension Documentation
+# Feature ROI Pro Documentation
 
-## 1. Extension Overview
+## 1. Overview
 
-**Purpose**: ROI Calculator helps business professionals and investors quickly calculate Return on Investment for projects and initiatives. It computes ROI percentage from gain, hours spent, and hourly rate, maintaining a calculation history for reference.
+Feature ROI Pro is a Chrome Manifest V3 extension for evaluating product, growth, support, infrastructure, and business initiatives. It combines ROI calculation with portfolio tracking, scenario modeling, templates, exports, and lightweight business health metrics.
 
-**Current Functionality**:
-- Feature/project name input
-- Profit/gain amount input
-- Hours spent input
-- Hourly rate input
-- Automatic ROI calculation
-- Cost calculation (hours × rate)
-- Net profit calculation
-- Color-coded results (green for positive, red for negative ROI)
-- Calculation history display
-- Clear history functionality
-- Persistent history storage
+## 2. Current Version
 
----
+- Name: `Feature ROI Pro`
+- Version: `2.0.0`
+- Popup entry: `popup.html`
+- Minimum Chrome version: `114`
+- Storage: `chrome.storage.local`
 
-## 2. Current Features (From Codebase Analysis)
+## 3. Implemented Features
 
-### Core Features Implemented:
-1. **Input Fields**
-   - Feature name input (for identification)
-   - Gain/profit amount field
-   - Hours spent field
-   - Hourly rate field
-   - All numeric validation
+### Core ROI Analysis
 
-2. **ROI Calculation**
-   - Cost = Hours × Hourly Rate
-   - Net Profit = Gain - Cost
-   - ROI % = (Net Profit / Cost) × 100
-   - Rounding to 1 decimal place
-   - Handles both positive and negative ROI
+- Feature name, category, status, notes, and tags
+- Annual gain, development hours, hourly rate, and time horizon
+- Risk level and confidence scoring
+- Calculated outputs:
+  - ROI
+  - Total cost
+  - Net profit
+  - Profit margin
+  - Payback period
+  - NPV
+  - IRR
+  - CAGR
+  - ROAS
+  - Multi-year profit
+  - Risk-adjusted ROI
+  - Risk score
 
-3. **Results Display**
-   - Total cost display
-   - Net profit display
-   - ROI percentage with color coding
-   - Green for positive ROI
-   - Red for negative ROI
-   - Result container with conditional display
+### Scenario Modeling
 
-4. **History Management**
-   - Stores last 5 calculations (limited)
-   - Calculation history list
-   - Project name display
-   - ROI result display
-   - Clear all history button
-   - Chrome storage integration
+- Best case
+- Realistic case
+- Worst case
+- Custom multiplier scenario
+- Apply a scenario result back into the main calculator
 
-5. **UI/UX Elements**
-   - Input form with labeled fields
-   - Calculate button
-   - Result card display
-   - History list display
-   - Clear history button
-   - Responsive layout
+### Project History and Portfolio
 
-6. **Storage**
-   - localStorage/Chrome storage for history
-   - Persists calculations between sessions
-   - Limited history size (last 5 items)
-   - Auto-load on extension open
+- Saved project history in local browser storage
+- Favorites support
+- Search and filtering
+- Sorting by date, ROI, profit, and cost
+- Best ROI summary
+- Average ROI summary
+- Total profit summary
+- Category distribution
+- ROI trend visualization
 
----
+### Insights
 
-## 3. Problems & Limitations
+- Priority matrix
+- Smart recommendations
+- ROI distribution view
 
-### Current Limitations:
-1. **Calculation Limitations**
-   - No break-even analysis
-   - No ROI over time
-   - No compound ROI calculation
-   - No discount rate/NPV
-   - No internal rate of return (IRR)
-   - No payback period calculation
+### Templates
 
-2. **Project Management**
-   - Cannot categorize projects
-   - No project grouping
-   - Limited history (only 5 items)
-   - No project archive
-   - Cannot filter/search history
-   - No date tracking for calculations
+- Save current calculator settings as a reusable template
+- Load or delete saved templates
 
-3. **Advanced Metrics Missing**
-   - No ROAS (Return on Ad Spend)
-   - No LTV (Lifetime Value) calculation
-   - No CAC (Customer Acquisition Cost)
-   - No Profit Margin display
-   - No Growth Rate
-   - No Breakeven point
+### Business Metrics
 
-4. **User Experience**
-   - No export functionality
-   - Cannot edit past calculations
-   - No comparisons between projects
-   - No visualization/charts
-   - No trend analysis
-   - Limited keyboard support
+- LTV
+- CAC
+- Churn
+- Active customers
+- MRR
+- Growth rate
+- Derived business health metrics and summary messaging
 
-5. **Business Features**
-   - No multi-project comparison
-   - No scenario modeling
-   - No budget allocation
-   - No resource planning
-   - No sensitivity analysis
-   - No financial forecasting
+### Export Options
 
-6. **Collaboration**
-   - Cannot share calculations
-   - No team workspace
-   - No version history
-   - No comments/notes
-   - No approval workflow
+- CSV
+- JSON
+- Excel-compatible export
+- Printable PDF report via extension-owned report page
 
----
+## 4. CSP and Security Notes
 
-## 4. Feature Enhancements
+The extension now follows a strict extension page CSP:
 
-### Recommended Improvements:
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self'; object-src 'none'; style-src 'self';"
+}
+```
 
-1. **Advanced Financial Metrics**
-   - Payback period calculation
-   - NPV (Net Present Value)
-   - IRR (Internal Rate of Return)
-   - Profit margin percentage
-   - ROI over multiple time periods
-   - Compound annual growth rate (CAGR)
+To stay compatible with this policy:
 
-2. **Project Management**
-   - Project categorization (marketing, development, etc.)
-   - Date tracking for calculations
-   - Project status tracking
-   - Unlimited history storage
-   - Search and filter history
-   - Archive old projects
-   - Project notes/comments
+- inline event handlers were removed
+- inline style attributes were removed from popup-rendered content
+- the printable report was moved to dedicated files:
+  - `report.html`
+  - `report.css`
+  - `report.js`
 
-3. **Comparative Analysis**
-   - Compare multiple projects
-   - Best ROI identification
-   - Average ROI calculation
-   - Performance ranking
-   - Benchmark comparison
+## 5. Icons and Manifest
 
-4. **Business Metrics**
-   - ROAS (Return on Ad Spend)
-   - CAC (Customer Acquisition Cost)
-   - LTV (Lifetime Value)
-   - Churn rate impact
-   - Revenue per user
+The manifest declares both toolbar and extension icons:
 
-5. **Visualization & Reporting**
-   - Charts and graphs
-   - ROI trends over time
-   - Project comparison charts
-   - Export reports (PDF, CSV)
-   - Dashboards
-   - Visual data representation
+- `action.default_icon`
+- top-level `icons`
 
-6. **Scenario Analysis**
-   - What-if scenarios
-   - Sensitivity analysis
-   - Best/worst case scenarios
-   - Break-even analysis
-   - Budget allocation optimizer
+These map to:
 
-7. **Integration & Automation**
-   - Zapier integration
-   - Email reports
-   - Scheduled calculations
-   - API access
-   - Data import
+- `icons/icon16.png`
+- `icons/icon48.png`
+- `icons/icon128.png`
 
----
+## 6. Visual and Usability Updates
 
-## 5. Unique & Advanced Features
+Recent UI maintenance improved visibility by strengthening:
 
-### Innovative Enhancements:
+- secondary text contrast
+- muted helper text contrast
+- semantic status colors such as green, red, and orange
+- dark mode readability
 
-1. **AI-Powered Insights**
-   - Predict project success
-   - Suggest optimizations
-   - Identify underperforming areas
-   - Recommend best projects
-   - Anomaly detection
+This was done primarily through shared design tokens in `style.css` so readability improvements apply consistently across the popup.
 
-2. **Portfolio Management**
-   - Portfolio ROI calculation
-   - Asset allocation optimizer
-   - Risk assessment
-   - Diversification analysis
-   - Performance benchmarking
+## 7. File Reference Summary
 
-3. **Business Intelligence**
-   - ROI trends and forecasting
-   - Department/team comparison
-   - Cost optimization suggestions
-   - Resource allocation recommendations
-   - Budget planning support
+- `manifest.json`: extension metadata, icons, permissions, CSP
+- `popup.html`: popup structure and modal layout
+- `popup.js`: calculator logic, storage, scenarios, history, insights, export flow
+- `style.css`: popup styling, themes, visibility improvements
+- `report.html`: printable report shell
+- `report.css`: printable report styles
+- `report.js`: report data rendering and print trigger
 
-4. **Scenario Planner**
-   - What-if analysis
-   - Multiple scenario comparison
-   - best-case/worst-case modeling
-   - Sensitivity analysis
-   - Break-even finder
+## 8. Local Testing Checklist
 
-5. **Collaboration Suite**
-   - Share projects with team
-   - Approve/reject projects
-   - Commentary and discussion
-   - Version history
-   - Audit trail
+1. Reload the unpacked extension in Chrome
+2. Confirm toolbar icon appears correctly
+3. Open popup and verify light mode readability
+4. Toggle dark mode and verify readability
+5. Run a calculation and inspect history save behavior
+6. Open scenario modal and apply a scenario
+7. Save and load a template
+8. Export CSV, JSON, Excel, and PDF report
+9. Confirm there are no CSP errors in the extension console
 
-6. **Reporting & Analytics**
-   - Automated report generation
-   - Email scheduling
-   - Custom dashboards
-   - KPI tracking
-   - Export in multiple formats
+## 9. Known Constraints
 
-7. **Integration Ecosystem**
-   - Salesforce integration
-   - HubSpot integration
-   - Google Sheets add-on
-   - Slack notifications
-   - Webhook support
+- Data is local-only and not synced across devices
+- PDF export uses a browser print flow rather than a bundled PDF library
+- Storage is limited by Chrome local storage capacity
 
----
+## 10. Maintenance Guidance
 
-## 6. User Productivity Impact
+When updating the popup in the future:
 
-### How Enhancements Benefit Users:
-
-**Decision Making**:
-- Quick ROI assessment supports project prioritization
-- Comparison helps choose best opportunities
-- Data-driven decision making
-- Risk assessment before investment
-- Portfolio optimization
-
-**Time Efficiency**:
-- One-click calculation saves analysis time
-- Template reuse for similar projects
-- Batch analysis of multiple projects
-- Automated report generation
-- No manual spreadsheet creation
-
-**Financial Planning**:
-- Understand project profitability
-- Forecast future returns
-- Plan budget allocation
-- Identify best investments
-- Optimize resource usage
-
-**Team Accountability**:
-- Track project performance
-- Compare against benchmarks
-- Demonstrate ROI to stakeholders
-- Justify investments
-- Show business impact
-
-**Business Growth**:
-- Identify high-ROI opportunities
-- Optimize spending
-- Improve decision quality
-- Maximize profits
-- Reduce financial risk
-
----
-
-## 7. Future Scope
-
-### Long-term Vision:
-
-1. **Enterprise Financial Platform**
-   - Portfolio management system
-   - Investment tracking
-   - Financial planning suite
-   - Risk management tools
-   - Compliance reporting
-
-2. **Advanced Analytics Engine**
-   - Predictive ROI modeling
-   - Machine learning insights
-   - Anomaly detection
-   - Forecasting engine
-   - Business intelligence
-
-3. **Mobile Expansion**
-   - Native iOS/Android apps
-   - Mobile financial dashboard
-   - Push notifications
-   - Cross-device sync
-   - Offline capability
-
-4. **Integration Hub**
-   - ERP system integration
-   - Accounting software sync
-   - CRM integration
-   - Data warehouse connection
-   - Real-time data access
-
-5. **Collaboration Platform**
-   - Team workspace
-   - Portfolio management
-   - Approval workflows
-   - Compliance controls
-   - Audit logging
-
-6. **AI Integration**
-   - Predictive analytics
-   - Recommendation engine
-   - Automated forecasting
-   - Natural language queries
-   - Intelligent insights
-
----
-
-## Development Constraints
-
-- **Frontend-Only**: All calculations in JavaScript
-- **No Backend**: No server-side processing
-- **Internet Not Required**: Works completely offline
-- **Local Storage**: History limited by browser storage
-- **No Financial Data**: No real market data access
-
----
-
-## Summary
-
-ROI Calculator can expand from a simple calculator into an enterprise financial planning platform. By adding advanced metrics, project management, analytics dashboards, and integration capabilities, it would serve CFOs, project managers, and investment professionals for comprehensive financial analysis and decision-making.
+- avoid inline handlers like `onclick`
+- avoid inline `style=""` attributes for dynamic UI
+- keep report rendering in dedicated files if print/export UI grows
+- maintain icon declarations in the manifest
+- preserve strong contrast for helper text and state colors

@@ -1,65 +1,609 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h2>Feature ROI Pro</h2>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Feature ROI Pro</title>
+  </head>
 
-    <div class="input-section">
-      <div class="field">
-        <label for="featureName">Feature Name</label>
-        <input type="text" id="featureName" placeholder="e.g. Google Login">
+  <body>
+    <div class="popup-container">
+      <!-- Header -->
+      <header>
+        <div class="logo-wrapper">
+          <div class="logo-mark">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect width="22" height="22" rx="6" fill="url(#logoGrad)"/>
+              <path d="M6 16L10 8L14 12L17 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="logoGrad" x1="0" y1="0" x2="22" y2="22">
+                  <stop stop-color="#6366f1"/>
+                  <stop offset="1" stop-color="#8b5cf6"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span class="app-name">ROI<span class="app-name-pro">Pro</span></span>
+        </div>
+        <div class="header-actions">
+          <button id="compareBtn" class="header-btn" title="Compare Features">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+          <button id="themeToggle" class="header-btn" title="Toggle Dark Mode">
+            <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Tab Navigation -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="calculator">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+          Calculate
+        </button>
+        <button class="tab-btn" data-tab="portfolio">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Portfolio
+        </button>
+        <button class="tab-btn" data-tab="insights">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Insights
+        </button>
+        <button class="tab-btn" data-tab="history">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </button>
+      </nav>
+
+      <!-- Scrollable Content -->
+      <div class="popup-content">
+
+        <!-- ===== TAB: CALCULATOR ===== -->
+        <div id="tab-calculator" class="tab-panel active">
+
+          <!-- Quick Action Bar -->
+          <div class="quick-actions">
+            <button id="scenarioBtn" class="action-chip" title="Scenario Analysis">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+              Scenarios
+            </button>
+            <button id="businessBtn" class="action-chip" title="Business Metrics">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              SaaS Metrics
+            </button>
+            <button id="templateBtn" class="action-chip" title="Templates">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Templates
+            </button>
+            <button id="priorityBtn" class="action-chip" title="Priority Matrix">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              Matrix
+            </button>
+          </div>
+
+          <!-- Main Input Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Feature Details</span>
+              <button id="favoriteToggle" class="icon-btn fav-btn" title="Add to favorites">
+                <svg id="favIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </button>
+            </div>
+
+            <div class="field">
+              <label>Feature Name</label>
+              <input id="featureName" placeholder="e.g., AI Chat Integration" autocomplete="off" />
+            </div>
+
+            <!-- Tags Input -->
+            <div class="field">
+              <label>Tags</label>
+              <div class="tags-container" id="tagsContainer">
+                <input id="tagInput" placeholder="Add tag + Enter..." autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Category</label>
+                <select id="category">
+                  <option value="Product">📱 Product</option>
+                  <option value="Marketing">📢 Marketing</option>
+                  <option value="Development">💻 Development</option>
+                  <option value="Sales">💰 Sales</option>
+                  <option value="Support">🎧 Support</option>
+                  <option value="Infrastructure">⚙️ Infrastructure</option>
+                  <option value="Security">🔒 Security</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Status</label>
+                <select id="status">
+                  <option value="Idea">💡 Idea</option>
+                  <option value="Planned">📋 Planned</option>
+                  <option value="In Progress">🔄 In Progress</option>
+                  <option value="Completed">✅ Completed</option>
+                  <option value="On Hold">⏸️ On Hold</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Notes</label>
+              <input id="notes" placeholder="Add context or assumptions..." autocomplete="off" />
+            </div>
+
+            <!-- Risk Assessment Slider -->
+            <div class="field">
+              <label class="label-with-value">
+                <span>Risk Level</span>
+                <span id="riskLabel" class="risk-badge risk-medium">Medium</span>
+              </label>
+              <div class="slider-track">
+                <input type="range" id="riskSlider" min="1" max="5" value="3" class="risk-slider" />
+                <div class="slider-ticks">
+                  <span>Very Low</span><span>Low</span><span>Medium</span><span>High</span><span>Very High</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Annual Gain ($)</label>
+                <div class="input-with-icon">
+                  <span class="input-prefix">$</span>
+                  <input type="number" id="gain" placeholder="50,000" class="has-prefix" />
+                </div>
+              </div>
+              <div class="field">
+                <label>Dev Hours</label>
+                <div class="input-with-icon">
+                  <input type="number" id="hours" placeholder="40" />
+                  <span class="input-suffix">hrs</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Hourly Rate ($)</label>
+                <div class="input-with-icon">
+                  <span class="input-prefix">$</span>
+                  <input type="number" id="rate" value="100" class="has-prefix" />
+                </div>
+              </div>
+              <div class="field">
+                <label>Time Horizon</label>
+                <select id="timeHorizon">
+                  <option value="1">1 Year</option>
+                  <option value="2">2 Years</option>
+                  <option value="3" selected>3 Years</option>
+                  <option value="5">5 Years</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Confidence Slider -->
+            <div class="field">
+              <label class="label-with-value">
+                <span>Gain Confidence</span>
+                <span id="confidenceValue" class="confidence-label">70%</span>
+              </label>
+              <input type="range" id="confidenceSlider" min="10" max="100" value="70" class="confidence-slider" />
+            </div>
+
+            <button id="calculate" class="btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+              Calculate ROI
+              <kbd class="btn-kbd">⌘↵</kbd>
+            </button>
+          </div>
+
+          <!-- Results Section -->
+          <div id="result-container" class="result-box hidden">
+            <!-- ROI Hero -->
+            <div class="roi-hero">
+              <div class="roi-main">
+                <div class="roi-label">ROI Score</div>
+                <div id="roi-percent" class="roi-value">0%</div>
+                <div id="roiRating" class="roi-badge-pill"></div>
+              </div>
+              <div class="roi-risk-score">
+                <div class="risk-ring">
+                  <svg viewBox="0 0 36 36" class="ring-svg">
+                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"/>
+                    <path id="riskRingPath" class="ring-fill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3" stroke-dasharray="0, 100"/>
+                  </svg>
+                  <div class="ring-label">
+                    <span id="riskScoreDisplay">--</span>
+                    <small>Risk</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="progress-container">
+              <div class="progress-bar" id="roiProgress"></div>
+            </div>
+
+            <!-- Adjusted ROI (with confidence) -->
+            <div class="adjusted-roi-row">
+              <span class="adj-label">Risk-Adjusted ROI</span>
+              <span id="adjustedROI" class="adj-value">--</span>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <div class="metric-label">Total Cost</div>
+                <div id="total-cost" class="metric-value">$0</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">Net Profit</div>
+                <div id="net-profit" class="metric-value">$0</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">Profit Margin</div>
+                <div id="profit-margin" class="metric-value">0%</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">Payback</div>
+                <div id="payback" class="metric-value">--</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">NPV</div>
+                <div id="npv" class="metric-value">$0</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">IRR</div>
+                <div id="irr" class="metric-value">0%</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">CAGR</div>
+                <div id="cagr" class="metric-value">0%</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-label">ROAS</div>
+                <div id="roas" class="metric-value">0x</div>
+              </div>
+              <div class="metric-item highlight-metric">
+                <div class="metric-label">3-Yr Profit</div>
+                <div id="threeYrProfit" class="metric-value">$0</div>
+              </div>
+            </div>
+
+            <!-- AI Recommendation -->
+            <div id="aiRecommendation" class="ai-rec-box"></div>
+          </div>
+
+          <!-- SaaS Business Metrics Section -->
+          <div id="businessSection" class="card hidden">
+            <div class="card-header">
+              <span class="card-title">SaaS Metrics</span>
+              <button class="icon-btn close-section" data-section="businessSection">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>LTV ($)</label>
+                <div class="input-with-icon"><span class="input-prefix">$</span><input type="number" id="ltv" placeholder="5000" class="has-prefix"/></div>
+              </div>
+              <div class="field">
+                <label>CAC ($)</label>
+                <div class="input-with-icon"><span class="input-prefix">$</span><input type="number" id="cac" placeholder="1000" class="has-prefix"/></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Monthly Churn (%)</label>
+                <input type="number" id="churn" placeholder="2" step="0.1" />
+              </div>
+              <div class="field">
+                <label>Active Customers</label>
+                <input type="number" id="customers" placeholder="100" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>MRR ($)</label>
+                <div class="input-with-icon"><span class="input-prefix">$</span><input type="number" id="mrr" placeholder="10000" class="has-prefix"/></div>
+              </div>
+              <div class="field">
+                <label>Growth Rate (%/mo)</label>
+                <input type="number" id="growthRate" placeholder="5" step="0.5" />
+              </div>
+            </div>
+            <button id="calculateBusiness" class="btn-secondary">Calculate SaaS Health</button>
+            <div id="businessResults" class="business-results"></div>
+          </div>
+
+          <!-- Export Options -->
+          <div class="export-buttons">
+            <button id="exportCSV" class="btn-export">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              CSV
+            </button>
+            <button id="exportPDF" class="btn-export">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 11h4m-4 4h2"/></svg>
+              PDF
+            </button>
+            <button id="exportJSON" class="btn-export">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              JSON
+            </button>
+            <button id="exportExcel" class="btn-export">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+              Excel
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== TAB: PORTFOLIO ===== -->
+        <div id="tab-portfolio" class="tab-panel hidden">
+          <!-- Summary Cards -->
+          <div class="portfolio-summary">
+            <div class="stat-card">
+              <div class="stat-icon green">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              </div>
+              <div>
+                <div class="stat-label">Best ROI</div>
+                <div id="bestROIStat" class="stat-value">--</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon blue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <div class="stat-label">Total Profit</div>
+                <div id="totalProfit" class="stat-value">$0</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div>
+                <div class="stat-label">Avg ROI</div>
+                <div id="avgROI" class="stat-value">0%</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon orange">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div>
+                <div class="stat-label">Favorites</div>
+                <div id="favoriteCount" class="stat-value">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROI Trend Chart -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">ROI Trend</span>
+              <span id="trendIndicator" class="trend-badge">→ Stable</span>
+            </div>
+            <div class="trend-chart" id="trendChart"></div>
+          </div>
+
+          <!-- Category Distribution -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">By Category</span>
+            </div>
+            <div id="categoryBreakdown" class="category-breakdown"></div>
+          </div>
+
+          <!-- Best Feature -->
+          <div class="card" id="bestFeatureCard">
+            <div class="card-header">
+              <span class="card-title">🏆 Best Performer</span>
+            </div>
+            <div id="bestFeatureDetails" class="best-feature-details">
+              <span class="no-data">No data yet</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== TAB: INSIGHTS ===== -->
+        <div id="tab-insights" class="tab-panel hidden">
+          <!-- Priority Matrix -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Priority Matrix</span>
+              <span class="card-hint">ROI vs Cost</span>
+            </div>
+            <div class="matrix-container">
+              <div class="matrix-grid" id="priorityMatrix">
+                <div class="matrix-label-y">High ROI</div>
+                <div class="matrix-quadrant q1">
+                  <div class="q-label">Quick Wins</div>
+                  <div class="q-dots" id="qWins"></div>
+                </div>
+                <div class="matrix-quadrant q2">
+                  <div class="q-label">Strategic</div>
+                  <div class="q-dots" id="qStrategic"></div>
+                </div>
+                <div class="matrix-label-y-low">Low ROI</div>
+                <div class="matrix-quadrant q3">
+                  <div class="q-label">Fill-ins</div>
+                  <div class="q-dots" id="qFillins"></div>
+                </div>
+                <div class="matrix-quadrant q4">
+                  <div class="q-label">Avoid</div>
+                  <div class="q-dots" id="qAvoid"></div>
+                </div>
+                <div class="matrix-label-x">Low Cost</div>
+                <div class="matrix-label-x-high">High Cost</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Recommendations -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Smart Recommendations</span>
+            </div>
+            <div id="smartRecommendations" class="recommendations-list">
+              <div class="no-data">Calculate some features to see recommendations</div>
+            </div>
+          </div>
+
+          <!-- ROI Distribution -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">ROI Distribution</span>
+            </div>
+            <div id="roiDistribution" class="distribution-chart"></div>
+          </div>
+        </div>
+
+        <!-- ===== TAB: HISTORY ===== -->
+        <div id="tab-history" class="tab-panel hidden">
+          <div class="search-bar">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="searchProject" placeholder="Search features..." autocomplete="off"/>
+            <button id="clearSearch" class="clear-search hidden">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="filter-row">
+            <div class="filter-chips">
+              <span class="chip active" data-filter="all">All</span>
+              <span class="chip" data-filter="Product">📱</span>
+              <span class="chip" data-filter="Marketing">📢</span>
+              <span class="chip" data-filter="Development">💻</span>
+              <span class="chip" data-filter="favorites">⭐</span>
+            </div>
+            <div class="sort-control">
+              <select id="sortSelect">
+                <option value="date">Latest</option>
+                <option value="roi">Best ROI</option>
+                <option value="profit">Most Profit</option>
+                <option value="cost">Lowest Cost</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="history-meta">
+            <span id="historyCount">0 projects</span>
+            <div class="history-actions-row">
+              <button id="filterFavorites" class="meta-btn" title="Show Favorites">⭐ Favorites</button>
+              <button id="clearHistory" class="meta-btn danger" title="Clear all">🗑 Clear</button>
+            </div>
+          </div>
+
+          <ul id="historyList" class="history-list"></ul>
+        </div>
+
+      </div><!-- end popup-content -->
+
+      <!-- Shortcuts Footer -->
+      <div class="shortcuts-footer">
+        <kbd>⌘↵</kbd> Calculate &nbsp;•&nbsp; <kbd>⌘S</kbd> Save &nbsp;•&nbsp; <kbd>⌘F</kbd> Search
       </div>
+    </div>
 
-      <div class="field-row">
+    <!-- ===== MODALS ===== -->
+
+    <!-- Scenario Modal -->
+    <div id="scenarioModal" class="modal hidden">
+      <div class="modal-overlay close-modal-overlay"></div>
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Scenario Analysis</h3>
+          <button class="close-modal icon-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="scenario-grid">
+          <div class="scenario-card" data-scenario="best">
+            <div class="scenario-icon green">🚀</div>
+            <h4>Best Case</h4>
+            <p>+30% gain, −20% hours</p>
+          </div>
+          <div class="scenario-card" data-scenario="realistic">
+            <div class="scenario-icon blue">📊</div>
+            <h4>Realistic</h4>
+            <p>Current estimates</p>
+          </div>
+          <div class="scenario-card" data-scenario="worst">
+            <div class="scenario-icon red">⚠️</div>
+            <h4>Worst Case</h4>
+            <p>−30% gain, +20% hours</p>
+          </div>
+          <div class="scenario-card" data-scenario="custom">
+            <div class="scenario-icon gray">⚙️</div>
+            <h4>Custom</h4>
+            <p>Set your own</p>
+          </div>
+        </div>
+        <div id="customScenarioInputs" class="custom-scenario hidden">
+          <div class="row">
+            <div class="field"><label>Gain Multiplier</label><input type="number" id="gainMultiplier" placeholder="1.0" step="0.1"/></div>
+            <div class="field"><label>Hours Multiplier</label><input type="number" id="hoursMultiplier" placeholder="1.0" step="0.1"/></div>
+          </div>
+          <button id="runCustomScenario" class="btn-secondary">Run Custom</button>
+        </div>
+        <div id="scenarioResults" class="scenario-results"></div>
+      </div>
+    </div>
+
+    <!-- Template Modal -->
+    <div id="templateModal" class="modal hidden">
+      <div class="modal-overlay close-modal-overlay"></div>
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Templates</h3>
+          <button class="close-modal icon-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
         <div class="field">
-          <label for="gain">Annual Gain ($)</label>
-          <input type="number" id="gain" placeholder="50000">
+          <label>Template Name</label>
+          <input type="text" id="templateName" placeholder="e.g., SaaS Feature Baseline" autocomplete="off"/>
         </div>
-        <div class="field">
-          <label for="hours">Dev Hours</label>
-          <input type="number" id="hours" placeholder="40">
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="rate">Hourly Labor Rate ($)</label>
-        <input type="number" id="rate" value="100">
-      </div>
-
-      <button id="calculate">Calculate & Save</button>
-    </div>
-
-    <div id="result-container" class="result-box hidden">
-      <div class="roi-header">
-        <span class="roi-label">ROI Score</span>
-        <span id="roi-percent" class="roi-value">0%</span>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-label">Total Cost</span>
-          <span id="total-cost" class="stat-value">--</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Net Profit</span>
-          <span id="net-profit" class="stat-value">--</span>
-        </div>
+        <button id="saveTemplate" class="btn-primary btn-spaced">Save Current as Template</button>
+        <div id="templateList" class="template-list"></div>
       </div>
     </div>
 
-    <div class="history-section">
-      <div class="history-header">
-        <h3>History</h3>
-        <button id="clearHistory">Clear</button>
+    <!-- Compare Modal -->
+    <div id="compareModal" class="modal hidden">
+      <div class="modal-overlay close-modal-overlay"></div>
+      <div class="modal-container wide">
+        <div class="modal-header">
+          <h3>Feature Comparison</h3>
+          <button class="close-modal icon-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <p class="modal-hint">Select up to 3 features from history to compare side-by-side.</p>
+        <div id="compareSelector" class="compare-selector"></div>
+        <div id="compareTable" class="compare-table"></div>
       </div>
-      <ul id="historyList"></ul>
     </div>
-  </div>
-  <script src="popup.js"></script>
-</body>
+
+    <!-- Priority Matrix Modal -->
+    <div id="priorityModal" class="modal hidden">
+      <div class="modal-overlay close-modal-overlay"></div>
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Priority Score</h3>
+          <button class="close-modal icon-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div id="priorityContent" class="priority-content"></div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
 </html>
