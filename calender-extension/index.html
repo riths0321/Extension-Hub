@@ -1,60 +1,302 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Secure, offline dynamic calendar extension." />
-
-    <!-- Strict CSP for Extension Security -->
-    <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';">
-
-    <title>Dynamic Calendar</title>
+    <title>Calendar & World Clock</title>
+    <link rel="stylesheet" href="popup.css" />
     <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-    <div class="app-container">
-        <header class="app-header">
+
+<!-- ── MAIN TAB BAR ──────────────────────────────────────────── -->
+<div class="main-tab-bar">
+    <button class="main-tab-btn active" data-target="app-calendar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="3"/>
+            <path d="M16 2v4M8 2v4M3 10h18"/>
+            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
+        </svg>
+        Calendar
+    </button>
+    <button class="main-tab-btn" data-target="app-clock">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 3"/>
+            <path d="M3.5 9h1M3.5 15h1M19.5 9h1M19.5 15h1M9 3.5v1M15 3.5v1M9 19.5v1M15 19.5v1"/>
+        </svg>
+        World Clock
+    </button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PANEL 1 — DYNAMIC CALENDAR PRO
+══════════════════════════════════════════════════════════════ -->
+<div id="app-calendar" class="main-panel active">
+<div class="app-container">
+
+    <!-- ── HEADER ──────────────────────────────────────────── -->
+    <header class="app-header">
+        <div class="header-row">
             <div class="month-nav">
-                <button class="nav-btn prev" aria-label="Previous Month">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
+                <button class="nav-btn prev" aria-label="Previous" title="Previous (←)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
-                <div class="current-date">
-                    <h1 class="month-year"></h1>
-                </div>
-                <button class="nav-btn next" aria-label="Next Month">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
+                <h1 class="month-year" id="month-year-btn" tabindex="0" role="button"
+                    aria-label="Pick month" title="Click to jump to any month" aria-live="polite"></h1>
+                <button class="nav-btn next" aria-label="Next" title="Next (→)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </button>
             </div>
-        </header>
-
-        <main class="calendar-main">
-            <div class="calendar-board">
-                <!-- Headers and Days injected via JS -->
+            <div class="header-actions">
+                <button id="btn-today" class="pill-btn" title="Jump to Today (T)">Today</button>
+                <select id="state-filter" class="state-select" title="Filter holidays by state" aria-label="Holiday filter">
+                    <option value="all">🗺 All Holidays</option>
+                    <option value="national">🇮🇳 National Only</option>
+                </select>
+                <!-- Theme toggle removed - light mode only -->
             </div>
-        </main>
+        </div>
 
-        <footer class="app-footer">
-            <button id="btn-today" class="footer-btn secondary">Today</button>
-            <button id="btn-add-event" class="footer-btn primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Add Event
-            </button>
-        </footer>
+        <!-- Search bar -->
+        <div class="search-row">
+            <div class="search-wrap">
+                <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input id="search-input" type="search" placeholder="Search events…" autocomplete="off" />
+                <button id="search-clear" class="search-clear hidden" aria-label="Clear search">✕</button>
+            </div>
+        </div>
+
+        <!-- View Tabs -->
+        <div class="view-tabs" role="tablist">
+            <button class="view-tab active" data-view="month"  role="tab" aria-selected="true" >Month</button>
+            <button class="view-tab"        data-view="week"   role="tab" aria-selected="false">Week</button>
+            <button class="view-tab"        data-view="agenda" role="tab" aria-selected="false">Agenda</button>
+        </div>
+    </header>
+
+    <!-- ── MONTH PICKER DROPDOWN ────────────────────────── -->
+    <div id="month-picker" class="month-picker" hidden>
+        <div class="mp-year-nav">
+            <button id="mp-prev-year" class="mp-yr-btn" aria-label="Previous year">‹</button>
+            <span id="mp-year-label" class="mp-year-label"></span>
+            <button id="mp-next-year" class="mp-yr-btn" aria-label="Next year">›</button>
+        </div>
+        <div class="mp-months" id="mp-months"></div>
     </div>
-    <script src="script.js"></script>
-</body>
 
+    <!-- ── MAIN CONTENT ─────────────────────────────────── -->
+    <main class="calendar-main" id="calendar-main">
+        <div id="view-search" class="view">
+            <div class="search-results" id="search-results"></div>
+        </div>
+        <div id="view-month" class="view active">
+            <div class="calendar-board" id="calendar-board"></div>
+        </div>
+        <div id="view-week" class="view">
+            <div class="week-board" id="week-board"></div>
+        </div>
+        <div id="view-agenda" class="view">
+            <div class="agenda-list" id="agenda-list"></div>
+        </div>
+    </main>
+
+    <!-- ── FOOTER ───────────────────────────────────────── -->
+    <footer class="app-footer">
+        <div class="mini-stats" id="mini-stats"></div>
+        <button id="btn-add-event" class="add-btn" type="button" title="Add Event (A)" aria-label="Add Event">
+            Add Event
+        </button>
+    </footer>
+</div><!-- /.app-container -->
+
+<!-- ── EVENT MODAL ──────────────────────────────────────── -->
+<div id="event-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Event" hidden>
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2 id="modal-title-text">New Event</h2>
+            <button id="modal-close" class="icon-btn" type="button" aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="field-group">
+                <label for="event-title">Title *</label>
+                <input id="event-title" type="text" placeholder="Event name…" maxlength="60" autocomplete="off" />
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label for="event-date">Date *</label>
+                    <input id="event-date" type="date" />
+                </div>
+                <div class="field-group">
+                    <label for="event-end-date">End Date</label>
+                    <input id="event-end-date" type="date" />
+                </div>
+            </div>
+            <div class="field-row" id="time-row">
+                <div class="field-group">
+                    <label for="event-time">Start Time</label>
+                    <input id="event-time" type="time" />
+                </div>
+                <div class="field-group">
+                    <label for="event-end-time">End Time</label>
+                    <input id="event-end-time" type="time" />
+                </div>
+            </div>
+            <div class="field-group checkbox-row">
+                <label class="checkbox-label">
+                    <input id="event-allday" type="checkbox" />
+                    <span class="checkmark"></span>
+                    All-day event
+                </label>
+            </div>
+            <div class="field-group">
+                <label for="event-category">Category</label>
+                <div class="category-picker" id="category-picker">
+                    <button class="cat-btn active" type="button" data-cat="none" title="None">📋 None</button>
+                    <button class="cat-btn" type="button" data-cat="work" title="Work">🏢 Work</button>
+                    <button class="cat-btn" type="button" data-cat="personal" title="Personal">👤 Personal</button>
+                    <button class="cat-btn" type="button" data-cat="health" title="Health">❤️ Health</button>
+                    <button class="cat-btn" type="button" data-cat="family" title="Family">👨‍👩‍👧 Family</button>
+                    <button class="cat-btn" type="button" data-cat="birthday" title="Birthday">🎂 Birthday</button>
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="event-recur">Repeat</label>
+                <select id="event-recur">
+                    <option value="none">No repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="event-desc">Note</label>
+                <textarea id="event-desc" placeholder="Add a note…" rows="2" maxlength="200"></textarea>
+            </div>
+            <div class="field-group">
+                <label>Color</label>
+                <div class="color-picker" id="color-picker">
+                    <button class="color-swatch active" type="button" data-color="#6366F1" title="Indigo"></button>
+                    <button class="color-swatch" type="button" data-color="#EC4899" title="Pink"></button>
+                    <button class="color-swatch" type="button" data-color="#F59E0B" title="Amber"></button>
+                    <button class="color-swatch" type="button" data-color="#10B981" title="Emerald"></button>
+                    <button class="color-swatch" type="button" data-color="#3B82F6" title="Blue"></button>
+                    <button class="color-swatch" type="button" data-color="#EF4444" title="Red"></button>
+                    <button class="color-swatch" type="button" data-color="#8B5CF6" title="Violet"></button>
+                    <button class="color-swatch" type="button" data-color="#14B8A6" title="Teal"></button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="modal-delete" class="danger-btn hidden" type="button">Delete</button>
+            <div class="modal-actions">
+                <button id="modal-dup" class="ghost-btn hidden" type="button" title="Duplicate this event">Duplicate</button>
+                <button id="modal-gcal" class="gcal-btn hidden" type="button" title="Save here and add to Google Calendar">
+                    Save + Google
+                </button>
+                <button id="modal-cancel" class="ghost-btn" type="button">Cancel</button>
+                <button id="modal-save" class="save-btn" type="button">Save Event</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── DAY EVENTS POPUP ──────────────────────────────────── -->
+<div id="day-popup" class="day-popup" hidden>
+    <div class="day-popup-header">
+        <span id="day-popup-title"></span>
+        <button id="day-popup-close" class="icon-btn" type="button" aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+    <div id="day-popup-list" class="day-popup-list"></div>
+    <button id="day-popup-add" class="day-popup-add" type="button">+ Add event this day</button>
+</div>
+
+<!-- ── UNDO TOAST ────────────────────────────────────────── -->
+<div id="undo-toast" class="undo-toast" hidden>
+    <span id="undo-toast-msg">Event deleted</span>
+    <button id="undo-btn" class="undo-btn" type="button">Undo</button>
+</div>
+</div><!-- /#app-calendar -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     PANEL 2 — MULTI-COUNTRY WORLD CLOCK
+══════════════════════════════════════════════════════════════ -->
+<div id="app-clock" class="main-panel">
+  <main class="shell">
+
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Global Time Desk</p>
+        <h1>World Clock</h1>
+        <p class="subtitle">Track multiple regions with live analog and digital clocks for faster day planning.</p>
+      </div>
+      <div class="hero-actions">
+        <button id="formatToggle" class="icon-btn" type="button" aria-label="Toggle time format">24H</button>
+      </div>
+    </header>
+
+    <section class="spotlight">
+      <div>
+        <p class="section-label">Local time</p>
+        <div id="localTime" class="spotlight-time">--:--:--</div>
+        <p id="localDate" class="spotlight-date">Loading local date</p>
+      </div>
+      <div class="spotlight-meta">
+        <div class="meta-chip">
+          <span class="meta-key">Clocks</span>
+          <strong id="clockCount">0</strong>
+        </div>
+        <div class="meta-chip">
+          <span class="meta-key">Format</span>
+          <strong id="formatLabel">12h</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="add-card">
+      <div class="section-head">
+        <div>
+          <p class="section-label">Add destination</p>
+          <h2 class="section-title">Country and city</h2>
+        </div>
+        <span id="statusBadge" class="status-badge">Ready</span>
+      </div>
+      <div class="search-stack">
+        <label class="search-label" for="timezoneSearch">Search timezone</label>
+        <input id="timezoneSearch" class="search-input" type="search"
+               placeholder="Search by country, city, or region" autocomplete="off" />
+      </div>
+      <div class="add-row">
+        <select id="countrySelect" class="country-select" size="7" aria-label="Select country timezone"></select>
+        <button id="addBtn" class="add-btn" type="button">Add Clock</button>
+      </div>
+    </section>
+
+    <section class="clock-panel">
+      <div class="section-head">
+        <div>
+          <p class="section-label">Saved clocks</p>
+          <h2 class="section-title">Live comparison</h2>
+        </div>
+        <span class="panel-note">Drag cards to reorder</span>
+      </div>
+      <div id="clockList" class="clock-list"></div>
+    </section>
+
+  </main>
+</div><!-- /#app-clock -->
+
+
+<!-- ── SCRIPTS ───────────────────────────────────────────────── -->
+<script src="script.js"></script>
+<script src="dropdown.js"></script>
+<script src="popup.js"></script>
+
+</body>
 </html>

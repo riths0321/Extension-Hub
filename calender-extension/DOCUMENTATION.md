@@ -1,321 +1,133 @@
-# Calendar Planner - Extension Documentation
+# Calendar & World Clock Documentation
 
-## 1. Extension Overview
+## Overview
 
-**Purpose**: Calendar Planner is a simple calendar extension that displays the current month in a grid format with proper weekday headers. It allows users to navigate between months and identify today's date with visual highlighting.
+This extension provides two tools inside one popup:
+- A calendar planner with month, week, agenda, and search views
+- A world clock panel with reorderable live timezone cards
 
-**Current Functionality**:
-- Calendar grid display for current month
-- Month and year header
-- Previous/next month navigation
-- Today's date highlighting
-- Weekday headers (Su-Sa)
-- Previous/next month date padding
-- 6-week calendar grid layout
-- Real-time current date detection
+The codebase is built for Manifest V3 and now follows a stricter CSP-safe rendering approach.
 
----
+## Current Architecture
 
-## 2. Current Features (From Codebase Analysis)
+### UI
+- [index.html](/Users/apple/Desktop/Extension-Hub/calender-extension/index.html)
+  - Main popup shell
+  - Calendar panel
+  - World clock panel
+  - Event modal
+  - Day popup
 
-### Core Features Implemented:
-1. **Calendar Display**
-   - Full month calendar view
-   - 7-day × 6-week grid
-   - Proper day alignment to weekdays
-   - Previous month padding dates
-   - Next month overflow dates
-   - 42-cell standard calendar layout
+### Calendar Logic
+- [script.js](/Users/apple/Desktop/Extension-Hub/calender-extension/script.js)
+  - Calendar rendering
+  - Event CRUD
+  - Search
+  - Agenda and week views
+  - Holiday filtering
+  - Day popup placement
+  - ICS export
 
-2. **Navigation**
-   - Previous button to go back month
-   - Next button to go forward month
-   - Year and month display header
-   - Month names in text format
-   - Current month/year tracking
+### Dropdown System
+- [dropdown.js](/Users/apple/Desktop/Extension-Hub/calender-extension/dropdown.js)
+  - Converts native `select` elements into custom popup-safe dropdowns
+  - Opens only on button click
+  - Closes on outside click or second click
+  - Uses smooth open/close transitions
 
-3. **Date Highlighting**
-   - Today's date highlighted
-   - Visual distinction for current day
-   - Week structure (Sunday start)
-   - Proper date alignment
+### Styling
+- [style.css](/Users/apple/Desktop/Extension-Hub/calender-extension/style.css)
+  - Calendar styles
+  - Modal styles
+  - Day popup
+  - Custom dropdown classes
+- [popup.css](/Users/apple/Desktop/Extension-Hub/calender-extension/popup.css)
+  - World clock layout and scoped styles
 
-4. **UI Elements**
-   - Weekday headers (Su-Mo-Tu-We-Th-Fr-Sa)
-   - Date cells
-   - Navigation buttons
-   - Month/year title
-   - Simple CSS styling
+## Security Status
 
-5. **Functionality**
-   - Real-time current date detection
-   - Automatic month wrapping
-   - Year increment/decrement
-   - Proper calendar math
+### CSP
+The current manifest CSP is:
 
----
+```text
+script-src 'self'; style-src 'self'; object-src 'none'; connect-src 'self';
+```
 
-## 3. Problems & Limitations
+This is tighter than the earlier setup because `blob:` has been removed from `connect-src`.
 
-### Current Limitations:
-1. **Feature Gaps**
-   - No event creation/management
-   - Cannot add notes to dates
-   - No recurring events
-   - No reminders/notifications
-   - No task management
-   - No agenda view
+### Rendering Safety
+The extension previously had several HTML-string based render paths. Those have now been hardened:
+- Search results use DOM creation
+- Month picker uses DOM creation
+- Month cells and event chips use DOM creation
+- Week view uses DOM creation
+- Agenda view uses DOM creation
+- Day popup uses DOM creation
 
-2. **Navigation**
-   - Cannot jump to specific month/year
-   - No quick date picker
-   - Cannot return to today quickly
-   - No keyboard shortcuts
-   - No fast-forward option
+This reduces future XSS risk if event titles, notes, filters, or search input expand further.
 
-3. **User Experience**
-   - No weekend highlighting
-   - No holiday indicators
-   - No events display
-   - Limited customization
-   - No dark mode
-   - No timezone support
+### Future Guardrails
+If new features are added, keep these rules:
+- Do not render user input through `innerHTML`
+- Prefer `createElement`, `textContent`, and explicit attribute assignment
+- Avoid inline event handlers and inline styles
+- Keep popup assets local only
 
-4. **Data Management**
-   - No event storage
-   - Cannot persist data
-   - No cloud sync
-   - No export functionality
-   - No import capability
+## Day Popup Behavior
 
-5. **Advanced Features**
-   - No multiple calendars
-   - No shared calendars
-   - No calendar integration (Google, Outlook)
-   - No scheduling features
-   - No conflict detection
+The day popup now:
+- Measures itself before final placement
+- Prefers opening above the clicked date
+- Falls back below the cell if the header would cover it
+- Clamps within the popup viewport
 
-6. **Accessibility**
-   - Limited keyboard navigation
-   - No high contrast mode
-   - No screen reader optimization
-   - Limited text size options
-   - No voice interaction
+This fixes the earlier issue where the popup could slide under the sticky header area.
 
----
+## Functional Areas
 
-## 4. Feature Enhancements
+### Calendar
+- Month navigation
+- Today jump
+- Month picker
+- Search
+- Week and agenda views
+- Holiday filter
+- Event add, edit, duplicate, delete, undo
+- Recurring events
+- Multi-day events
+- Category and color tags
+- Google Calendar handoff
+- ICS export
 
-### Recommended Improvements:
+### World Clock
+- Local time spotlight
+- Multiple saved clocks
+- 12h/24h toggle
+- Searchable timezone picker
+- Drag-to-reorder clock cards
 
-1. **Event Management**
-   - Create and edit events
-   - Event descriptions
-   - Time-specific events
-   - All-day events
-   - Multi-day events
-   - Recurring events
+## Storage
 
-2. **Enhanced Navigation**
-   - Date picker for quick jump
-   - Go-to-today button
-   - Month/year selector
-   - Keyboard shortcuts (< > for prev/next)
-   - Quick month navigation
+### Calendar
+- Events are stored locally via the extension storage wrapper
 
-3. **Visual Enhancements**
-   - Weekend highlighting
-   - Holiday indicators
-   - Event display on calendar
-   - Event color coding
-   - Heat map of busy days
-   - Different view modes (week, day, agenda)
+### World Clock
+- Saved clocks and 12h/24h preference are stored in `chrome.storage.local`
 
-4. **Customization**
-   - Theme options (light/dark)
-   - Custom start day (Sunday/Monday)
-   - Holiday selection by country
-   - Reminder settings
-   - Display options
+## Testing Checklist
 
-5. **Integration Features**
-   - Google Calendar sync
-   - Outlook integration
-   - iCal import/export
-   - Timezone support
-   - Weather forecast
-   - World clock
+- Reload unpacked extension after edits
+- Open and close each dropdown from button click
+- Change holiday filter and confirm rerender
+- Click dates near the top row and confirm day popup stays visible
+- Click dates in middle and lower rows and confirm popup placement stays aligned
+- Add, edit, duplicate, and delete events
+- Run search and agenda view checks
+- Add and reorder world clocks
+- Export ICS and confirm file download starts
 
-6. **Notifications**
-   - Event reminders
-   - Upcoming events notification
-   - Deadline alerts
-   - Custom notifications
-   - Email reminders
+## Known Notes
 
-7. **Data Management**
-   - Event storage
-   - Calendar backup
-   - Export to iCal
-   - Import events
-   - Multiple calendars
-
----
-
-## 5. Unique & Advanced Features
-
-### Innovative Enhancements:
-
-1. **Smart Scheduling**
-   - Suggest best meeting times
-   - Find available slots
-   - Auto-schedule with participants
-   - Conflict detection
-   - Calendar optimization
-
-2. **Productivity Integration**
-   - Task list on calendar
-   - Daily goals tracking
-   - Time blocking
-   - Pomodoro integration
-   - Productivity analytics
-
-3. **Personal Insights**
-   - Busy/free analytics
-   - Time usage patterns
-   - Productivity trends
-   - Meeting load analysis
-   - Calendar statistics
-
-4. **Collaboration Features**
-   - Share calendars
-   - Team scheduling
-   - Group availability
-   - Resource booking
-   - Meeting room reservation
-
-5. **AI-Powered Features**
-   - Smart scheduling assistant
-   - Meeting suggestion
-   - Time optimization
-   - Travel time calculation
-   - Predictive scheduling
-
-6. **Advanced Views**
-   - Agenda view (list of events)
-   - Week view with time slots
-   - Day view detail
-   - Month overview
-   - Year view
-
-7. **Integration Hub**
-   - Slack integration
-   - Zoom meeting links
-   - Google Meet integration
-   - Email scheduling
-   - Webhook support
-
----
-
-## 6. User Productivity Impact
-
-### How Enhancements Benefit Users:
-
-**Planning & Organization**:
-- Visual calendar aids planning
-- Event management ensures nothing falls through
-- Reminder system prevents missed deadlines
-- Multi-view options suit different contexts
-- Task integration consolidates planning
-
-**Time Management**:
-- Identify available time slots
-- Avoid double-booking
-- Optimize meeting scheduling
-- Block focus time
-- Balance workload
-
-**Collaboration**:
-- Share calendar with team
-- Find common availability
-- Coordinate schedules
-- Schedule efficiently
-- Reduce scheduling emails
-
-**Insights & Analytics**:
-- Understand time usage
-- Identify patterns
-- Optimize schedule
-- Measure productivity
-- Track goals
-
-**Integration & Efficiency**:
-- Sync with other calendars
-- Automated reminders
-- Direct meeting link access
-- Email integration
-- Workflow automation
-
----
-
-## 7. Future Scope
-
-### Long-term Vision:
-
-1. **Comprehensive Calendar Platform**
-   - Full-featured calendar app
-   - Multi-user collaboration
-   - Team workspaces
-   - Resource management
-   - Conference room booking
-
-2. **Scheduling Intelligence**
-   - AI meeting assistant
-   - Automatic scheduling
-   - Time optimization
-   - Travel planning
-   - Conflict resolution
-
-3. **Mobile Integration**
-   - Native iOS/Android apps
-   - Push notifications
-   - Mobile quick-add events
-   - Wear OS integration
-   - Apple Watch integration
-
-4. **Enterprise Features**
-   - Multi-calendar management
-   - Team scheduling
-   - Resource booking
-   - Compliance features
-   - Audit logging
-
-5. **Integration Ecosystem**
-   - Salesforce integration
-   - HubSpot sync
-   - Slack bot
-   - Microsoft Teams integration
-   - Zapier automation
-
-6. **Advanced Analytics**
-   - Meeting analytics
-   - Productivity insights
-   - Time allocation charts
-   - Team capacity planning
-   - ROI of meetings
-
----
-
-## Development Constraints
-
-- **Frontend-Only**: All rendering in browser
-- **No Backend**: No server-side processing
-- **Internet Not Required**: Basic calendar functions offline
-- **Local Storage**: Events stored locally
-- **No Network**: Calendar sync requires API
-
----
-
-## Summary
-
-Calendar Planner can grow from a simple month view into a comprehensive scheduling and planning platform. By adding event management, notifications, integrations, and collaborative features, it would serve professionals managing complex schedules and teams coordinating activities.
+- ICS export still uses `URL.createObjectURL` for local file download, which is acceptable here
+- Custom dropdown menus are rendered by local JS and CSS only
+- The extension is designed for popup-only usage; manual Chrome reload remains necessary after local changes

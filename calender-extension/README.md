@@ -1,50 +1,48 @@
-# 📅 Dynamic Calendar
+# Calendar & World Clock
 
-## 👨‍💻 Made by Saurabh Tiwari
+Chrome extension popup that combines a multi-view calendar with a live world clock dashboard.
 
-### 🧩 Description
-**Dynamic Calendar** puts a fully functional calendar in your browser toolbar. Check dates, days, and plan your month without leaving your current tab. It updates dynamically to show the current day.
+## Current Features
+- Month, week, agenda, and search views
+- Event creation, edit, duplicate, delete, and undo
+- Multi-day, all-day, recurring, and category-based events
+- Holiday filter with a custom popup-safe dropdown
+- Day popup for quick date details and event creation
+- World clock with live digital and analog cards
+- Drag-to-reorder world clocks
+- ICS export and Google Calendar handoff
 
-### 🚀 Features
-- **Month View**: Navigate previous and next months.
-- **Today Highlight**: Automatically highlights the current date.
-- **Dynamic Icon**: (Optional) The extension icon shows the current date.
-- **Minimalist**: Clean grid layout.
+## Security & CSP
+- Manifest V3 extension with local-only assets
+- No inline scripts or inline styles in popup HTML
+- Strict extension page CSP:
+  - `script-src 'self'`
+  - `style-src 'self'`
+  - `object-src 'none'`
+  - `connect-src 'self'`
+- Event, search, agenda, and popup rendering now use DOM APIs instead of `innerHTML`
 
-### 🛠️ Tech Stack
-- **HTML5**: Grid structure.
-- **CSS3**: Calendar styling.
-- **JavaScript**: Date generation and navigation logic.
-- **Chrome Extension (Manifest V3)**: Popup.
-
-### 📂 Folder Structure
+## Project Files
+```text
+calender-extension/
+├── manifest.json
+├── index.html
+├── script.js
+├── dropdown.js
+├── popup.js
+├── style.css
+├── popup.css
+├── README.md
+└── DOCUMENTATION.md
 ```
-Calender Extension/
-├── manifest.json      # Config
-├── index.html         # Calendar Grid
-├── script.js          # Logic
-└── style.css          # Styles
-```
 
-### ⚙️ Installation (Developer Mode)
-1.  Download source.
-2.  Open `chrome://extensions`.
-3.  Turn on **Developer mode**.
-4.  Load unpacked -> `Calender Extension`.
+## Load Unpacked
+1. Open `chrome://extensions`
+2. Enable Developer Mode
+3. Choose Load unpacked
+4. Select `calender-extension`
 
-### 🧠 How It Works
-1.  **Render**: JS looping through days of the month to build a grid.
-2.  **Navigation**: Buttons increment/decrement the `currentMonth` variable and re-render the grid.
-
-### 🔐 Permissions Explained
-- **None**: Basic functionality only.
-
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Calendar View](https://via.placeholder.com/600x400?text=Calendar+View)
-
-### 🔒 Privacy Policy
-- **No Data**: We don't track your schedule.
-
-### 📄 License
-This project is licensed under the **MIT License**.
+## Notes
+- Data is stored locally through `chrome.storage`
+- No remote APIs are required for core features
+- Reload the unpacked extension after any file changes

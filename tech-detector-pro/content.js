@@ -1,51 +1,168 @@
-console.log('Tech Detector Pro content script loaded');
+// Tech Detector Pro v2.0 — Content Script
+// Advanced DOM + Script + Meta + Window + Performance scanning engine
+'use strict';
 
-// Check if already loaded to avoid redeclaration
-if (typeof window.TECH_DETECTOR_LOADED === 'undefined') {
-  window.TECH_DETECTOR_LOADED = true;
+if (typeof window.__TECH_DETECTOR_V2__ === 'undefined') {
+  window.__TECH_DETECTOR_V2__ = true;
 
-  // Load technology patterns from technologies.json
+  // ─── State ───
   let TECH_PATTERNS = {};
-  let TECH_DATABASE_LOADED = false;
+  let DB_LOADED = false;
 
-  // Load technologies.json file
-  async function loadTechnologies() {
+  // ─── Load tech database ───
+  async function loadDB() {
+    if (DB_LOADED) return true;
     try {
-      const response = await fetch(chrome.runtime.getURL('technologies.json'));
-      const data = await response.json();
-
-      // Convert technologies.json format to TECH_PATTERNS format
+      const res = await fetch(chrome.runtime.getURL('technologies.json'));
+      const data = await res.json();
       TECH_PATTERNS = {};
-
-      // Process each category
-      Object.entries(data.technologies).forEach(([category, techs]) => {
-        techs.forEach(tech => {
-          TECH_PATTERNS[tech.id] = {
-            name: tech.name,
-            category: category,
-            patterns: tech.patterns,
-            icon: tech.icon,
-            website: tech.website,
-            versionCheck: tech.versionCheck
+      
+      Object.entries(data.technologies).forEach(([cat, techs]) => {
+        techs.forEach(t => {
+          TECH_PATTERNS[t.id] = {
+            name: t.name,
+            category: cat,
+            patterns: t.patterns || [],
+            website: t.website || null,
+            versionCheck: t.versionCheck || null
           };
         });
       });
-
-      TECH_DATABASE_LOADED = true;
-      console.log('✅ Technologies database loaded:', Object.keys(TECH_PATTERNS).length, 'technologies');
+      
+      DB_LOADED = true;
       return true;
-    } catch (error) {
-      console.error('❌ Error loading technologies.json:', error);
+    } catch (e) {
+      console.error('[TDP] DB load failed:', e);
       return false;
     }
   }
 
-  // Enhanced detection functions
-  async function detectTechnologies() {
-    // Load technologies first if not already loaded
-    if (!TECH_DATABASE_LOADED) {
-      await loadTechnologies();
+  // ─── Confidence helpers ───
+  function confLabel(score) {
+    if (score >= 3) return 'high';
+    if (score >= 2) return 'medium';
+    return 'low';
+  }
+
+  // ─── Version extraction (improved) ───
+  const VERSION_EXTRACTORS = {
+    react: [
+      () => {
+        try {
+          const h = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+          if (h?.renderers?.size) {
+            for (const [, r] of h.renderers) {
+              if (r.version) return r.version;
+            }
+          }
+          if (window.React?.version) return window.React.version;
+        } catch {}
+        return null;
+      },
+      (src) => extractVersionFromStr(src, /react[/@-](\d+\.\d+[\.\d]*)/i),
+    ],
+    vue: [
+      () => {
+        try {
+          return window.Vue?.version || window.__vue_version__ || null;
+        } catch {}
+        return null;
+      },
+      (src) => extractVersionFromStr(src, /vue[/@-](\d+\.\d+[\.\d]*)/i),
+    ],
+    angular: [
+      () => {
+        try {
+          const el = document.querySelector('[ng-version]');
+          return el?.getAttribute('ng-version') || null;
+        } catch {}
+        return null;
+      },
+      (src) => extractVersionFromStr(src, /angular[/@-](\d+\.\d+[\.\d]*)/i),
+    ],
+    jquery: [
+      () => {
+        try {
+          return window.jQuery?.fn?.jquery || window.$?.fn?.jquery || null;
+        } catch {}
+        return null;
+      },
+      (src) => extractVersionFromStr(src, /jquery[/@-v]?(\d+\.\d+[\.\d]*)/i),
+    ],
+    bootstrap: [
+      () => {
+        try {
+          return window.bootstrap?.Tooltip?.VERSION || null;
+        } catch {}
+        return null;
+      },
+      (src) => extractVersionFromStr(src, /bootstrap[/@-v]?(\d+\.\d+[\.\d]*)/i),
+    ],
+    wordpress: [
+      () => {
+        try {
+          const meta = document.querySelector('meta[name="generator"]');
+          if (meta && meta.content.toLowerCase().includes('wordpress')) {
+            const match = meta.content.match(/(\d+\.\d+[\.\d]*)/);
+            return match ? match[1] : null;
+          }
+        } catch {}
+        return null;
+      },
+      (src) => extractVersionFromStr(src, /ver=(\d+\.\d+[\.\d]*)/),
+    ],
+    nextjs: [
+      () => {
+        try {
+          if (window.__NEXT_DATA__) {
+            return window.__NEXT_DATA__.version || 'detected';
+          }
+        } catch {}
+        return null;
+      },
+    ],
+    nuxt: [
+      () => {
+        try {
+          return window.__NUXT__?.config?.app?.nuxtVersion || null;
+        } catch {}
+        return null;
+      },
+    ],
+    tailwind: [
+      () => {
+        try {
+          // Check for Tailwind classes in HTML
+          const html = document.documentElement.outerHTML;
+          if (/class="[^"]*(?:flex|grid|text-|bg-|p-|m-|rounded|border)[^"]*"/i.test(html)) {
+            return 'detected';
+          }
+        } catch {}
+        return null;
+      },
+    ],
+  };
+
+  function extractVersionFromStr(str, regex) {
+    const m = str.match(regex);
+    return m ? m[1] : null;
+  }
+
+  function getVersion(techId, allSrc) {
+    const extractors = VERSION_EXTRACTORS[techId];
+    if (!extractors) return null;
+    for (const fn of extractors) {
+      try {
+        const v = fn.length === 0 ? fn() : fn(allSrc);
+        if (v) return v;
+      } catch {}
     }
+    return null;
+  }
+
+  // ─── Main detection engine ───
+  async function detectTechnologies() {
+    await loadDB();
 
     const detected = {
       frontend: [],
@@ -58,610 +175,242 @@ if (typeof window.TECH_DETECTOR_LOADED === 'undefined') {
       build_tools: []
     };
 
-    // Track scraping statistics
-    let patternsChecked = 0;
-    let patternsMatched = 0;
+    // ── Gather all signals ──
+    const scripts = Array.from(document.scripts);
+    const links = Array.from(document.querySelectorAll('link'));
+    const metas = Array.from(document.querySelectorAll('meta'));
+    const allScripts = scripts.map(s => s.src || '').filter(Boolean);
+    const allSrc = allScripts.join(' ');
+    const rawHTML = document.documentElement.outerHTML;
+    const htmlLower = rawHTML.substring(0, 150000).toLowerCase();
+    const htmlFull = rawHTML.substring(0, 150000);
 
+    // Get all response headers (via fetch if possible)
+    let headers = '';
     try {
-      // Get relevant page data (REAL SCRAPING)
-      const scripts = Array.from(document.scripts);
-      const links = Array.from(document.querySelectorAll('link'));
-      const metaTags = Array.from(document.querySelectorAll('meta'));
-      const htmlSource = document.documentElement.outerHTML;
-      const htmlSourceLower = htmlSource.substring(0, 50000).toLowerCase();
+      const response = await fetch(window.location.href, { method: 'HEAD', mode: 'no-cors' });
+      headers = JSON.stringify(response.headers);
+    } catch (e) {}
 
-      // Log scraping activity
-      console.log('🔍 SCRAPING PAGE DATA:');
-      console.log(`  - Scripts found: ${scripts.length}`);
-      console.log(`  - Links found: ${links.length}`);
-      console.log(`  - Meta tags found: ${metaTags.length}`);
-      console.log(`  - HTML source size: ${htmlSource.length} characters`);
-      console.log(`  - Analyzing patterns in technologies.json...`);
+    // ── Window globals detection (most reliable) ──
+    const globalChecks = [
+      { check: () => window.React, id: 'react', name: 'React', cat: 'frontend', score: 3 },
+      { check: () => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, id: 'react', name: 'React', cat: 'frontend', score: 3 },
+      { check: () => window.Vue, id: 'vue', name: 'Vue.js', cat: 'frontend', score: 3 },
+      { check: () => window.__VUE__, id: 'vue', name: 'Vue.js', cat: 'frontend', score: 3 },
+      { check: () => window.__NEXT_DATA__, id: 'nextjs', name: 'Next.js', cat: 'frontend', score: 3 },
+      { check: () => window.__NUXT__, id: 'nuxt', name: 'Nuxt.js', cat: 'frontend', score: 3 },
+      { check: () => window.angular, id: 'angular', name: 'Angular', cat: 'frontend', score: 3 },
+      { check: () => window.__ANGULAR__, id: 'angular', name: 'Angular', cat: 'frontend', score: 3 },
+      { check: () => window.Alpine, id: 'alpinejs', name: 'Alpine.js', cat: 'frontend', score: 3 },
+      { check: () => window.htmx, id: 'htmx', name: 'htmx', cat: 'frontend', score: 3 },
+      { check: () => window.jQuery, id: 'jquery', name: 'jQuery', cat: 'libraries', score: 3 },
+      { check: () => window.$?.fn?.jquery, id: 'jquery', name: 'jQuery', cat: 'libraries', score: 3 },
+      { check: () => window.gsap, id: 'gsap', name: 'GSAP', cat: 'libraries', score: 3 },
+      { check: () => window.THREE, id: 'threejs', name: 'Three.js', cat: 'libraries', score: 3 },
+      { check: () => window.d3, id: 'd3js', name: 'D3.js', cat: 'libraries', score: 3 },
+      { check: () => window._?.VERSION, id: 'lodash', name: 'Lodash', cat: 'libraries', score: 3 },
+      { check: () => window.gtag, id: 'google_analytics_4', name: 'Google Analytics 4', cat: 'analytics', score: 3 },
+      { check: () => window.ga, id: 'google_analytics_4', name: 'Google Analytics', cat: 'analytics', score: 2 },
+      { check: () => window.dataLayer, id: 'google_tag_manager', name: 'Google Tag Manager', cat: 'analytics', score: 2 },
+      { check: () => window.fbq, id: 'facebook_pixel', name: 'Meta Pixel', cat: 'analytics', score: 3 },
+      { check: () => window.Shopify, id: 'shopify', name: 'Shopify', cat: 'cms', score: 3 },
+      { check: () => window.wc_add_to_cart_params, id: 'woocommerce', name: 'WooCommerce', cat: 'cms', score: 3 },
+      { check: () => window.Stripe, id: 'stripe', name: 'Stripe', cat: 'payment', score: 3 },
+      { check: () => window.Intercom, id: 'intercom', name: 'Intercom', cat: 'analytics', score: 3 },
+    ];
 
-      // Check for React FIRST (before pattern matching)
-      detectReactSpecial(detected, scripts, htmlSourceLower);
-
-      // Check for Vue
-      detectVueSpecial(detected, scripts, htmlSourceLower);
-
-      // Check for Next.js
-      detectNextJsSpecial(detected, scripts, htmlSourceLower);
-
-      // Check each technology (REAL PATTERN MATCHING)
-      Object.entries(TECH_PATTERNS).forEach(([techId, tech]) => {
-        try {
-          let found = false;
-          let detectionMethod = 'html';
-
-          // Check in page source (SCRAPING HTML)
-          for (const pattern of tech.patterns) {
-            patternsChecked++;
-            const patternLower = pattern.toLowerCase();
-            if (htmlSourceLower.includes(patternLower)) {
-              found = true;
-              patternsMatched++;
-              detectionMethod = 'html';
-              break;
-            }
-          }
-
-          // Check script sources (SCRAPING SCRIPT URLs)
-          if (!found) {
-            for (const script of scripts) {
-              if (script.src) {
-                const srcLower = script.src.toLowerCase();
-                for (const pattern of tech.patterns) {
-                  patternsChecked++;
-                  const patternLower = pattern.toLowerCase();
-                  if (srcLower.includes(patternLower)) {
-                    found = true;
-                    patternsMatched++;
-                    detectionMethod = 'script';
-                    console.log(`  ✓ Matched "${tech.name}" via script: ${script.src.substring(0, 50)}...`);
-                    break;
-                  }
-                }
-                if (found) break;
-              }
-            }
-          }
-
-          // Check links
-          if (!found) {
-            for (const link of links) {
-              const href = (link.href || '').toLowerCase();
-              for (const pattern of tech.patterns) {
-                const patternLower = pattern.toLowerCase();
-                if (href.includes(patternLower)) {
-                  found = true;
-                  detectionMethod = 'link';
-                  break;
-                }
-              }
-              if (found) break;
-            }
-          }
-
-          // Check meta tags
-          if (!found) {
-            for (const meta of metaTags) {
-              const content = (meta.content || '').toLowerCase();
-              const name = (meta.name || '').toLowerCase();
-              const property = (meta.getAttribute('property') || '').toLowerCase();
-
-              for (const pattern of tech.patterns) {
-                const patternLower = pattern.toLowerCase();
-                if (content.includes(patternLower) ||
-                  name.includes(patternLower) ||
-                  property.includes(patternLower)) {
-                  found = true;
-                  detectionMethod = 'meta';
-                  break;
-                }
-              }
-              if (found) break;
-            }
-          }
-
-          if (found) {
-            // Try to detect version
-            const version = detectVersion(techId, htmlSourceLower, scripts);
-
-            detected[tech.category].push({
-              id: techId,
-              name: tech.name,
-              category: tech.category,
-              version: version,
-              confidence: 'high',
-              detectionMethod: detectionMethod,
-              detectedAt: new Date().toISOString()
-            });
-          }
-        } catch (techError) {
-          console.warn(`Error detecting ${techId}:`, techError);
+    for (const { check, id, name, cat, score } of globalChecks) {
+      try {
+        if (check()) {
+          const version = getVersion(id, allSrc);
+          addTech(detected, cat, {
+            id, name, category: cat, version,
+            confidence: confLabel(score), detectionMethod: 'window'
+          });
         }
-      });
-
-      // Check for additional technologies
-      detectAdditionalTechnologies(detected, htmlSourceLower, scripts, metaTags);
-
-    } catch (error) {
-      console.error('Error in detectTechnologies:', error);
-      detected.error = error.message;
+      } catch (e) {}
     }
 
-    // Log final results with scraping statistics
-    const totalDetected = Object.values(detected).reduce((sum, arr) => {
-      return sum + (Array.isArray(arr) ? arr.length : 0);
-    }, 0);
+    // ── Script URL detection ──
+    const scriptPatterns = [
+      { pattern: /react/i, id: 'react', name: 'React', cat: 'frontend', score: 2 },
+      { pattern: /vue/i, id: 'vue', name: 'Vue.js', cat: 'frontend', score: 2 },
+      { pattern: /angular/i, id: 'angular', name: 'Angular', cat: 'frontend', score: 2 },
+      { pattern: /next/i, id: 'nextjs', name: 'Next.js', cat: 'frontend', score: 2 },
+      { pattern: /nuxt/i, id: 'nuxt', name: 'Nuxt.js', cat: 'frontend', score: 2 },
+      { pattern: /gatsby/i, id: 'gatsby', name: 'Gatsby', cat: 'frontend', score: 2 },
+      { pattern: /svelte/i, id: 'svelte', name: 'Svelte', cat: 'frontend', score: 2 },
+      { pattern: /jquery/i, id: 'jquery', name: 'jQuery', cat: 'libraries', score: 2 },
+      { pattern: /bootstrap/i, id: 'bootstrap', name: 'Bootstrap', cat: 'libraries', score: 2 },
+      { pattern: /tailwind/i, id: 'tailwind', name: 'Tailwind CSS', cat: 'frontend', score: 2 },
+      { pattern: /\/wp-content\//i, id: 'wordpress', name: 'WordPress', cat: 'cms', score: 3 },
+      { pattern: /\/wp-includes\//i, id: 'wordpress', name: 'WordPress', cat: 'cms', score: 3 },
+      { pattern: /shopify/i, id: 'shopify', name: 'Shopify', cat: 'cms', score: 3 },
+      { pattern: /googletagmanager/i, id: 'google_tag_manager', name: 'Google Tag Manager', cat: 'analytics', score: 2 },
+      { pattern: /gtag\/js/i, id: 'google_analytics_4', name: 'Google Analytics 4', cat: 'analytics', score: 2 },
+      { pattern: /hotjar/i, id: 'hotjar', name: 'Hotjar', cat: 'analytics', score: 2 },
+      { pattern: /stripe/i, id: 'stripe', name: 'Stripe', cat: 'payment', score: 2 },
+      { pattern: /cloudflare/i, id: 'cloudflare', name: 'Cloudflare', cat: 'hosting', score: 2 },
+      { pattern: /vercel/i, id: 'vercel', name: 'Vercel', cat: 'hosting', score: 2 },
+      { pattern: /netlify/i, id: 'netlify', name: 'Netlify', cat: 'hosting', score: 2 },
+      { pattern: /amazonaws/i, id: 'aws', name: 'Amazon AWS', cat: 'hosting', score: 2 },
+      { pattern: /azure/i, id: 'azure', name: 'Microsoft Azure', cat: 'hosting', score: 2 },
+    ];
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎯 SCRAPING & DETECTION COMPLETE');
-    console.log(`  - Patterns checked: ${patternsChecked || 'N/A'}`);
-    console.log(`  - Patterns matched: ${patternsMatched || 'N/A'}`);
-    console.log(`  - Technologies found: ${totalDetected}`);
-    console.log('  - Detection method: Real-time page analysis');
-    console.log('  - Data source: Live webpage scraping');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 Detected technologies:', detected);
+    allScripts.forEach(src => {
+      scriptPatterns.forEach(({ pattern, id, name, cat, score }) => {
+        if (pattern.test(src)) {
+          const version = getVersion(id, src);
+          addTech(detected, cat, {
+            id, name, category: cat, version,
+            confidence: confLabel(score), detectionMethod: 'script-url'
+          });
+        }
+      });
+    });
+
+    // ── HTML/DOM pattern detection ──
+    const domPatterns = [
+      { pattern: 'data-reactroot', id: 'react', name: 'React', cat: 'frontend', score: 3 },
+      { pattern: 'data-reactid', id: 'react', name: 'React', cat: 'frontend', score: 3 },
+      { pattern: '_reactRootContainer', id: 'react', name: 'React', cat: 'frontend', score: 3 },
+      { pattern: 'data-v-', id: 'vue', name: 'Vue.js', cat: 'frontend', score: 3 },
+      { pattern: 'v-cloak', id: 'vue', name: 'Vue.js', cat: 'frontend', score: 3 },
+      { pattern: 'ng-version', id: 'angular', name: 'Angular', cat: 'frontend', score: 3 },
+      { pattern: '_nghost', id: 'angular', name: 'Angular', cat: 'frontend', score: 3 },
+      { pattern: 'data-astro', id: 'astro', name: 'Astro', cat: 'frontend', score: 3 },
+      { pattern: 'svelte-', id: 'svelte', name: 'Svelte', cat: 'frontend', score: 3 },
+      { pattern: 'wp-content', id: 'wordpress', name: 'WordPress', cat: 'cms', score: 3 },
+      { pattern: 'wp-json', id: 'wordpress', name: 'WordPress', cat: 'cms', score: 3 },
+      { pattern: 'woocommerce', id: 'woocommerce', name: 'WooCommerce', cat: 'cms', score: 3 },
+    ];
+
+    domPatterns.forEach(({ pattern, id, name, cat, score }) => {
+      if (htmlLower.includes(pattern)) {
+        const version = getVersion(id, '');
+        addTech(detected, cat, {
+          id, name, category: cat, version,
+          confidence: confLabel(score), detectionMethod: 'dom-attribute'
+        });
+      }
+    });
+
+    // ── Meta tag detection ──
+    metas.forEach(meta => {
+      const generator = meta.getAttribute('generator');
+      if (generator) {
+        const genLower = generator.toLowerCase();
+        if (genLower.includes('wordpress')) {
+          const version = extractVersionFromStr(generator, /(\d+\.\d+[\.\d]*)/);
+          addTech(detected, 'cms', {
+            id: 'wordpress', name: 'WordPress', category: 'cms',
+            version, confidence: 'high', detectionMethod: 'meta-generator'
+          });
+        }
+        if (genLower.includes('wix')) {
+          addTech(detected, 'cms', {
+            id: 'wix', name: 'Wix', category: 'cms',
+            version: null, confidence: 'high', detectionMethod: 'meta-generator'
+          });
+        }
+        if (genLower.includes('webflow')) {
+          addTech(detected, 'cms', {
+            id: 'webflow', name: 'Webflow', category: 'cms',
+            version: null, confidence: 'high', detectionMethod: 'meta-generator'
+          });
+        }
+      }
+    });
+
+    // ── CSS Framework detection via classes ──
+    const htmlSample = rawHTML.substring(0, 50000);
+    
+    if (/\b(container|row|col-|btn|navbar|modal|card)\b/i.test(htmlSample)) {
+      addTech(detected, 'libraries', {
+        id: 'bootstrap', name: 'Bootstrap', category: 'libraries',
+        version: null, confidence: 'medium', detectionMethod: 'css-classes'
+      });
+    }
+    
+    if (/\b(flex|grid|text-|bg-|p-|m-|rounded|shadow)\b/i.test(htmlSample)) {
+      addTech(detected, 'frontend', {
+        id: 'tailwind', name: 'Tailwind CSS', category: 'frontend',
+        version: null, confidence: 'medium', detectionMethod: 'css-classes'
+      });
+    }
+
+    // ── Deduplicate ──
+    Object.keys(detected).forEach(cat => {
+      if (Array.isArray(detected[cat])) {
+        detected[cat] = dedup(detected[cat]);
+      }
+    });
 
     return detected;
   }
 
-  function detectVersion(techId, pageSource, scripts) {
-    const versionPatterns = {
-      react: [
-        /react[\/\-@](\d+\.\d+\.\d+)/gi,
-        /react@(\d+\.\d+\.\d+)/gi
-      ],
-      vue: [
-        /vue[\/\-@](\d+\.\d+\.\d+)/gi,
-        /vue@(\d+\.\d+\.\d+)/gi
-      ],
-      jquery: [
-        /jquery[\/\-@](\d+\.\d+\.\d+)/gi,
-        /jquery-(\d+\.\d+\.\d+)/gi
-      ],
-      bootstrap: [
-        /bootstrap[\/\-@](\d+\.\d+\.\d+)/gi,
-        /bootstrap-(\d+\.\d+\.\d+)/gi
-      ],
-      angular: [
-        /angular[\/\-@](\d+\.\d+\.\d+)/gi,
-        /ng-version="(\d+\.\d+\.\d+)"/gi
-      ]
-    };
-
-    const patterns = versionPatterns[techId];
-    if (!patterns) return null;
-
-    // Check in page source
-    for (const pattern of patterns) {
-      const match = pageSource.match(pattern);
-      if (match && match.length > 0) {
-        const versionMatch = match[0].match(/(\d+\.\d+\.\d+)/);
-        if (versionMatch) return versionMatch[1];
-      }
+  // ─── Add tech helper ───
+  function addTech(detected, cat, item) {
+    if (!detected[cat]) {
+      detected[cat] = [];
     }
+    const bucket = detected[cat];
+    const existing = bucket.find(t => t.id === item.id);
+    const confScore = { high: 3, medium: 2, low: 1 };
 
-    // Check in script URLs
-    for (const script of scripts) {
-      if (script.src) {
-        const src = script.src.toLowerCase();
-        for (const pattern of patterns) {
-          const match = src.match(pattern);
-          if (match) {
-            const versionMatch = match[0].match(/(\d+\.\d+\.\d+)/);
-            if (versionMatch) return versionMatch[1];
-          }
-        }
+    if (existing) {
+      if (confScore[item.confidence] > confScore[existing.confidence]) {
+        existing.confidence = item.confidence;
+        existing.detectionMethod = item.detectionMethod;
       }
-    }
-
-    return null;
-  }
-
-  function detectAdditionalTechnologies(detected, pageSource, scripts, metaTags) {
-    try {
-      // Detect by meta tags
-      metaTags.forEach(meta => {
-        try {
-          const generator = (meta.getAttribute('generator') || '').toLowerCase();
-          const content = (meta.getAttribute('content') || '').toLowerCase();
-
-          if (generator.includes('wordpress') || content.includes('wordpress')) {
-            addIfNotExists(detected.cms, {
-              id: 'wordpress_meta',
-              name: 'WordPress',
-              category: 'cms',
-              confidence: 'high',
-              detectionMethod: 'meta',
-              detectedAt: new Date().toISOString()
-            });
-          }
-        } catch (metaError) {
-          // Ignore individual meta tag errors
-        }
-      });
-
-      // Detect window object properties
-      detectFromWindowObject(detected);
-
-      // Detect from performance API
-      detectFromPerformanceAPI(detected);
-
-      // Enhanced script URL detection
-      scripts.forEach(script => {
-        try {
-          if (!script.src) return;
-
-          const src = script.src.toLowerCase();
-
-          // Google Analytics
-          if (src.includes('gtag.js') || (src.includes('googletagmanager') && src.includes('gtag'))) {
-            addIfNotExists(detected.analytics, {
-              id: 'ga4',
-              name: 'Google Analytics 4',
-              category: 'analytics',
-              confidence: 'high',
-              detectionMethod: 'script',
-              detectedAt: new Date().toISOString()
-            });
-          }
-
-          // Facebook Pixel
-          if (src.includes('facebook.net') && src.includes('fbevents')) {
-            addIfNotExists(detected.analytics, {
-              id: 'facebook_pixel_script',
-              name: 'Facebook Pixel',
-              category: 'analytics',
-              confidence: 'high',
-              detectionMethod: 'script',
-              detectedAt: new Date().toISOString()
-            });
-          }
-
-          // Public CDN detection
-          if (src.includes('cdn.jsdelivr.net') ||
-            src.includes('cdnjs.cloudflare.com') ||
-            src.includes('unpkg.com')) {
-            addIfNotExists(detected.hosting, {
-              id: 'cdn_public',
-              name: 'Public CDN',
-              category: 'hosting',
-              confidence: 'medium',
-              detectionMethod: 'script',
-              detectedAt: new Date().toISOString()
-            });
-          }
-        } catch (scriptError) {
-          // Ignore script detection errors
-        }
-      });
-
-    } catch (error) {
-      console.error('Error in detectAdditionalTechnologies:', error);
+      if (item.version && !existing.version) {
+        existing.version = item.version;
+      }
+    } else {
+      item.detectedAt = new Date().toISOString();
+      bucket.push(item);
     }
   }
 
-  function detectFromWindowObject(detected) {
-    try {
-      const indicators = [
-        { key: 'React', tech: { id: 'react_window', name: 'React', category: 'frontend' } },
-        { key: '__REACT_DEVTOOLS_GLOBAL_HOOK__', tech: { id: 'react_devtools', name: 'React', category: 'frontend' } },
-        { key: 'Vue', tech: { id: 'vue_window', name: 'Vue.js', category: 'frontend' } },
-        { key: '__VUE__', tech: { id: 'vue_app', name: 'Vue.js', category: 'frontend' } },
-        { key: '__NUXT__', tech: { id: 'nuxt_app', name: 'Nuxt.js', category: 'frontend' } },
-        { key: '__NEXT_DATA__', tech: { id: 'next_data', name: 'Next.js', category: 'frontend' } },
-        { key: 'angular', tech: { id: 'angular_window', name: 'Angular', category: 'frontend' } },
-        { key: 'jQuery', tech: { id: 'jquery_window', name: 'jQuery', category: 'libraries' } },
-        { key: 'Shopify', tech: { id: 'shopify_window', name: 'Shopify', category: 'cms' } }
-      ];
-
-      indicators.forEach(({ key, tech }) => {
-        try {
-          if (typeof window !== 'undefined' && window[key] !== undefined) {
-            addIfNotExists(detected[tech.category], {
-              id: tech.id,
-              name: tech.name,
-              category: tech.category,
-              confidence: 'high',
-              detectionMethod: 'window',
-              windowProperty: key,
-              detectedAt: new Date().toISOString()
-            });
-          }
-        } catch (e) {
-          // Ignore errors accessing window properties
-        }
-      });
-
-    } catch (error) {
-      console.error('Error in detectFromWindowObject:', error);
-    }
-  }
-
-  function detectFromPerformanceAPI(detected) {
-    try {
-      if (typeof performance === 'undefined' || !performance.getEntriesByType) {
-        return;
-      }
-
-      const entries = performance.getEntriesByType('resource');
-
-      entries.forEach(entry => {
-        try {
-          const url = entry.name.toLowerCase();
-
-          const hostingPatterns = [
-            { pattern: 'cloudflare', id: 'cf_perf', name: 'Cloudflare' },
-            { pattern: 'amazonaws.com', id: 'aws_perf', name: 'AWS' },
-            { pattern: 'cloudfront.net', id: 'cloudfront_perf', name: 'AWS CloudFront' },
-            { pattern: 'azureedge.net', id: 'azure_perf', name: 'Microsoft Azure' },
-            { pattern: 'googleapis.com', id: 'gcp_perf', name: 'Google Cloud' },
-            { pattern: 'gstatic.com', id: 'gstatic_perf', name: 'Google Cloud' },
-            { pattern: 'netlify', id: 'netlify_perf', name: 'Netlify' },
-            { pattern: 'vercel', id: 'vercel_perf', name: 'Vercel' },
-            { pattern: 'herokuapp.com', id: 'heroku_perf', name: 'Heroku' }
-          ];
-
-          for (const { pattern, id, name } of hostingPatterns) {
-            if (url.includes(pattern)) {
-              addIfNotExists(detected.hosting, {
-                id: id,
-                name: name,
-                category: 'hosting',
-                confidence: 'medium',
-                detectionMethod: 'performance',
-                resourceUrl: entry.name,
-                detectedAt: new Date().toISOString()
-              });
-              break;
-            }
-          }
-        } catch (entryError) {
-          // Ignore individual entry errors
-        }
-      });
-    } catch (e) {
-      // Ignore performance API errors
-    }
-  }
-
-  // Special React detection for production builds
-  function detectReactSpecial(detected, scripts, pageSource) {
-    let reactFound = false;
-    let reactVersion = null;
-
-    // Method 1: Check for React in window object
-    try {
-      if (typeof window !== 'undefined') {
-        if (window.React || window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
-          reactFound = true;
-        }
-      }
-    } catch (e) { }
-
-    // Method 2: Check script URLs for React
-    scripts.forEach(script => {
-      if (script.src) {
-        const src = script.src.toLowerCase();
-        if (src.includes('react') || src.includes('/static/js/') || src.includes('/assets/')) {
-          // Common React build patterns
-          if (src.includes('react') || src.match(/\/static\/js\/main\.[a-f0-9]+\.js/)) {
-            reactFound = true;
-          }
-        }
+  // ─── Dedup by id ───
+  function dedup(arr) {
+    const seen = new Map();
+    const confScore = { high: 3, medium: 2, low: 1 };
+    arr.forEach(item => {
+      const existing = seen.get(item.id);
+      if (!existing || confScore[item.confidence] > confScore[existing.confidence]) {
+        seen.set(item.id, item);
       }
     });
-
-    // Method 3: Check for React DOM patterns in HTML
-    const reactPatterns = [
-      'data-reactroot',
-      'data-reactid',
-      '__react',
-      'react-root',
-      'id="root"',
-      'id="app"',
-      'class="app"'
-    ];
-
-    reactPatterns.forEach(pattern => {
-      if (pageSource.includes(pattern.toLowerCase())) {
-        reactFound = true;
-      }
-    });
-
-    // Method 4: Check for JSX-like attributes
-    if (pageSource.includes('classname=') || pageSource.includes('onclick=')) {
-      reactFound = true;
-    }
-
-    // Method 5: Check meta tags
-    try {
-      const metaTags = document.querySelectorAll('meta');
-      metaTags.forEach(meta => {
-        const content = (meta.content || '').toLowerCase();
-        if (content.includes('react') || content.includes('create-react-app')) {
-          reactFound = true;
-        }
-      });
-    } catch (e) { }
-
-    if (reactFound) {
-      addIfNotExists(detected.frontend, {
-        id: 'react_detected',
-        name: 'React',
-        category: 'frontend',
-        version: reactVersion,
-        confidence: 'high',
-        detectionMethod: 'enhanced',
-        detectedAt: new Date().toISOString()
-      });
-    }
+    return Array.from(seen.values());
   }
 
-  // Special Vue detection
-  function detectVueSpecial(detected, scripts, pageSource) {
-    let vueFound = false;
-
-    try {
-      if (typeof window !== 'undefined' && (window.Vue || window.__VUE__)) {
-        vueFound = true;
-      }
-    } catch (e) { }
-
-    scripts.forEach(script => {
-      if (script.src && script.src.toLowerCase().includes('vue')) {
-        vueFound = true;
-      }
-    });
-
-    if (pageSource.includes('data-v-') || pageSource.includes('v-if') || pageSource.includes('v-for')) {
-      vueFound = true;
-    }
-
-    if (vueFound) {
-      addIfNotExists(detected.frontend, {
-        id: 'vue_detected',
-        name: 'Vue.js',
-        category: 'frontend',
-        confidence: 'high',
-        detectionMethod: 'enhanced',
-        detectedAt: new Date().toISOString()
-      });
-    }
-  }
-
-  // Special Next.js detection
-  function detectNextJsSpecial(detected, scripts, pageSource) {
-    let nextFound = false;
-
-    try {
-      if (typeof window !== 'undefined' && window.__NEXT_DATA__) {
-        nextFound = true;
-      }
-    } catch (e) { }
-
-    scripts.forEach(script => {
-      if (script.src) {
-        const src = script.src.toLowerCase();
-        if (src.includes('/_next/') || src.includes('next.js') || src.includes('next/')) {
-          nextFound = true;
-        }
-      }
-    });
-
-    if (pageSource.includes('__next') || pageSource.includes('_next')) {
-      nextFound = true;
-    }
-
-    if (nextFound) {
-      addIfNotExists(detected.frontend, {
-        id: 'nextjs_detected',
-        name: 'Next.js',
-        category: 'frontend',
-        confidence: 'high',
-        detectionMethod: 'enhanced',
-        detectedAt: new Date().toISOString()
-      });
-    }
-  }
-
-  function addIfNotExists(array, item) {
-    if (!Array.isArray(array)) {
-      console.warn('addIfNotExists: array is not an array', array);
-      return;
-    }
-
-    if (!array.some(i => i.id === item.id && i.name === item.name)) {
-      array.push(item);
-    }
-  }
-
-  // Message listener
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Tech Detector: Received message:', message.type);
-
-    // Handle async operations
+  // ─── Message listener ───
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
       try {
-        if (message.type === 'DETECT_TECHNOLOGIES') {
+        if (msg.type === 'PING') {
+          sendResponse({ pong: true });
+          return;
+        }
+        if (msg.type === 'DETECT_TECHNOLOGIES') {
           const technologies = await detectTechnologies();
-
           const result = {
             url: window.location.href,
             hostname: window.location.hostname,
             title: document.title,
-            technologies: technologies,
+            technologies,
             timestamp: new Date().toISOString(),
-            userAgent: navigator.userAgent
           };
-
-          // Send to background script
-          try {
-            chrome.runtime.sendMessage({
-              type: 'TECH_DATA',
-              data: result
-            }).catch(err => {
-              console.warn('Could not send to background:', err);
-            });
-          } catch (sendError) {
-            console.warn('Could not send message to background:', sendError);
-          }
-
           sendResponse({ success: true, data: result });
-          return;
         }
-
-        if (message.type === 'PING') {
-          sendResponse({ pong: true, timestamp: new Date().toISOString() });
-          return;
-        }
-
-      } catch (error) {
-        console.error('Message handler error:', error);
-        sendResponse({
-          error: true,
-          message: error.message,
-          timestamp: new Date().toISOString()
-        });
+      } catch (err) {
+        console.error('[TDP] Error:', err);
+        sendResponse({ error: true, message: err.message });
       }
     })();
-
-    return true; // Keep channel open for async response
+    return true;
   });
 
-  // Auto-detect on page load if enabled
-  try {
-    chrome.storage.sync.get(['autoScan'], (result) => {
-      if (result && result.autoScan) {
-        setTimeout(async () => {
-          try {
-            const techData = await detectTechnologies();
-
-            chrome.runtime.sendMessage({
-              type: 'TECH_DATA',
-              data: {
-                url: window.location.href,
-                hostname: window.location.hostname,
-                title: document.title,
-                technologies: techData,
-                timestamp: new Date().toISOString(),
-                autoDetected: true
-              }
-            }).catch(err => {
-              console.warn('Auto-detection message failed:', err);
-            });
-          } catch (autoDetectError) {
-            console.error('Auto-detection error:', autoDetectError);
-          }
-        }, 2000);
-      }
-    });
-  } catch (storageError) {
-    console.warn('Storage access error:', storageError);
-  }
 }
-
-console.log('Tech Detector Pro content script ready');
