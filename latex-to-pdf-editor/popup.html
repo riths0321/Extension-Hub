@@ -1,63 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LaTeX to PDF Generator</title>
-    <link rel="stylesheet" href="popup.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaTeX Studio</title>
+
+  <link rel="stylesheet" href="popup.css">
 </head>
-
 <body>
-    <div class="app-container">
-        <header>
-            <h1>LaTeX to PDF</h1>
-            <select id="template-select" class="template-select" title="Choose a template">
-                <option value="" disabled selected>Load Template...</option>
-                <option value="blank">Blank Document</option>
-                <option value="article">Academic Article</option>
-                <option value="homework">Math Homework</option>
-                <option value="resume">Simple Resume</option>
-            </select>
-        </header>
+<div class="app-container">
 
-        <main class="split-view">
-            <div class="panel editor-panel">
-                <div class="panel-header">
-                    <span>LaTeX Input</span>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span id="word-count" class="word-count">0 words</span>
-                        <span id="save-status" class="save-status">Saved</span>
-                    </div>
-                </div>
-                <div class="editor-container">
-                    <div id="line-numbers" class="line-numbers">1</div>
-                    <textarea id="latex-editor"
-                        placeholder="\documentclass{article}&#10;\begin{document}&#10;Hello World!&#10;\end{document}"
-                        spellcheck="false"></textarea>
-                </div>
-            </div>
-
-            <div class="panel preview-panel">
-                <div class="panel-header">Preview</div>
-                <div id="preview-area" class="preview-content">
-                    <div class="placeholder-text">Preview will appear here...</div>
-                </div>
-            </div>
-        </main>
-
-        <footer class="action-bar">
-            <div class="status-message" id="status-message"></div>
-            <div class="actions">
-                <button id="export-btn" class="btn secondary" title="Download .tex source">Export .tex</button>
-                <button id="clear-btn" class="btn secondary">Clear</button>
-                <button id="generate-btn" class="btn primary">Generate PDF</button>
-                <button id="copy-btn" class="btn secondary" title="Copy for Word/Docs">Copy HTML</button>
-                <button id="download-btn" class="btn success" disabled>Download PDF</button>
-            </div>
-        </footer>
+  <!-- ═══ HEADER ═══════════════════════════════════════════════════ -->
+  <header>
+    <div class="header-brand">
+      <div class="header-logo">
+        <span class="logo-tex">LaTeX Studio</span>
+        <span class="logo-tag">v2.0</span>
+      </div>
+      <p class="header-subtitle">Write on the left, preview on the right.</p>
     </div>
-    <script src="popup.js"></script>
-</body>
 
+    <select id="template-select" class="template-select" title="Load a template">
+      <option value="" disabled selected>Choose a starter template…</option>
+      <option value="blank">Blank Document</option>
+      <option value="simple-sample">Simple Sample</option>
+      <option value="article">Academic Article</option>
+      <option value="homework">Math Homework</option>
+      <option value="resume">Simple Resume</option>
+      <option value="beamer">Presentation</option>
+      <option value="letter">Formal Letter</option>
+    </select>
+
+    <div class="header-actions">
+      <button id="outline-toggle" class="hdr-btn" title="Toggle document outline">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <rect x="1" y="2" width="4" height="1.2" fill="currentColor" rx="0.5"/>
+        <rect x="1" y="5.4" width="6" height="1.2" fill="currentColor" rx="0.5" opacity="0.6"/>
+        <rect x="1" y="8.8" width="5" height="1.2" fill="currentColor" rx="0.5" opacity="0.4"/>
+        <rect x="7" y="2" width="4" height="1.2" fill="currentColor" rx="0.5" opacity="0.3"/>
+        </svg>
+        Outline
+      </button>
+
+      <button id="history-toggle" class="hdr-btn" title="Version history">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        <path d="M6 3.5V6L7.5 7.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        History
+      </button>
+
+    </div>
+  </header>
+
+  <!-- ═══ WORKSPACE ════════════════════════════════════════════════ -->
+  <div class="workspace">
+
+    <!-- LEFT SIDEBAR: Document Outline -->
+    <div id="outline-panel" class="sidebar sidebar-left hidden">
+      <div class="sidebar-head">
+        <span class="sidebar-title">Document Outline</span>
+        <button class="sidebar-close" id="close-outline">✕</button>
+      </div>
+      <div class="outline-scroll">
+        <div id="outline-list">
+          <div class="outline-empty">No sections detected.<br>Generate a preview first.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN: Editor + Preview -->
+    <main class="split-view">
+
+      <!-- EDITOR PANEL -->
+      <div class="panel editor-panel">
+        <div class="panel-bar">
+          <div>
+            <div class="panel-bar-title">
+            <span class="panel-dot"></span>
+            Editor
+            </div>
+            <div class="panel-bar-subtitle">Paste LaTeX or start from a template</div>
+          </div>
+          <div class="panel-bar-meta">
+            <span id="err-pill" class="err-pill hidden">0 issues</span>
+            <span id="word-count" class="meta-pill">0 words</span>
+            <span id="save-pill" class="save-pill">saved ✓</span>
+          </div>
+        </div>
+
+        <div class="editor-wrap">
+          <div class="editor-placeholder">
+            <div class="ph-heading">\documentclass{article}</div>
+            <div class="ph-subheading">\begin{document}</div>
+            <div class="ph-content">Write your content here...</div>
+            <div class="ph-subheading">\end{document}</div>
+          </div>
+          <textarea id="latex-editor" spellcheck="false"></textarea>
+        </div>
+
+        <div id="error-drawer" class="error-drawer hidden">
+          <div class="error-drawer-title">Compilation Issues</div>
+          <ul id="error-list"></ul>
+        </div>
+      </div>
+
+      <!-- PREVIEW PANEL -->
+      <div class="panel preview-panel">
+        <div class="panel-bar">
+          <div>
+            <div class="panel-bar-title">
+            <span class="panel-dot" style="background:var(--green);box-shadow:0 0 4px var(--green)"></span>
+            Preview
+            </div>
+            <div class="panel-bar-subtitle">Updates automatically while you type</div>
+          </div>
+          <div class="panel-bar-meta">
+            <div class="zoom-row">
+              <button id="zoom-out" class="z-btn" title="Zoom out">−</button>
+              <span id="zoom-label" class="z-label">100%</span>
+              <button id="zoom-in"  class="z-btn" title="Zoom in">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="preview-area" class="preview-scroll">
+          <div class="placeholder-msg">
+            <div class="ph-glyph">∫</div>
+            <div class="ph-text">Live preview appears here</div>
+            <div class="ph-hint">Choose a template or start typing in the editor</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- RIGHT SIDEBAR: Version History -->
+    <div id="history-panel" class="sidebar sidebar-right hidden">
+      <div class="sidebar-head">
+        <span class="sidebar-title">Version History</span>
+        <button class="sidebar-close" id="close-history">✕</button>
+      </div>
+      <div class="history-toolbar">
+        <button id="save-version-btn" class="hist-btn-action save">Save Version</button>
+        <button id="clear-history-btn" class="hist-btn-action clr">Clear All</button>
+      </div>
+      <div class="history-scroll">
+        <div id="history-list">
+          <div class="history-empty">No saved versions yet.<br>Click "Save Version" to snapshot.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+
+  <!-- ═══ ACTION BAR ════════════════════════════════════════════════ -->
+  <footer class="action-bar">
+    <div id="status-msg" class="status-area"></div>
+    <div class="btn-row">
+      <button id="export-btn"   class="btn btn-ghost" title="Download .tex source">Export .tex</button>
+      <button id="clear-btn"    class="btn btn-ghost">Clear</button>
+      <div class="btn-sep"></div>
+      <button id="copy-btn"     class="btn btn-ghost" title="Copy HTML for Word / Docs">Copy HTML</button>
+      <button id="generate-btn" class="btn btn-primary">▶ Generate</button>
+      <button id="download-btn" class="btn btn-dl" disabled>⬇ Download PDF</button>
+    </div>
+  </footer>
+
+</div><!-- /app-container -->
+
+<script src="dropdowns.js"></script>
+<script src="popup.js"></script>
+</body>
 </html>

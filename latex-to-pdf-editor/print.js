@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Retrieve content from localStorage (shared extension storage)
     const content = localStorage.getItem('latex_print_content');
 
-    const sanitizeHtml = (str) => {
+    const sanitizeToBody = (str) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(str, 'text/html');
 
@@ -26,19 +26,34 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        return doc.body.innerHTML;
+        return doc.body;
+    };
+
+    const mountSanitizedHtml = (container, html) => {
+        const safeBody = sanitizeToBody(html);
+        const nodes = [...safeBody.childNodes].map((node) => node.cloneNode(true));
+        container.replaceChildren(...nodes);
     };
 
     if (content) {
-        document.getElementById('content').innerHTML = sanitizeHtml(content);
+        const container = document.getElementById('content');
+        mountSanitizedHtml(container, content);
+
+        const titleText = container.querySelector('.title-h1')?.textContent?.trim();
+        if (titleText) {
+            document.title = `${titleText}.pdf`;
+        }
 
         // Brief delay to ensure styles render, then print
         setTimeout(() => {
-            document.title = "Resume.pdf"; // Suggest filename
             window.print();
         }, 500);
     } else {
-        document.getElementById('content').innerHTML = '<p style="color:red; text-align:center;">Error: No content to print.</p>';
+        const error = document.createElement('p');
+        error.textContent = 'Error: No content to print.';
+        error.style.color = 'red';
+        error.style.textAlign = 'center';
+        document.getElementById('content').replaceChildren(error);
     }
 
     // Cleanup? Maybe keep it so user can reprint.
