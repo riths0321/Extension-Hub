@@ -1,636 +1,698 @@
-// Tech Detector Pro - Popup Script (Debug Version)
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Popup loaded');
-  initialize();
-});
+// Tech Detector Pro v2.0 — Popup Script
+'use strict';
 
 let currentTechData = null;
 let scanHistory = [];
+let currentTheme = 'light';
+let activeCategory = 'all';
+let searchQuery = '';
+
+// ─── Category config ───
+const CAT_META = {
+  frontend:   { label: 'Frontend',   icon: '🎨', dot: 'cat-dot-frontend' },
+  backend:    { label: 'Backend',    icon: '⚙️',  dot: 'cat-dot-backend' },
+  cms:        { label: 'CMS',        icon: '📝',  dot: 'cat-dot-cms' },
+  analytics:  { label: 'Analytics',  icon: '📊',  dot: 'cat-dot-analytics' },
+  hosting:    { label: 'Hosting',    icon: '☁️',  dot: 'cat-dot-hosting' },
+  libraries:  { label: 'Libraries',  icon: '📚',  dot: 'cat-dot-libraries' },
+  payment:    { label: 'Payment',    icon: '💳',  dot: 'cat-dot-payment' },
+  build_tools:{ label: 'Build Tools',icon: '📦',  dot: 'cat-dot-build_tools' },
+  other:      { label: 'Other',      icon: '🔧',  dot: 'cat-dot-other' },
+};
+
+// ─── Tech doc links map ───
+const TECH_LINKS = {
+  // Frontend frameworks
+  react:        'https://react.dev',
+  vue:          'https://vuejs.org',
+  angular:      'https://angular.io',
+  svelte:       'https://svelte.dev',
+  nextjs:       'https://nextjs.org',
+  'next.js':    'https://nextjs.org',
+  nuxt:         'https://nuxt.com',
+  gatsby:       'https://www.gatsbyjs.com',
+  remix:        'https://remix.run',
+  astro:        'https://astro.build',
+  solid:        'https://www.solidjs.com',
+  ember:        'https://emberjs.com',
+  backbone:     'https://backbonejs.org',
+  alpine:       'https://alpinejs.dev',
+  htmx:         'https://htmx.org',
+  // CSS / UI
+  bootstrap:    'https://getbootstrap.com',
+  tailwind:     'https://tailwindcss.com',
+  bulma:        'https://bulma.io',
+  foundation:   'https://get.foundation',
+  materialui:   'https://mui.com',
+  chakra:       'https://chakra-ui.com',
+  shadcn:       'https://ui.shadcn.com',
+  // Libraries
+  jquery:       'https://jquery.com',
+  lodash:       'https://lodash.com',
+  axios:        'https://axios-http.com',
+  moment:       'https://momentjs.com',
+  dayjs:        'https://day.js.org',
+  d3:           'https://d3js.org',
+  three:        'https://threejs.org',
+  gsap:         'https://greensock.com/gsap',
+  // Backend
+  nodejs:       'https://nodejs.org',
+  'node.js':    'https://nodejs.org',
+  express:      'https://expressjs.com',
+  fastify:      'https://fastify.dev',
+  django:       'https://www.djangoproject.com',
+  flask:        'https://flask.palletsprojects.com',
+  rails:        'https://rubyonrails.org',
+  laravel:      'https://laravel.com',
+  symfony:      'https://symfony.com',
+  spring:       'https://spring.io',
+  fastapi:      'https://fastapi.tiangolo.com',
+  // CMS
+  wordpress:    'https://wordpress.org',
+  shopify:      'https://shopify.com',
+  drupal:       'https://drupal.org',
+  joomla:       'https://joomla.org',
+  magento:      'https://magento.com',
+  ghost:        'https://ghost.org',
+  contentful:   'https://www.contentful.com',
+  strapi:       'https://strapi.io',
+  sanity:       'https://www.sanity.io',
+  wix:          'https://www.wix.com',
+  webflow:      'https://webflow.com',
+  squarespace:  'https://squarespace.com',
+  // Hosting/Infra
+  nginx:        'https://nginx.org',
+  apache:       'https://httpd.apache.org',
+  cloudflare:   'https://cloudflare.com',
+  vercel:       'https://vercel.com',
+  netlify:      'https://netlify.com',
+  aws:          'https://aws.amazon.com',
+  azure:        'https://azure.microsoft.com',
+  gcp:          'https://cloud.google.com',
+  heroku:       'https://heroku.com',
+  // Analytics
+  ga4:          'https://analytics.google.com',
+  'google analytics': 'https://analytics.google.com',
+  gtm:          'https://tagmanager.google.com',
+  'google tag': 'https://tagmanager.google.com',
+  mixpanel:     'https://mixpanel.com',
+  amplitude:    'https://amplitude.com',
+  hotjar:       'https://hotjar.com',
+  segment:      'https://segment.com',
+  plausible:    'https://plausible.io',
+  heap:         'https://heap.io',
+  // Payment
+  stripe:       'https://stripe.com',
+  paypal:       'https://paypal.com',
+  braintree:    'https://braintreepayments.com',
+  // Build
+  webpack:      'https://webpack.js.org',
+  vite:         'https://vitejs.dev',
+  rollup:       'https://rollupjs.org',
+  parcel:       'https://parceljs.org',
+  esbuild:      'https://esbuild.github.io',
+  turbo:        'https://turbo.build',
+  // Lang
+  typescript:   'https://typescriptlang.org',
+  graphql:      'https://graphql.org',
+};
+
+function getTechLink(tech) {
+  const id   = (tech.id   || '').toLowerCase().replace(/[_\-]/g, '');
+  const name = (tech.name || '').toLowerCase();
+  // Exact name match first
+  if (TECH_LINKS[name]) return TECH_LINKS[name];
+  // Partial key match
+  for (const [key, url] of Object.entries(TECH_LINKS)) {
+    const k = key.toLowerCase();
+    if (id.includes(k.replace(/[.\-\s]/g,'')) || name.includes(k)) return url;
+  }
+  return `https://www.google.com/search?q=${encodeURIComponent(tech.name + ' documentation')}`;
+}
+
+// ─── Init ───
+document.addEventListener('DOMContentLoaded', () => {
+  loadTheme();
+  initialize();
+});
 
 async function initialize() {
-  console.log('🔧 Initializing...');
-
-  // Get current tab URL
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    console.log('📍 Current tab:', tab);
+    if (!tab?.url) { setUrl('No URL'); return; }
+    setUrl(tab.url);
+    loadFavicon(tab.url);
+  } catch (e) { setUrl('Error: ' + e.message); }
 
-    if (!tab?.url) {
-      console.error('❌ No tab URL found');
-      document.getElementById('currentUrl').textContent = 'No URL found';
-      return;
-    }
-
-    document.getElementById('currentUrl').textContent = tab.url;
-    console.log('✅ URL set:', tab.url);
-  } catch (error) {
-    console.error('❌ Error getting tab:', error);
-    document.getElementById('currentUrl').textContent = 'Error: ' + error.message;
-  }
-
-  // Load history
   try {
-    const result = await chrome.storage.local.get(['scanHistory']);
-    if (result.scanHistory) {
-      scanHistory = result.scanHistory;
-      updateHistoryList();
-      console.log('📚 History loaded:', scanHistory.length, 'items');
-    }
-  } catch (error) {
-    console.error('❌ Error loading history:', error);
-  }
+    const { scanHistory: h } = await chrome.storage.local.get(['scanHistory']);
+    if (h) { scanHistory = h; renderHistory(); }
+  } catch (e) { /* ignore */ }
 
-  // Setup event listeners
-  setupEventListeners();
+  setupListeners();
 
-  // Auto-scan if enabled
   try {
-    const settings = await chrome.storage.sync.get(['autoScan']);
-    if (settings.autoScan) {
-      console.log('🔄 Auto-scan enabled');
-      startScan();
-    }
-  } catch (error) {
-    console.error('❌ Error checking auto-scan:', error);
+    const { autoScan } = await chrome.storage.sync.get(['autoScan']);
+    if (autoScan) startScan();
+  } catch (e) { /* ignore */ }
+}
+
+function setUrl(url) {
+  const el = document.getElementById('currentUrl');
+  try {
+    const u = new URL(url);
+    el.textContent = u.hostname || url;
+  } catch { el.textContent = url; }
+}
+
+function loadFavicon(url) {
+  try {
+    const { origin } = new URL(url);
+    const img = document.createElement('img');
+    img.onload = () => {
+      const wrap = document.getElementById('siteFavicon');
+      wrap.replaceChildren(img);
+    };
+    img.onerror = () => {}; // keep SVG fallback
+    img.src = `${origin}/favicon.ico`;
+    img.width = 20; img.height = 20;
+  } catch {}
+}
+
+// ─── Theme ───
+function loadTheme() {
+  try {
+    chrome.storage.local.get(['theme'], ({ theme }) => {
+      applyTheme(theme || 'light');
+    });
+  } catch { applyTheme('light'); }
+}
+
+function applyTheme(t) {
+  currentTheme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  document.body.setAttribute('data-theme', t);
+  const sun  = document.getElementById('themeIconSun');
+  const moon = document.getElementById('themeIconMoon');
+  if (sun && moon) {
+    sun.hidden = t !== 'light';
+    moon.hidden = t !== 'dark';
   }
 }
 
-function setupEventListeners() {
-  // Scan buttons
-  document.getElementById('scanBtn').addEventListener('click', () => {
-    console.log('🔘 Scan button clicked');
-    startScan();
-  });
+function toggleTheme() {
+  const next = currentTheme === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { chrome.storage.local.set({ theme: next }); } catch {}
+}
 
-  document.getElementById('rescanBtn').addEventListener('click', () => {
-    console.log('🔘 Rescan button clicked');
-    startScan();
-  });
-
-  // Export buttons
+// ─── Event listeners ───
+function setupListeners() {
+  document.getElementById('scanBtn').addEventListener('click', startScan);
+  document.getElementById('rescanBtn').addEventListener('click', startScan);
+  document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
   document.getElementById('copyBtn').addEventListener('click', copyReport);
   document.getElementById('downloadBtn').addEventListener('click', downloadReport);
-  document.getElementById('shareBtn').addEventListener('click', shareReport);
+  document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
 
-  // Category filters
-  document.querySelectorAll('.category-btn').forEach(btn => {
+  document.querySelectorAll('.cat-pill').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      filterTechnologies(btn.dataset.category);
+      activeCategory = btn.dataset.category;
+      renderTechList();
     });
   });
 
-  console.log('✅ Event listeners setup complete');
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchQuery = e.target.value.toLowerCase().trim();
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (clearBtn) clearBtn.hidden = !searchQuery;
+    renderTechList();
+  });
+
+  const clearBtn = document.getElementById('searchClearBtn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      searchQuery = '';
+      clearBtn.hidden = true;
+      input.focus();
+      renderTechList();
+    });
+  }
 }
 
+// ─── Scan ───
 async function startScan() {
-  console.log('🔍 Starting scan...');
+  const scanBtn = document.getElementById('scanBtn');
+  const scanBtnLabel = document.getElementById('scanBtnLabel');
+  scanBtn.classList.add('scanning');
+  if (scanBtnLabel) scanBtnLabel.textContent = 'Scanning...';
   showLoading(true);
-
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab?.id) {
-      throw new Error('No active tab found');
-    }
-
-    console.log('📋 Tab ID:', tab.id);
-    console.log('🌐 Tab URL:', tab.url);
-
-    // Check if we can inject scripts
-    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+    if (!tab?.id) throw new Error('No active tab found');
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://'))
       throw new Error('Cannot scan Chrome internal pages');
-    }
 
-    // Execute content script if not already
-    console.log('💉 Injecting content script...');
     try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content.js']
-      });
-      console.log('✅ Content script injected');
-    } catch (injectError) {
-      console.warn('⚠️ Content script injection error (might be already loaded):', injectError);
-    }
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+    } catch {}
 
-    // Wait a bit for script to load
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await waitForContentScript(tab.id);
 
-    // Test if content script is loaded
-    console.log('🏓 Sending PING to content script...');
-    try {
-      const pingResponse = await chrome.tabs.sendMessage(tab.id, { type: 'PING' });
-      console.log('✅ Content script responded:', pingResponse);
-    } catch (pingError) {
-      console.error('❌ Content script not responding:', pingError);
-      throw new Error('Content script failed to load. Please refresh the page and try again.');
-    }
+    animateLoader();
 
-    // Request tech detection
-    console.log('📡 Requesting tech detection...');
-    const response = await chrome.tabs.sendMessage(tab.id, {
-      type: 'DETECT_TECHNOLOGIES'
-    });
-
-    console.log('📦 Received response:', response);
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'DETECT_TECHNOLOGIES' });
 
     if (response?.success && response?.data) {
-      console.log('✅ Tech data received:', response.data);
       currentTechData = response.data;
       displayResults(response.data);
       saveToHistory(tab.url, response.data);
-      showLoading(false);
-    } else if (response?.error) {
-      throw new Error(response.message || 'Detection failed');
     } else {
-      throw new Error('Invalid response from content script');
+      throw new Error(response?.message || 'Detection failed');
     }
-
-  } catch (error) {
-    console.error('❌ Scan error:', error);
-    showError('Failed to scan: ' + error.message);
+  } catch (err) {
+    showToast('❌ ' + err.message, 'error');
+  } finally {
     showLoading(false);
+    scanBtn.classList.remove('scanning');
+    if (scanBtnLabel) scanBtnLabel.textContent = 'Scan Technologies';
   }
 }
 
-function displayResults(techData) {
-  console.log('🎨 Displaying results:', techData);
-
-  const resultsSection = document.getElementById('results');
-  const loadingSection = document.getElementById('loading');
-
-  loadingSection?.classList.remove('active');
-  resultsSection?.classList.add('active');
-
-  // Safety check
-  if (!techData || !techData.technologies || typeof techData.technologies !== "object") {
-    console.warn("⚠️ No technologies data found:", techData);
-
-    document.getElementById('techCount').textContent = "0";
-    displayTechnologies({});
-    updateSummary({ technologies: {} });
-    return;
+async function waitForContentScript(tabId, attempts = 8, delayMs = 120) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      await chrome.tabs.sendMessage(tabId, { type: 'PING' });
+      return;
+    } catch {}
+    await new Promise(resolve => setTimeout(resolve, delayMs));
   }
-
-  // Count technologies
-  const totalTechs = Object.values(techData.technologies)
-    .filter(Array.isArray)
-    .reduce((sum, arr) => sum + arr.length, 0);
-
-  console.log('📊 Total technologies found:', totalTechs);
-  document.getElementById('techCount').textContent = totalTechs;
-
-  // Display all technologies
-  displayTechnologies(techData.technologies);
-
-  // Update summary
-  updateSummary(techData);
+  throw new Error('Content script not responding. Please refresh the page.');
 }
 
-function displayTechnologies(technologies) {
-  console.log('📋 Displaying technology list:', technologies);
+function animateLoader() {
+  const bar = document.getElementById('loaderBar');
+  if (!bar) return;
+  let w = 0;
+  const t = setInterval(() => {
+    w = Math.min(w + Math.random() * 18, 85);
+    bar.style.width = w + '%';
+    if (w >= 85) clearInterval(t);
+  }, 150);
+  // store ref to finish on complete
+  bar._timer = t;
+}
 
+function finishLoader() {
+  const bar = document.getElementById('loaderBar');
+  if (!bar) return;
+  clearInterval(bar._timer);
+  bar.style.width = '100%';
+  setTimeout(() => { if (bar) bar.style.width = '0%'; }, 400);
+}
+
+// ─── Display ───
+function displayResults(data) {
+  finishLoader();
+  document.getElementById('results').hidden = false;
+
+  if (!data?.technologies) { document.getElementById('techCount').textContent = '0'; return; }
+
+  const total = Object.values(data.technologies)
+    .filter(Array.isArray).reduce((s, a) => s + a.length, 0);
+  document.getElementById('techCount').textContent = total;
+
+  const subtitle = document.getElementById('resultsSubtitle');
+  if (subtitle) {
+    try {
+      const hostname = new URL(data.url).hostname;
+      subtitle.textContent = `Found ${total} ${total === 1 ? 'technology' : 'technologies'} powering ${hostname}`;
+    } catch {
+      subtitle.textContent = `Found ${total} ${total === 1 ? 'technology' : 'technologies'}`;
+    }
+  }
+
+  renderTechList();
+}
+
+function flattenTechs(technologies) {
+  const all = [];
+  Object.entries(technologies).forEach(([cat, arr]) => {
+    if (!Array.isArray(arr)) return;
+    arr.forEach(t => {
+      const tech = typeof t === 'string'
+        ? { id: t, name: t, category: cat, version: null, confidence: 'high' }
+        : { ...t, category: cat };
+      all.push(tech);
+    });
+  });
+  return all;
+}
+
+function renderTechList() {
   const techList = document.getElementById('techList');
-  // Clear existing content safely
   techList.replaceChildren();
 
-  const allTechs = Object.entries(technologies).flatMap(([category, techs]) =>
-    techs.map(tech => {
-      if (typeof tech === 'string') {
-        return {
-          id: tech.toLowerCase().replace(/\s+/g, '_'),
-          name: tech,
-          category,
-          version: null,
-          confidence: 'high'
-        };
-      }
-      return { ...tech, category };
-    })
-  );
-
-  console.log('🔢 Total tech items:', allTechs.length);
-
-  if (allTechs.length === 0) {
-    // Create empty state using DOM methods
-    const emptyState = document.createElement('div');
-    emptyState.className = 'empty-state';
-
-    const icon = document.createElement('div');
-    icon.className = 'icon';
-    icon.textContent = '🔍';
-
-    const message = document.createElement('p');
-    message.textContent = 'No technologies detected on this page';
-
-    const hint = document.createElement('p');
-    hint.style.fontSize = '12px';
-    hint.style.color = '#999';
-    hint.style.marginTop = '8px';
-    hint.textContent = 'This might be a static page or patterns didn\'t match.';
-
-    emptyState.appendChild(icon);
-    emptyState.appendChild(message);
-    emptyState.appendChild(hint);
-    techList.appendChild(emptyState);
+  if (!currentTechData?.technologies) {
+    techList.appendChild(emptyState('No scan results yet. Click Scan Technologies.'));
     return;
   }
 
-  allTechs.forEach(tech => {
-    const techElement = createTechElement(tech);
-    techList.appendChild(techElement);
+  const all = flattenTechs(currentTechData.technologies);
+
+  // Filter
+  let filtered = all.filter(t => {
+    const matchCat = activeCategory === 'all' || t.category === activeCategory;
+    const matchSearch = !searchQuery ||
+      t.name.toLowerCase().includes(searchQuery) ||
+      (t.category || '').toLowerCase().includes(searchQuery);
+    return matchCat && matchSearch;
   });
 
-  console.log('✅ Technology list rendered');
+  if (filtered.length === 0) {
+    techList.appendChild(emptyState('No technologies match your filter.'));
+    return;
+  }
+
+  if (activeCategory === 'all') {
+    // Group by category
+    const groups = {};
+    filtered.forEach(t => {
+      const c = t.category || 'other';
+      if (!groups[c]) groups[c] = [];
+      groups[c].push(t);
+    });
+
+    Object.entries(groups).forEach(([cat, techs], i) => {
+      // Group header
+      const header = buildGroupHeader(cat, techs.length);
+      techList.appendChild(header);
+      techs.forEach(tech => {
+        const el = buildTechItem(tech);
+        techList.appendChild(el);
+      });
+    });
+  } else {
+    filtered.forEach(tech => {
+      const el = buildTechItem(tech);
+      techList.appendChild(el);
+    });
+  }
 }
 
-function createTechElement(tech) {
+function buildGroupHeader(cat, count) {
+  const meta = CAT_META[cat] || { label: cap(cat), icon: '🔧', dot: 'cat-dot-other' };
   const div = document.createElement('div');
-  div.className = 'tech-item';
-  div.dataset.category = tech.category;
+  div.className = 'cat-group-header';
 
-  // Create tech icon
-  const techIcon = document.createElement('div');
-  techIcon.className = 'tech-icon';
-  techIcon.textContent = getCategoryIcon(tech.category);
+  const dot = document.createElement('div');
+  dot.className = 'cat-group-dot ' + meta.dot;
 
-  // Create tech content container
-  const techContent = document.createElement('div');
-  techContent.className = 'tech-content';
+  const name = document.createElement('span');
+  name.className = 'cat-group-name';
+  name.textContent = meta.label;
 
-  // Create tech name
-  const techName = document.createElement('div');
-  techName.className = 'tech-name';
-  techName.textContent = tech.name;
+  const cnt = document.createElement('span');
+  cnt.className = 'cat-group-count';
+  cnt.textContent = count;
 
-  // Create metadata container
-  const metaContainer = document.createElement('div');
-
-  // Add category
-  const categorySpan = document.createElement('span');
-  categorySpan.className = 'tech-category';
-  categorySpan.textContent = tech.category;
-  metaContainer.appendChild(categorySpan);
-
-  // Add version if available
-  if (tech.version) {
-    const versionSpan = document.createElement('span');
-    versionSpan.className = 'tech-version';
-    versionSpan.textContent = `v${tech.version}`;
-    metaContainer.appendChild(versionSpan);
-  }
-
-  // Add confidence badge if available
-  if (tech.confidence) {
-    const confidenceSpan = document.createElement('span');
-    confidenceSpan.className = 'tech-confidence';
-    confidenceSpan.title = 'Detection confidence';
-    confidenceSpan.textContent = tech.confidence;
-    metaContainer.appendChild(confidenceSpan);
-  }
-
-  // Assemble the structure
-  techContent.appendChild(techName);
-  techContent.appendChild(metaContainer);
-  div.appendChild(techIcon);
-  div.appendChild(techContent);
-
+  div.appendChild(dot); div.appendChild(name); div.appendChild(cnt);
   return div;
 }
 
-function filterTechnologies(category) {
-  console.log('🔍 Filtering by category:', category);
+function buildTechItem(tech) {
+  const meta = CAT_META[tech.category] || { icon: '🔧' };
+  const docUrl = getTechLink(tech);
 
-  const techItems = document.querySelectorAll('.tech-item');
+  const item = document.createElement('div');
+  item.className = 'tech-item';
+  item.dataset.category = tech.category;
+  item.title = `Open ${tech.name} documentation`;
 
-  techItems.forEach(item => {
-    if (category === 'all' || item.dataset.category === category) {
-      item.style.display = 'flex';
-    } else {
-      item.style.display = 'none';
-    }
+  // Icon
+  const iconWrap = document.createElement('div');
+  iconWrap.className = 'tech-icon-wrap';
+  iconWrap.textContent = meta.icon || '🔧';
+
+  // Main
+  const main = document.createElement('div');
+  main.className = 'tech-main';
+
+  // Name row
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'tech-name';
+
+  const nameLink = document.createElement('a');
+  nameLink.className = 'tech-name-link';
+  nameLink.textContent = tech.name;
+  nameLink.href = docUrl;
+  nameLink.target = '_blank';
+  nameLink.rel = 'noopener noreferrer';
+  nameLink.addEventListener('click', e => e.stopPropagation());
+  nameDiv.appendChild(nameLink);
+
+  // Meta row
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'tech-meta';
+
+  const catTag = document.createElement('span');
+  catTag.className = 'tech-cat-tag';
+  catTag.textContent = cap(tech.category || 'other');
+  metaDiv.appendChild(catTag);
+
+  if (tech.version) {
+    const sep = document.createElement('span');
+    sep.className = 'tech-separator';
+    sep.textContent = '·';
+    metaDiv.appendChild(sep);
+    const ver = document.createElement('span');
+    ver.className = 'tech-version';
+    ver.textContent = 'v' + tech.version;
+    metaDiv.appendChild(ver);
+  }
+
+  if (tech.confidence) {
+    const confClass = {high:'tech-conf-high', medium:'tech-conf-medium', low:'tech-conf-low'}[tech.confidence] || 'tech-conf-high';
+    const conf = document.createElement('span');
+    conf.className = 'tech-conf ' + confClass;
+    const pct = tech.confidence === 'high' ? '95%' : tech.confidence === 'medium' ? '70%' : '40%';
+    conf.textContent = pct;
+    conf.title = 'Confidence: ' + tech.confidence;
+    metaDiv.appendChild(conf);
+  }
+
+  main.appendChild(nameDiv);
+  main.appendChild(metaDiv);
+
+  // Ext link icon (built via DOM — no innerHTML for CSP compliance)
+  const extIcon = document.createElement('div');
+  extIcon.className = 'tech-link-icon';
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('width', '12'); svg.setAttribute('height', '12');
+  svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2.2');
+  svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round');
+  const p1 = document.createElementNS(svgNS, 'path');
+  p1.setAttribute('d', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6');
+  const pl = document.createElementNS(svgNS, 'polyline');
+  pl.setAttribute('points', '15 3 21 3 21 9');
+  const ln = document.createElementNS(svgNS, 'line');
+  ln.setAttribute('x1','10'); ln.setAttribute('y1','14'); ln.setAttribute('x2','21'); ln.setAttribute('y2','3');
+  svg.appendChild(p1); svg.appendChild(pl); svg.appendChild(ln);
+  extIcon.appendChild(svg);
+
+  item.appendChild(iconWrap);
+  item.appendChild(main);
+  item.appendChild(extIcon);
+
+  item.addEventListener('click', () => {
+    chrome.tabs.create({ url: docUrl });
   });
+
+  return item;
 }
 
-function updateSummary(techData) {
-  const summaryGrid = document.getElementById('summaryGrid');
-  const technologies = techData.technologies;
-
-  const countTechs = (arr) => {
-    if (!Array.isArray(arr)) return 0;
-    return arr.length;
-  };
-
-  const summaryItems = [
-    { label: 'Frontend', value: countTechs(technologies.frontend), icon: '🎨' },
-    { label: 'Backend', value: countTechs(technologies.backend), icon: '⚙️' },
-    { label: 'CMS', value: countTechs(technologies.cms), icon: '📝' },
-    { label: 'Analytics', value: countTechs(technologies.analytics), icon: '📊' },
-    { label: 'Hosting', value: countTechs(technologies.hosting), icon: '☁️' },
-    { label: 'Libraries', value: countTechs(technologies.libraries), icon: '📚' },
-    {
-      label: 'Total',
-      value: Object.values(technologies).reduce((sum, arr) => sum + countTechs(arr), 0),
-      icon: '🔧'
-    }
-  ];
-
-  // Clear and rebuild using DOM methods
-  summaryGrid.replaceChildren();
-
-  summaryItems.forEach(item => {
-    const summaryItem = document.createElement('div');
-    summaryItem.className = 'summary-item';
-
-    const label = document.createElement('div');
-    label.className = 'summary-label';
-    label.textContent = `${item.icon} ${item.label}`;
-
-    const value = document.createElement('div');
-    value.className = 'summary-value';
-    value.textContent = item.value.toString();
-
-    summaryItem.appendChild(label);
-    summaryItem.appendChild(value);
-    summaryGrid.appendChild(summaryItem);
-  });
+function emptyState(text, hint) {
+  const div = document.createElement('div');
+  div.className = 'empty-state';
+  const icon = document.createElement('div');
+  icon.className = 'empty-icon';
+  icon.textContent = '🔍';
+  const t = document.createElement('div');
+  t.className = 'empty-text';
+  t.textContent = text;
+  div.appendChild(icon); div.appendChild(t);
+  if (hint) {
+    const h = document.createElement('div');
+    h.className = 'empty-hint'; h.textContent = hint;
+    div.appendChild(h);
+  }
+  return div;
 }
 
-function getCategoryIcon(category) {
-  const icons = {
-    frontend: '🎨',
-    backend: '⚙️',
-    cms: '📝',
-    analytics: '📊',
-    hosting: '☁️',
-    libraries: '📚',
-    payment: '💳',
-    build_tools: '📦',
-    other: '🔧'
-  };
-  return icons[category] || '🔍';
-}
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ') : s; }
 
+// ─── Loading ───
 function showLoading(show) {
   const loading = document.getElementById('loading');
   const scanBtn = document.getElementById('scanBtn');
+  const results = document.getElementById('results');
 
   if (show) {
-    loading.classList.add('active');
+    loading.hidden = false;
     scanBtn.disabled = true;
-    document.getElementById('results').classList.remove('active');
+    results.hidden = true;
+    // Reset loader bar
+    const bar = document.getElementById('loaderBar');
+    if (bar) { clearInterval(bar._timer); bar.style.width = '0%'; }
   } else {
-    loading.classList.remove('active');
+    loading.hidden = true;
     scanBtn.disabled = false;
   }
 }
 
-function showError(message) {
-  console.error('💥 Error:', message);
-  alert(`❌ Error: ${message}`);
-}
-
-async function saveToHistory(url, techData) {
+// ─── History ───
+async function saveToHistory(url, data) {
   try {
+    const techs = data.technologies || {};
     const entry = {
       url,
+      hostname: (() => { try { return new URL(url).hostname; } catch { return url; } })(),
       timestamp: new Date().toISOString(),
-      techCount: Object.values(techData.technologies).flat().length,
-      categories: Object.keys(techData.technologies).filter(cat =>
-        techData.technologies[cat]?.length > 0
-      )
+      techCount: Object.values(techs).filter(Array.isArray).reduce((s,a) => s+a.length, 0),
+      categories: Object.keys(techs).filter(k => techs[k]?.length > 0)
     };
-
     scanHistory.unshift(entry);
-
-    // Keep only last 3 entries
-    if (scanHistory.length > 3) {
-      scanHistory = scanHistory.slice(0, 3);
-    }
-
+    if (scanHistory.length > 5) scanHistory = scanHistory.slice(0, 5);
     await chrome.storage.local.set({ scanHistory });
-    updateHistoryList();
-
-    console.log('💾 History saved (last 3 only)');
-  } catch (error) {
-    console.error('❌ Error saving history:', error);
-  }
+    renderHistory();
+  } catch {}
 }
 
-function updateHistoryList() {
-  const historyList = document.getElementById('historyList');
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.replaceChildren();
 
-  if (scanHistory.length === 0) {
-    // Create empty state using DOM methods
-    historyList.replaceChildren();
-
-    const emptyState = document.createElement('div');
-    emptyState.className = 'empty-state';
-
-    const message = document.createElement('p');
-    message.textContent = 'No scan history yet';
-
-    emptyState.appendChild(message);
-    historyList.appendChild(emptyState);
+  if (!scanHistory.length) {
+    const div = document.createElement('div');
+    div.className = 'empty-state';
+    const icon = document.createElement('div'); icon.className = 'empty-icon'; icon.textContent = '🕐';
+    const text = document.createElement('div'); text.className = 'empty-text'; text.textContent = 'No scan history yet';
+    div.appendChild(icon); div.appendChild(text); list.appendChild(div);
     return;
   }
 
-  // Show only last 3 scans
-  const recentHistory = scanHistory.slice(0, 3);
+  scanHistory.slice(0, 5).forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
 
-  // Clear and rebuild using DOM methods
-  historyList.replaceChildren();
+    const fav = document.createElement('div');
+    fav.className = 'history-favicon';
+    const img = document.createElement('img');
+    img.width = 14; img.height = 14;
+    img.onerror = () => { fav.textContent = '🌐'; };
+    try { img.src = new URL(entry.url).origin + '/favicon.ico'; } catch { fav.textContent = '🌐'; }
+    fav.appendChild(img);
 
-  recentHistory.forEach((entry, index) => {
-    const date = new Date(entry.timestamp);
-    const timeAgo = getTimeAgo(date);
-
-    const historyItem = document.createElement('div');
-    historyItem.className = 'history-item';
-    historyItem.dataset.index = index.toString();
+    const main = document.createElement('div');
+    main.className = 'history-main';
 
     const urlDiv = document.createElement('div');
     urlDiv.className = 'history-url';
-    try {
-      urlDiv.textContent = new URL(entry.url).hostname;
-    } catch (e) {
-      urlDiv.textContent = entry.url;
-    }
+    urlDiv.textContent = entry.hostname || entry.url;
 
-    const techsDiv = document.createElement('div');
-    techsDiv.className = 'history-techs';
-    techsDiv.textContent = `${entry.techCount} techs`;
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'history-meta';
+    metaDiv.textContent = timeAgo(new Date(entry.timestamp));
 
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'history-time';
-    timeDiv.style.fontSize = '11px';
-    timeDiv.style.color = '#9ca3af';
-    timeDiv.style.marginTop = '2px';
-    timeDiv.textContent = timeAgo;
+    main.appendChild(urlDiv); main.appendChild(metaDiv);
 
-    historyItem.appendChild(urlDiv);
-    historyItem.appendChild(techsDiv);
-    historyItem.appendChild(timeDiv);
+    const cnt = document.createElement('div');
+    cnt.className = 'history-count';
+    cnt.textContent = entry.techCount + ' techs';
 
-    // Add click listener
-    historyItem.addEventListener('click', () => loadHistoryItem(index));
-
-    historyList.appendChild(historyItem);
+    item.appendChild(fav); item.appendChild(main); item.appendChild(cnt);
+    item.addEventListener('click', () => loadHistoryDetail(entry));
+    list.appendChild(item);
   });
 }
 
-// Helper function to show time ago
-function getTimeAgo(date) {
-  const seconds = Math.floor((new Date() - date) / 1000);
-
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
+function loadHistoryDetail(entry) {
+  const cats = (entry.categories || []).map(c => (CAT_META[c]?.label || c)).join(', ');
+  showToast(`${entry.hostname} — ${entry.techCount} techs (${cats || 'none'})`, 'success');
 }
 
-function loadHistoryItem(index) {
-  const entry = scanHistory[index];
-  alert(`Scan from ${new Date(entry.timestamp).toLocaleString()}\nURL: ${entry.url}\nFound ${entry.techCount} technologies in categories: ${entry.categories.join(', ')}`);
+async function clearHistory() {
+  scanHistory = [];
+  try { await chrome.storage.local.set({ scanHistory: [] }); } catch {}
+  renderHistory();
+  showToast('History cleared', 'success');
 }
 
+function timeAgo(date) {
+  const s = Math.floor((Date.now() - date) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+// ─── Export ───
 async function copyReport() {
-  if (!currentTechData) {
-    showError('No scan results to copy');
-    return;
-  }
-
-  const reportText = buildReportText(currentTechData);
-
+  if (!currentTechData) { showToast('No scan results to copy', 'error'); return; }
+  const text = buildReportText(currentTechData);
   try {
-    await navigator.clipboard.writeText(reportText);
-    showNotification('✅ Report copied to clipboard!');
-  } catch (error) {
-    showError('Failed to copy: ' + error.message);
-  }
+    await navigator.clipboard.writeText(text);
+    showToast('✅ Report copied to clipboard!', 'success');
+  } catch { showToast('Failed to copy report', 'error'); }
 }
 
 async function downloadReport() {
-  if (!currentTechData) {
-    showError('No scan results to download');
-    return;
-  }
-
-  const reportData = {
-    ...currentTechData,
-    exportedAt: new Date().toISOString(),
-    tool: 'Tech Detector Pro'
-  };
-
-  const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
+  if (!currentTechData) { showToast('No scan results to download', 'error'); return; }
+  const data = { ...currentTechData, exportedAt: new Date().toISOString(), tool: 'Tech Detector Pro v2.0' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
   a.href = url;
   a.download = `tech-report-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
-
-  showNotification('📥 Report downloaded!');
+  showToast('📥 JSON report downloaded!', 'success');
 }
 
-function shareReport() {
-  if (!currentTechData) {
-    showError('No scan results to share');
-    return;
-  }
-
-  const techCount = Object.values(currentTechData.technologies).flat().length;
-  const mainTechs = Object.entries(currentTechData.technologies)
-    .filter(([_, techs]) => techs.length > 0)
-    .map(([cat, techs]) => `${cat}: ${techs.length}`)
-    .join(', ');
-
-  const shareText = `🔍 Tech Detector Pro found ${techCount} technologies on this page:\n${mainTechs}`;
-
-  if (navigator.share) {
-    navigator.share({
-      title: 'Technology Stack Report',
-      text: shareText,
-      url: currentTechData.url
+function buildReportText(data) {
+  let t = `TECH DETECTOR PRO v2.0 REPORT\n${'='.repeat(40)}\n`;
+  t += `URL: ${data.url}\nScanned: ${new Date().toLocaleString()}\n\n`;
+  const techs = data.technologies || {};
+  const total = Object.values(techs).filter(Array.isArray).reduce((s,a)=>s+a.length,0);
+  t += `Total Technologies: ${total}\n\n`;
+  Object.entries(techs).forEach(([cat, arr]) => {
+    if (!Array.isArray(arr) || !arr.length) return;
+    t += `${cat.toUpperCase()} (${arr.length}):\n`;
+    arr.forEach(tech => {
+      const name = typeof tech === 'string' ? tech : tech.name;
+      const ver  = typeof tech === 'string' ? null : tech.version;
+      const conf = typeof tech === 'string' ? null : tech.confidence;
+      t += `  • ${name}${ver ? ' v'+ver : ''}${conf ? ' ['+conf+']' : ''}\n`;
     });
-  } else {
-    navigator.clipboard.writeText(shareText + '\nURL: ' + currentTechData.url);
-    showNotification('✅ Share text copied to clipboard!');
-  }
-}
-
-function buildReportText(techData) {
-  let text = `TECH DETECTOR PRO REPORT\n`;
-  text += `========================\n`;
-  text += `URL: ${techData.url}\n`;
-  text += `Scan Date: ${new Date().toLocaleString()}\n`;
-
-  const totalTechs = Object.values(techData.technologies).reduce((sum, arr) =>
-    sum + (Array.isArray(arr) ? arr.length : 0), 0
-  );
-  text += `Total Technologies: ${totalTechs}\n\n`;
-
-  Object.entries(techData.technologies).forEach(([category, techs]) => {
-    if (Array.isArray(techs) && techs.length > 0) {
-      text += `${category.toUpperCase()} (${techs.length}):\n`;
-      techs.forEach(tech => {
-        const techName = typeof tech === 'string' ? tech : tech.name;
-        const techVersion = typeof tech === 'string' ? null : tech.version;
-        text += `  • ${techName}`;
-        if (techVersion) text += ` v${techVersion}`;
-        text += '\n';
-      });
-      text += '\n';
-    }
+    t += '\n';
   });
-
-  text += `========================\n`;
-  text += `Generated by Tech Detector Pro v1.0`;
-
-  return text;
+  t += `${'='.repeat(40)}\nGenerated by Tech Detector Pro v2.0`;
+  return t;
 }
 
-function showNotification(message) {
-  const notification = document.createElement('div');
-  notification.style.cssText = `
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: #10b981;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
-    animation: slideIn 0.3s ease;
-  `;
-  notification.textContent = message;
-
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease';
-    setTimeout(() => notification.remove(), 300);
-  }, 2000);
+// ─── Toast ───
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast' + (type ? ' ' + type : '');
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
-
-// Animation styles
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  @keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-  }
-`;
-document.head.appendChild(style);
-
-console.log('✅ Popup script loaded');
