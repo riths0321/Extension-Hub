@@ -1,27 +1,73 @@
+/* ─── Settings Shell ───────────────────────────────────── */
 .settings-shell {
-    max-width: 960px;
+    max-width: 900px;
     margin: 0 auto;
 }
 
 .settings-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 14px;
 }
 
+/* ─── Toggle Row ───────────────────────────────────────── */
 .toggle-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px;
+    padding: 12px 14px;
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: var(--radius-md);
     background: var(--surface-muted);
-    font-weight: 700;
+    font-weight: 600;
+    font-size: 13px;
     color: var(--text-soft);
+    cursor: pointer;
+    transition: all var(--transition);
+    user-select: none;
 }
 
-.toggle-row input {
+.toggle-row:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+/* Custom checkbox */
+.toggle-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
     width: 18px;
     height: 18px;
+    border: 2px solid var(--border-strong);
+    border-radius: 5px;
+    background: var(--surface-strong);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all var(--transition);
+}
+
+.toggle-row input[type="checkbox"]:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.toggle-row input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 5px;
+    height: 9px;
+    border: 2px solid #ffffff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(44deg);
+}
+
+.toggle-row input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
 }
 
 @media (max-width: 760px) {

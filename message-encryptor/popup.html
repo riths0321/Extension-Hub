@@ -1,47 +1,171 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>Message Encryptor</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vault - Secure Message Encryptor</title>
   <link rel="stylesheet" href="popup.css">
 </head>
-
 <body>
+<div class="app">
 
-  <div class="header">
-    <h2>Message Encryptor</h2>
-    <p>Encrypt & decrypt your messages securely</p>
-  </div>
+  <header class="hdr">
+    <div class="brand">
+      <svg class="brand-lock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="9" width="14" height="9" rx="2"/>
+        <path d="M6.5 9V6a3.5 3.5 0 0 1 7 0v3"/>
+        <circle cx="10" cy="13.5" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="brand-name">Message Encryptor</span>
+      <span class="brand-sep">·</span>
+      <span class="brand-algo">AES-256-GCM</span>
+    </div>
+  </header>
 
-  <div class="tabs">
-    <button class="tab active" id="tabEncrypt">ENCRYPT</button>
-    <button class="tab" id="tabDecrypt">DECRYPT</button>
-  </div>
+  <nav class="tabs">
+    <button class="tab active" id="tabEncrypt" data-tab="encrypt">Encrypt</button>
+    <button class="tab" id="tabDecrypt" data-tab="decrypt">Decrypt</button>
+    <button class="tab" id="tabFiles" data-tab="files">Files</button>
+    <button class="tab" id="tabHistory" data-tab="history">History</button>
+  </nav>
 
-  <div class="card">
-    <label id="labelMessage" for="message">Message to Encrypt</label>
-    <textarea id="message" rows="3" placeholder="Enter text here..."></textarea>
-
-    <label for="password">Secret Password</label>
-    <input type="password" id="password" placeholder="Enter a strong password" autocomplete="off">
-
-    <button class="btn-main" id="actionBtn">ENCRYPT MESSAGE</button>
-
-    <div class="btn-row">
-      <button class="btn-secondary" id="copyBtn">Copy Output</button>
-      <button class="btn-secondary" id="clearBtn">Clear All</button>
+  <div class="panel" id="panelMain">
+    <div class="io-split">
+      <div class="io-pane">
+        <div class="pane-hdr">
+          <span class="pane-lbl" id="msgLabel">Message</span>
+          <span class="char-count" id="charCount">0</span>
+          <button class="nano-btn" id="importTxtBtn">Import</button>
+          <input type="file" id="importTxtInput" accept=".txt,text/plain" style="display:none">
+        </div>
+        <textarea id="message" placeholder="Type your secret message…" spellcheck="false"></textarea>
+      </div>
+      <div class="io-divider"></div>
+      <div class="io-pane">
+        <div class="pane-hdr">
+          <span class="pane-lbl">Output</span>
+          <button class="pill copy-pill" id="copyBtn">Copy</button>
+          <button class="pill save-pill" id="exportBtn">Save</button>
+          <button class="pill clear-pill" id="clearBtn">Clear</button>
+        </div>
+        <div class="out-wrap">
+          <textarea id="output" readonly spellcheck="false" placeholder="Result appears here…"></textarea>
+          <div class="copy-flash" id="copyFlash"></div>
+        </div>
+      </div>
     </div>
 
-    <label class="mt-16" for="output">Output Result</label>
-    <textarea id="output" rows="3" placeholder="Result will appear here..." readonly></textarea>
+    <div class="controls-bar">
+      <div class="status-line" id="status"></div>
 
-    <div class="status" id="status"></div>
+      <div class="pwd-row">
+        <span class="ctrl-lbl">Password</span>
+        <div class="pwd-body" id="pwdSection">
+          <div class="pwd-inputs">
+            <input type="password" id="password" class="pwd-input" placeholder="Enter password…" autocomplete="new-password">
+            <button class="sq-btn" id="eyeBtn" type="button">
+              <svg id="eyeOpen" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/></svg>
+              <svg id="eyeClosed" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><line x1="4" y1="4" x2="16" y2="16"/></svg>
+            </button>
+            <button class="sq-btn" id="genPwdBtn" type="button" title="Generate strong password">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v4h4"/><path d="M16 16v-4h-4"/><path d="M16 8A6 6 0 0 0 5.3 5.3L4 8"/><path d="M4 12l1.3 2.7A6 6 0 0 0 16 12"/></svg>
+            </button>
+          </div>
+          <div class="str-bar">
+            <div class="str-track"><div class="str-fill" id="strFill"></div></div>
+            <span class="str-lbl" id="strText"></span>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chkPassword" checked>
+          <span class="tog-track"><span class="tog-thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="action-row">
+        <div class="opts">
+          <div class="seg">
+            <button class="seg-btn active" id="fmtB64" data-fmt="base64">B64</button>
+            <button class="seg-btn" id="fmtHex" data-fmt="hex">Hex</button>
+          </div>
+          <label class="ck"><input type="checkbox" id="chkCompress">  Zip</label>
+          <label class="ck"><input type="checkbox" id="chkSign"> Sign</label>
+        </div>
+        <button class="go-btn" id="actionBtn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="9" width="16" height="9" rx="2"/><path d="M5.5 9V6a4.5 4.5 0 0 1 9 0v3"/></svg>
+          Encrypt
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div class="footer">© 2026 Encryption Tool</div>
+  <div class="panel hidden" id="panelFiles">
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <p class="drop-title">Drop files here</p>
+      <p class="drop-sub">or <u>click to browse</u> · any file type</p>
+      <p class="drop-enc">Saved as <code>.enc</code></p>
+      <input type="file" id="fileInput" multiple style="display:none">
+    </div>
+    <div id="fileList" class="file-list"></div>
+    <div class="file-controls">
+      <div class="file-pwd-row">
+        <label class="file-pwd-label">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="9" width="14" height="9" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 0 1 7 0v3"/></svg>
+          Password
+        </label>
+        <div class="pwd-fields" id="filePwdSection">
+          <div class="pwd-inputs">
+            <input type="password" id="filePwd" class="pwd-input" placeholder="File password…" autocomplete="new-password">
+            <button class="sq-btn" id="fileEyeBtn" type="button">
+              <svg id="fileEyeOpen" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/></svg>
+              <svg id="fileEyeClosed" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><line x1="4" y1="4" x2="16" y2="16"/></svg>
+            </button>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chkFilePassword" checked>
+          <span class="tog-track"><span class="tog-thumb"></span></span>
+        </label>
+      </div>
+      <div class="btn-pair">
+        <button class="go-btn" id="fileEncryptBtn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="9" width="16" height="9" rx="2"/><path d="M5.5 9V6a4.5 4.5 0 0 1 9 0v3"/></svg>
+          Encrypt Files
+        </button>
+        <button class="go-btn go-ghost" id="fileDecryptBtn">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="9" width="16" height="9" rx="2"/><path d="M5.5 9V5a3 2.8 0 0 1 5-.3"/><line x1="13" y1="3" x2="16" y2="3"/><line x1="16" y1="1.5" x2="16" y2="4.5"/></svg>
+          Decrypt Files
+        </button>
+      </div>
+      <div class="progress-wrap hidden" id="progressWrap">
+        <div class="prog-track"><div class="prog-fill" id="progressFill"></div></div>
+        <span class="prog-lbl" id="progressLabel"></span>
+      </div>
+      <div class="status-line" id="fileStatus"></div>
+    </div>
+  </div>
 
-  <script src="popup.js"></script>
+  <div class="panel hidden" id="panelHistory">
+    <div class="hist-hdr">
+      <span class="pane-lbl">Recent Activity</span>
+      <button class="nano-btn nano-danger" id="clearHistoryBtn">Clear all</button>
+    </div>
+    <div id="historyList" class="hist-list">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        No history yet
+      </div>
+    </div>
+  </div>
 
+  <footer class="footer">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L2 4v4c0 3.5 2.5 6.4 6 7.4 3.5-1 6-3.9 6-7.4V4L8 1z"/></svg>
+    Local only · No data leaves your device
+  </footer>
+</div>
+<script src="popup.js"></script>
 </body>
-
 </html>

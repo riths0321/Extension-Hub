@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DataFlow Converter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="brand">
+    <div class="brand-wordmark">
+      <span class="brand-main">DataFlow</span>
+    </div>
+    <div class="brand-sub">CSV • JSON • TSV Converter</div>
+  </div>
+</header>
+
+<!-- ═══ STEP INDICATOR ═══ -->
+<div class="steps">
+  <div class="step active" id="s1">
+    <div class="step-num" id="sn1">1</div>
+    <span>Upload</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="s2">
+    <div class="step-num" id="sn2">2</div>
+    <span>Configure</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="s3">
+    <div class="step-num" id="sn3">3</div>
+    <span>Result</span>
+  </div>
+</div>
+
+<!-- ═══ STEP 1 — UPLOAD ═══ -->
+<section id="sec1">
+  <div id="dropZone" tabindex="0" role="button" aria-label="Drop file or click to select">
+    <div class="drop-inner">
+      <p class="drop-title">Drop your file here</p>
+      <p class="drop-sub">or <span class="link-text">click to browse</span></p>
+      <div class="fmt-badges">
+        <span class="fmt-badge csv-badge">CSV</span>
+        <span class="fmt-badge json-badge">JSON</span>
+        <span class="fmt-badge tsv-badge">TSV</span>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept=".csv,.json,.tsv,.txt">
+</section>
+
+<!-- ═══ STEP 2 — CONFIGURE ═══ -->
+<section class="hidden" id="sec2">
+
+  <div class="file-card">
+    <div class="file-card-bar"></div>
+    <div class="file-type" id="fType">CSV</div>
+    <div class="file-info">
+      <div class="file-name" id="fName">—</div>
+      <div class="file-size" id="fSize">—</div>
+    </div>
+    <button class="clear-btn" id="clearBtn" aria-label="Remove file">Remove</button>
+  </div>
+
+  <p class="field-label">Convert to</p>
+  <div class="mode-grid" role="group" aria-label="Conversion mode">
+    <button class="mode-pill active" data-mode="csv2json">CSV → JSON</button>
+    <button class="mode-pill" data-mode="json2csv">JSON → CSV</button>
+    <button class="mode-pill" data-mode="csv2tsv">CSV → TSV</button>
+    <button class="mode-pill" data-mode="json2tsv">JSON → TSV</button>
+  </div>
+
+  <button class="adv-toggle" id="advToggle" aria-expanded="false">
+    <span>Advanced options</span>
+    <span class="adv-caret" id="advCaret">›</span>
+  </button>
+
+  <div class="adv-panel hidden" id="advPanel">
+
+    <div class="adv-row">
+      <span class="adv-label">Delimiter</span>
+      <select id="delimiter" class="adv-select">
+        <option value=",">Comma ,</option>
+        <option value=";">Semicolon ;</option>
+        <option value="|">Pipe |</option>
+        <option value="&#9;">Tab</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <input type="text" id="customDelim" class="adv-input hidden" placeholder="Type your delimiter">
+
+    <div class="adv-row">
+      <span class="adv-label">JSON indent</span>
+      <select id="jsonIndent" class="adv-select">
+        <option value="2">2 spaces</option>
+        <option value="4">4 spaces</option>
+        <option value="0">Minified</option>
+      </select>
+    </div>
+
+    <div class="adv-divider"></div>
+
+    <div class="adv-checks">
+      <label class="chk-label">
+        <input type="checkbox" id="hasHeader" checked>
+        <span class="chk-box">✓</span>
+        <span>First row is header</span>
+      </label>
+      <label class="chk-label">
+        <input type="checkbox" id="inferTypes" checked>
+        <span class="chk-box">✓</span>
+        <span>Auto-detect types</span>
+      </label>
+      <label class="chk-label">
+        <input type="checkbox" id="dedupRows">
+        <span class="chk-box">✓</span>
+        <span>Remove duplicate rows</span>
+      </label>
+    </div>
+
+    <div class="adv-divider"></div>
+
+    <p class="adv-section-title">Filter rows</p>
+    <div class="adv-filter-row">
+      <input type="text" id="filterField" class="adv-input" placeholder="Column name">
+      <select id="filterOp" class="adv-select adv-op">
+        <option value="contains">contains</option>
+        <option value="equals">= equals</option>
+        <option value="starts">starts with</option>
+        <option value="gt">&gt; greater</option>
+        <option value="lt">&lt; less</option>
+      </select>
+      <input type="text" id="filterValue" class="adv-input" placeholder="Value">
+    </div>
+
+    <p class="adv-section-title">Sort rows</p>
+    <div class="adv-filter-row">
+      <input type="text" id="sortField" class="adv-input" placeholder="Column name">
+      <select id="sortDir" class="adv-select adv-op">
+        <option value="asc">A → Z</option>
+        <option value="desc">Z → A</option>
+      </select>
+    </div>
+
+  </div>
+
+  <button class="convert-btn" id="convertBtn">Convert File</button>
+
+  <div class="tpl-bar">
+    <span class="tpl-bar-label">Templates</span>
+    <div class="tpl-bar-right">
+      <input type="text" id="tplName" class="tpl-input" placeholder="Name this config…">
+      <button class="tpl-save-btn" id="saveTplBtn">Save</button>
+    </div>
+  </div>
+  <div id="tplList"></div>
+
+</section>
+
+<!-- ═══ PROGRESS ═══ -->
+<div class="progress-wrap hidden" id="progressWrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <span class="progress-pct" id="progressPct">0%</span>
+</div>
+
+<!-- ═══ STEP 3 — RESULT ═══ -->
+<section class="hidden" id="sec3">
+  <div class="result-bar">
+    <div class="result-info">
+      <span class="result-badge" id="resultBadge">JSON</span>
+      <span class="result-rows" id="resultRows"></span>
+    </div>
+    <div class="result-btns">
+      <button class="res-btn" id="copyBtn">Copy</button>
+      <button class="res-btn primary" id="downloadBtn">Download</button>
+    </div>
+  </div>
+  <pre id="output"></pre>
+  <button class="back-btn" id="backBtn">← Convert another file</button>
+</section>
+
+<script src="dropdowns.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

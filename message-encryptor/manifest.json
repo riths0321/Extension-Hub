@@ -1,15 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Message Encryptor & Decryptor",
-  "version": "1.0.0",
-  "description": "Securely encrypt and decrypt messages using a secret key.",
-
+  "name": "Message Encryptor",
+  "version": "2.0.0",
+  "description": "Securely encrypt and decrypt messages and files using AES-GCM — fast, offline, and private.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -17,5 +15,12 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+  "permissions": [
+    "clipboardWrite",
+    "storage"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
   }
 }
