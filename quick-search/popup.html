@@ -15,8 +15,8 @@
     <div class="header-left">
       <div class="logo-mark">
         <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="2"/>
-          <line x1="13" y1="13" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="8.5" cy="8.5" r="5" stroke="white" stroke-width="2"/>
+          <line x1="12.5" y1="12.5" x2="17.5" y2="17.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
       <div>
@@ -24,42 +24,91 @@
         <div class="tagline">Select text · Search anywhere</div>
       </div>
     </div>
-    <div class="shortcut-pill">Ctrl+Shift+S</div>
+    <div class="header-right">
+      <div class="shortcut-pill">Ctrl+Shift+S</div>
+      <button class="settings-btn" id="settingsToggleBtn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
   </header>
+
+  <!-- ── Search Bar ── -->
+  <div class="search-bar-wrap">
+    <div class="search-bar">
+      <div class="search-bar-icon">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="8.5" cy="8.5" r="5.5"/>
+          <line x1="13" y1="13" x2="18" y2="18"/>
+        </svg>
+      </div>
+      <input type="text" id="searchInput" placeholder="Search or type g:, yt:, gh:, r: …" autocomplete="off" spellcheck="false" />
+      <div class="cmd-hint" id="cmdHintBadge" style="display:none">command</div>
+    </div>
+  </div>
+
+  <!-- ── Command Autocomplete Dropdown ── -->
+  <div class="cmd-suggestions" id="cmdSuggestions"></div>
+
+  <!-- ── Smart Type Badge ── -->
+  <div class="smart-badge" id="smartBadge"></div>
 
   <!-- ── Tabs ── -->
   <nav class="tabs">
     <button class="tab active" data-tab="home">Home</button>
     <button class="tab" data-tab="history">History</button>
     <button class="tab" data-tab="custom">Custom</button>
+    <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
   <!-- ═══════ HOME TAB ═══════ -->
   <div class="tab-panel active" id="panel-home">
 
+    <!-- How it works -->
     <div class="how-section">
       <p class="how-title">How it works</p>
       <div class="steps">
         <div class="step">
           <span class="step-num">1</span>
-          <span class="step-text">Select text on any page</span>
+          <span class="step-text">Select any text on a page</span>
         </div>
         <div class="step">
           <span class="step-num">2</span>
-          <span class="step-text">Popup appears automatically</span>
+          <span class="step-text">Popup appears with smart engine picks</span>
         </div>
         <div class="step">
           <span class="step-num">3</span>
-          <span class="step-text">Click an engine to search</span>
+          <span class="step-text">Click or use 1–9 shortcuts</span>
         </div>
       </div>
     </div>
 
-    <div class="divider"></div>
+    <!-- Engine Grid -->
+    <div>
+      <div class="engine-section-header">
+        <p class="section-label">Search Engines</p>
+        <span class="multi-search-hint">Hold <span>Ctrl</span> for multi-select</span>
+      </div>
+      <div class="engine-grid" id="homeEngineGrid">
+        <!-- Populated by popup.js -->
+      </div>
+    </div>
 
-    <p class="section-label">Search Engines</p>
-    <div class="engine-grid" id="homeEngineGrid">
-      <!-- Injected by popup.js -->
+    <!-- Multi-search bar (shown when engines selected) -->
+    <div class="multi-search-bar" id="multiSearchBar">
+      <span class="multi-count" id="multiCount">0 engines selected</span>
+      <div class="multi-actions">
+        <button class="btn-multi-group" id="multiGroupBtn">Tab Group</button>
+        <button class="btn-multi-tabs" id="multiTabsBtn">Open All</button>
+      </div>
+    </div>
+
+    <!-- Pinned Engines -->
+    <div class="pinned-section" id="pinnedSection" style="display:none">
+      <p class="section-label">Pinned</p>
+      <div class="pinned-row" id="pinnedRow"></div>
     </div>
 
   </div>
@@ -70,8 +119,18 @@
       <p class="section-label" style="margin:0">Recent Searches</p>
       <button class="btn-ghost" id="clearHistoryBtn">Clear all</button>
     </div>
+
+    <!-- Engine filters -->
+    <div class="history-filters" id="historyFilters">
+      <button class="filter-pill active" data-filter="all">All</button>
+      <!-- Dynamic engine filters injected by JS -->
+    </div>
+
     <div class="history-list" id="historyList">
-      <div class="empty-state">No recent searches yet</div>
+      <div class="empty-state">
+        <div class="empty-state-icon">🕐</div>
+        No recent searches yet
+      </div>
     </div>
   </div>
 
@@ -81,28 +140,122 @@
     <div class="form-card">
       <div class="field">
         <label class="field-label" for="engineName">Engine Name</label>
-        <input class="field-input" type="text" id="engineName" placeholder="e.g. Netflix" autocomplete="off" />
+        <input class="field-input" type="text" id="engineName" placeholder="e.g. Netflix, Figma" autocomplete="off" />
       </div>
       <div class="field">
-        <label class="field-label" for="engineUrl">Search URL <span class="field-hint">(use %s as placeholder)</span></label>
+        <label class="field-label" for="engineUrl">
+          Search URL <span class="field-hint">(optional: use %s for query)</span>
+        </label>
         <input class="field-input" type="text" id="engineUrl" placeholder="https://example.com/search?q=%s" autocomplete="off" />
       </div>
+      <div class="field">
+        <label class="field-label" for="engineEmoji">Icon (emoji)</label>
+        <input class="field-input" type="text" id="engineEmoji" placeholder="🔗" maxlength="4" autocomplete="off" />
+      </div>
       <div class="form-actions">
-        <button class="btn-secondary" id="testCustomBtn">Test</button>
+        <button class="btn-secondary" id="testCustomBtn">Test URL</button>
         <button class="btn-primary" id="addCustomEngineBtn">Add Engine</button>
       </div>
     </div>
 
-    <div class="panel-header" style="margin-top:18px">
+    <div class="panel-header" style="margin-top:14px">
       <p class="section-label" style="margin:0">Your Engines</p>
     </div>
     <div class="custom-list" id="customEnginesList">
-      <div class="empty-state">No custom engines yet</div>
+      <div class="empty-state">
+        <div class="empty-state-icon">🔌</div>
+        No custom engines yet
+      </div>
     </div>
+  </div>
+
+  <!-- ═══════ SETTINGS TAB ═══════ -->
+  <div class="tab-panel" id="panel-settings">
+    <p class="section-label">Preferences</p>
+
+    <div class="settings-group">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Auto-show popup</div>
+          <div class="settings-desc">Show when text is selected</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingAutoShow" checked />
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Smart detection</div>
+          <div class="settings-desc">Detect URLs, emails, code snippets</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingSmartDetect" checked />
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Command shortcuts</div>
+          <div class="settings-desc">Type g:, yt:, gh: prefixes</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingCommands" checked />
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+    </div>
+
+    <p class="section-label" style="margin-top:4px">Search</p>
+
+    <div class="settings-group">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Default engine</div>
+          <div class="settings-desc">Used for Enter key search</div>
+        </div>
+        <select class="settings-select" id="settingDefaultEngine">
+          <option value="google">Google</option>
+          <option value="youtube">YouTube</option>
+          <option value="github">GitHub</option>
+          <option value="reddit">Reddit</option>
+          <option value="wikipedia">Wikipedia</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">History limit</div>
+          <div class="settings-desc">Max saved searches</div>
+        </div>
+        <select class="settings-select" id="settingHistoryLimit">
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="section-label" style="margin-top:4px">Data</p>
+
+    <div class="settings-group">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Clear all history</div>
+          <div class="settings-desc">Remove all search records</div>
+        </div>
+        <button class="btn-ghost" id="settingClearHistory">Clear</button>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
+<script src="dropdowns.js"></script>
 <script src="popup.js"></script>
 
 </body>

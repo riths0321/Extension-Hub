@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Quick Search",
-  "version": "2.0",
-  "description": "Select text on any webpage and instantly search it across multiple platforms.",
+  "version": "3.0",
+  "description": "Select text · Smart search across 10+ engines · Commands, history, multi-search.",
 
   "permissions": [
     "contextMenus",
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs",
+    "tabGroups"
   ],
 
   "host_permissions": [
@@ -55,6 +57,6 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+    "extension_pages": "script-src 'self'; object-src 'none';"
   }
 }

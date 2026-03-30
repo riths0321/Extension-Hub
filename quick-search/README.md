@@ -1,64 +1,176 @@
-# 🔍 Quick Search — v2.0
+# ⚡ Quick Search v3
 
-A premium Chrome Extension that lets you search selected text on 10+ platforms instantly.
+> **A premium Chrome Extension** — Select any text, search everywhere. Smart detection, multi-engine, command shortcuts, and a clean light UI.
+
+![Version](https://img.shields.io/badge/version-3.0-2563EB?style=flat-square)
+![Manifest](https://img.shields.io/badge/manifest-v3-059669?style=flat-square)
+![CSP Safe](https://img.shields.io/badge/CSP-safe-7C3AED?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-D97706?style=flat-square)
 
 ---
 
-## 📂 Folder Structure
+## 📸 What it does
 
-```
-quick-search/
-│
-├── icons/
-│   ├── icon16.png      ← Your icons here
-│   ├── icon48.png
-│   └── icon128.png
-│
-├── manifest.json       ← Extension config (MV3)
-├── background.js       ← Service Worker: context menu + history
-├── content.js          ← Floating popup injected into pages
-├── content.css         ← Styles for floating popup (injected via manifest)
-├── popup.html          ← Extension popup UI
-├── popup.js            ← Popup logic (tabs, history, custom engines)
-├── style.css           ← Popup styles (premium dark theme)
-└── README.md
-```
+Select **any text** on any webpage → a floating smart popup appears → click an engine or press `1–9` → done.
+
+Works with **Google, YouTube, GitHub, Reddit, Stack Overflow, Wikipedia, Amazon, Twitter/X, Translate, Google Images** + your own custom engines.
+
+---
+
+## 🚀 Install
+
+1. Download and unzip `quick-search-v3.zip`
+2. Go to `chrome://extensions`
+3. Enable **Developer Mode** (top-right toggle)
+4. Click **Load unpacked** → select the `quick-search-v3/` folder
+5. Done — the icon appears in your toolbar ✓
 
 ---
 
 ## ✨ Features
 
-- **Auto popup** — select any text (2–200 chars) → popup appears below selection
-- **Context menu** — right-click selected text → Quick Search → choose engine
-- **Keyboard shortcut** — `Ctrl+Shift+S` / `Cmd+Shift+S`
-- **10 built-in engines** — Google, YouTube, Wikipedia, Amazon, GitHub, StackOverflow, Twitter, Reddit, Translate, Images
-- **Search history** — last 20 searches with re-search button
-- **Custom engines** — add any site with `%s` URL placeholder
-- **100% CSP compliant** — no innerHTML, no eval, no inline scripts/styles, no external resources
+### 🔍 Smart Search System
+Automatically detects what kind of text you selected:
+
+| Type | Example | Action |
+|------|---------|--------|
+| URL | `https://github.com` | Opens directly |
+| Email | `user@gmail.com` | Routes to Gmail |
+| Code | `const x = () => {}` | Highlights GitHub + Stack Overflow |
+| Question | `how does DNS work` | Highlights Google + Reddit + Wikipedia |
 
 ---
 
-## ⚙️ Installation
+### 🎛 Multi-Search
+- **Ctrl+Click** multiple engine cards to select them
+- A slide-in bar shows your selection count
+- **Open All** → opens each as a separate tab
+- **Tab Group** → groups all results in a named Chrome Tab Group
 
-1. Download / unzip the folder
-2. Open `chrome://extensions`
-3. Enable **Developer Mode** (top right)
-4. Click **Load unpacked** → select `quick-search/` folder
-5. Pin from Extensions menu
+---
+
+### 📌 Pinned Engines
+- **Right-click** any engine card → Pin it
+- Pinned engines appear as quick-chip shortcuts
+- Right-click again to unpin
+- Saved permanently in storage
+
+---
+
+### ⌨ Command Shortcuts
+
+Type a prefix in the popup search bar:
+
+| Prefix | Engine | Example |
+|--------|--------|---------|
+| `g:` | Google | `g:best js frameworks` |
+| `yt:` | YouTube | `yt:react hooks tutorial` |
+| `gh:` | GitHub | `gh:nextjs starter` |
+| `r:` | Reddit | `r:mechanical keyboards` |
+| `so:` | Stack Overflow | `so:center div css` |
+| `wiki:` | Wikipedia | `wiki:quantum computing` |
+| `am:` | Amazon | `am:noise cancelling headphones` |
+| `tw:` | Twitter/X | `tw:#openai` |
+| `tr:` | Translate | `tr:bonjour le monde` |
+| `img:` | Google Images | `img:minimalist desk setup` |
+
+Live autocomplete dropdown shows as you type.
+
+---
+
+### 🕐 Advanced History
+- Filter history **by engine**
+- **Favorite ⭐** individual items
+- **Delete ×** single entries
+- Configurable history limit (25 / 50 / 100 / 200)
+
+---
+
+### 🎮 Keyboard UX
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+Shift+S` | Open popup anywhere |
+| `1` – `9` | Quick-pick engine by number |
+| `Ctrl+Click` | Add engine to multi-select |
+| `Enter` | Search with default engine |
+| `Ctrl+Enter` | Search across all selected engines |
+| `↑` / `↓` | Navigate command autocomplete |
+| `Escape` | Close floating popup |
+| `Right-click` engine | Pin / unpin |
+
+---
+
+### ⚙️ Settings Panel
+- Toggle **auto-show popup** on text selection
+- Toggle **smart detection** (URL/email/code/question)
+- Toggle **command shortcuts**
+- Set **default engine** (used when you press Enter)
+- Set **history limit**
+
+---
+
+## 📁 File Structure
+
+```
+quick-search-v3/
+├── manifest.json       ← MV3 manifest, permissions, CSP
+├── popup.html          ← Extension popup UI (4 tabs)
+├── popup.js            ← Popup logic, search, commands, settings
+├── style.css           ← Premium light theme (Manrope font)
+├── content.js          ← Injected into all pages (floating popup)
+├── content.css         ← Floating popup styles
+├── background.js       ← Service worker, tabs, history, context menu
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
 
 ---
 
 ## 🔐 Permissions
 
 | Permission | Why |
-|---|---|
-| `contextMenus` | Right-click menu |
-| `storage` | Save history & custom engines |
-| `tabs` | Open search results in new tab |
-| `activeTab` | Send message to current page |
+|------------|-----|
+| `contextMenus` | Right-click → Quick Search submenu |
+| `storage` | Save history, settings, pinned engines |
+| `activeTab` | Read selected text from current tab |
+| `tabs` | Open search results in new tabs |
+| `tabGroups` | Group multi-search results into Tab Groups |
 
 ---
 
-## 📄 License
+## 🛡 Security
 
-MIT License
+- ✅ **Zero `innerHTML`** — all DOM built with `createElement` + `textContent`
+- ✅ **Zero `eval()`** — no dynamic code execution
+- ✅ **Strict CSP** — `script-src 'self'; object-src 'self';`
+- ✅ **Sender validation** — only extension's own scripts can send messages
+- ✅ **URL validation** — only `http:` and `https:` URLs are ever opened
+
+---
+
+## 🎨 Design System
+
+Built with a premium **light theme** inspired by Notion / Linear / Stripe:
+
+```css
+--primary:   #2563EB   /* buttons, focus rings, active states */
+--heading:   #111111   /* all headings */
+--subtext:   #6B7280   /* secondary text */
+--bg:        #FFFFFF   /* backgrounds */
+--border:    #E5E7EB   /* inputs, cards */
+```
+
+Font: **Manrope** (700 headings · 600 labels · 500 body)
+
+---
+
+## 📝 License
+
+MIT — free to use, fork, and build on.
+
+---
+
+<p align="center">Made with ❤️ — Quick Search v3.0</p>

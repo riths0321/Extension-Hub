@@ -1,26 +1,30 @@
-/* ── Quick Search floating popup — injected into all pages ──────────── */
+/* ── Quick Search v3 — Content Popup (Light Theme) ───────────────── */
 
 #qs-popup {
   display: none;
   position: absolute;
   z-index: 2147483647;
-  width: 330px;
-  background: #0f1117;
-  border: 1px solid rgba(255,255,255,0.12);
+  width: 340px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
   border-radius: 16px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  box-shadow:
+    0 4px 6px rgba(0,0,0,0.05),
+    0 10px 30px rgba(0,0,0,0.10),
+    0 20px 60px rgba(0,0,0,0.06);
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
-  color: #ffffff;                /* pure white base                  */
+  font-weight: 500;
+  color: #374151;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  animation: qs-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  animation: qs-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes qs-in {
-  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
@@ -28,121 +32,289 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 16px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  padding: 11px 13px 10px;
+  border-bottom: 1px solid #F3F4F6;
+  background: #F9FAFB;
 }
 
-/* TITLE — "Quick Search" label */
+#qs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+#qs-logo-mark {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #1D4ED8, #3B82F6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 #qs-title {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #a0a8d4;               /* visible muted blue-white         */
-  margin-bottom: 2px;
+  color: #6B7280;
+  flex-shrink: 0;
 }
 
-/* SELECTED TEXT — what the user highlighted */
 #qs-selected-text {
-  font-size: 13px;              /* up from 12.5                     */
+  font-size: 12.5px;
   font-weight: 700;
-  color: #ffffff;               /* pure white                       */
-  max-width: 200px;
+  color: #111111;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
-#qs-close {
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  border: none;
-  color: #a0a8d4;
-  font-size: 16px; line-height: 1;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, color 0.15s;
+#qs-type-badge {
+  display: none;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
   flex-shrink: 0;
 }
-#qs-close:hover { background: rgba(255,255,255,0.16); color: #fff; }
+#qs-type-badge.visible { display: inline-flex; align-items: center; gap: 3px; }
+#qs-type-badge.type-url      { background: rgba(5,150,105,0.1);  color: #059669; }
+#qs-type-badge.type-email    { background: rgba(217,119,6,0.1);  color: #D97706; }
+#qs-type-badge.type-code     { background: rgba(37,99,235,0.1);  color: #2563EB; }
+#qs-type-badge.type-question { background: #F3F4F6; color: #6B7280; }
+
+#qs-close {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #9CA3AF;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.13s, color 0.13s;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+#qs-close:hover { background: #F3F4F6; color: #374151; }
+
+/* ── Multi-select bar ─────────────────────────────────────────────── */
+#qs-multi-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: rgba(37,99,235,0.06);
+  border-bottom: 1px solid rgba(37,99,235,0.15);
+}
+#qs-multi-bar.visible { display: flex; }
+
+#qs-multi-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2563EB;
+}
+
+#qs-multi-actions { display: flex; gap: 5px; }
+
+#qs-open-tabs {
+  padding: 5px 10px;
+  background: #2563EB;
+  color: #fff;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: background 0.13s;
+}
+#qs-open-tabs:hover { background: #1D4ED8; }
+
+#qs-open-group {
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  color: #374151;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.13s;
+}
+#qs-open-group:hover { border-color: #2563EB; color: #2563EB; }
 
 /* ── Engine Grid ─────────────────────────────────────────────────── */
 #qs-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  padding: 13px 12px 9px;
-  gap: 7px;
+  padding: 10px 10px 7px;
+  gap: 6px;
 }
 
 .qs-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 10px 4px 9px;
+  gap: 4px;
+  padding: 9px 3px 8px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.09);
-  color: #c8cde8;               /* light lavender — clearly visible */
-  font-size: 10.5px;            /* up from 10px                     */
+  background: #FFFFFF;
+  border: 1.5px solid #E5E7EB;
+  color: #374151;
+  font-size: 10px;
   font-weight: 700;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.16s;
+  position: relative;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 .qs-btn:hover {
-  background: rgba(255,255,255,0.13);
-  border-color: rgba(255,255,255,0.22);
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  background: rgba(37,99,235,0.06);
+  border-color: #2563EB;
+  color: #2563EB;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(37,99,235,0.12);
 }
-.qs-btn:active { transform: translateY(0); }
+.qs-btn:active { transform: translateY(0); box-shadow: none; }
+
+/* Multi-select mode */
+.qs-btn.selected {
+  background: rgba(37,99,235,0.08);
+  border-color: #2563EB;
+  color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+}
+.qs-btn.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 2px; right: 3px;
+  font-size: 8px;
+  font-weight: 800;
+  color: #2563EB;
+}
+
+/* Smart-recommended highlight */
+.qs-btn.recommended {
+  border-color: rgba(37,99,235,0.4);
+  background: rgba(37,99,235,0.04);
+}
+.qs-btn.recommended::before {
+  content: '★';
+  position: absolute;
+  top: 2px; left: 3px;
+  font-size: 7px;
+  color: #D97706;
+}
 
 .qs-btn-icon {
-  font-size: 16px;              /* up from 14px                     */
+  font-size: 17px;
   line-height: 1;
 }
 
+/* ── Command row ─────────────────────────────────────────────────── */
+#qs-cmd-hint {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  background: rgba(37,99,235,0.05);
+  border-top: 1px solid rgba(37,99,235,0.1);
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563EB;
+}
+#qs-cmd-hint.visible { display: flex; }
+#qs-cmd-hint-text { font-family: monospace; font-size: 11px; }
+
 /* ── Custom row ──────────────────────────────────────────────────── */
 #qs-custom-row {
-  padding: 0 12px 13px;
+  padding: 0 10px 10px;
   display: flex;
-  gap: 7px;
+  gap: 6px;
 }
 
 #qs-custom-input {
   flex: 1;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 9px;
-  padding: 8px 11px;
-  color: #ffffff;
-  font-size: 12.5px;            /* up from 12                       */
+  background: #F9FAFB;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: #111111;
+  font-size: 12px;
   font-weight: 500;
-  font-family: inherit;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-font-smoothing: antialiased;
 }
-#qs-custom-input::placeholder { color: #4a5075; font-weight: 400; }
+#qs-custom-input::placeholder {
+  color: #9CA3AF;
+  font-weight: 400;
+}
 #qs-custom-input:focus {
-  border-color: rgba(147,197,253,0.55);
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  background: #fff;
 }
 
 #qs-custom-go {
-  padding: 8px 15px;
-  background: #3b82f6;
+  padding: 7px 13px;
+  background: #2563EB;
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   color: #ffffff;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  letter-spacing: 0.03em;
-  transition: background 0.15s;
+  letter-spacing: 0.02em;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  transition: background 0.13s, transform 0.1s;
   white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
 }
-#qs-custom-go:hover { background: #2563eb; }
+#qs-custom-go:hover { background: #1D4ED8; }
+#qs-custom-go:active { transform: scale(0.96); }
+
+/* ── Keyboard shortcuts row ───────────────────────────────────────── */
+#qs-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: #F9FAFB;
+  border-top: 1px solid #F3F4F6;
+}
+
+.qs-key-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #9CA3AF;
+}
+
+.qs-key {
+  font-family: monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #6B7280;
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
