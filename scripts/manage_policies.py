@@ -46,10 +46,11 @@ def generate_index():
             
             # Prefer longer filenames as they are usually more specific (e.g. accessibility-score-calculator over accessibility)
             if title not in seen_titles or len(filename) > len(seen_titles[title]['filename']):
-                seen_titles[title] = {
                     'title': title,
                     'filename': filename,
-                    'url': f'https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/{filename}'
+                    'url': f'https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/{filename}',
+                    'has_terms': os.path.exists(os.path.join(policies_dir, filename.replace('.html', '-terms.html'))),
+                    'terms_url': f'https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/{filename.replace(".html", "-terms.html")}'
                 }
 
     final_policies = sorted(seen_titles.values(), key=lambda x: x['title'].lower())
@@ -155,7 +156,21 @@ def generate_index():
 
     cards = []
     for p in final_policies:
-        card = f"""
+        if p.get('has_terms'):
+            card = f"""
+        <div class="card">
+            <div class="info">
+                <h3>{p['title']}</h3>
+                <p>Privacy Policy & Terms</p>
+            </div>
+            <div class="link-box">{p['url']}</div>
+            <div style="display: flex; gap: 10px;">
+                <a href="privacy-policies/{p['filename']}" class="view-btn" style="flex: 1;">Privacy Policy</a>
+                <a href="privacy-policies/{p['filename'].replace('.html', '-terms.html')}" class="view-btn" style="flex: 1; background-color: #607d8b;">Terms of Service</a>
+            </div>
+        </div>"""
+        else:
+            card = f"""
         <div class="card">
             <div class="info">
                 <h3>{p['title']}</h3>
