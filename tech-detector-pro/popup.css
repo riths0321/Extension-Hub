@@ -470,6 +470,13 @@ body {
   background: var(--bg-section);
 }
 
+.tech-icon-wrap img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
 .tech-main { flex: 1; min-width: 0; }
 
 .tech-name {

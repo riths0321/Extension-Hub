@@ -20,6 +20,103 @@ const CAT_META = {
   other:      { label: 'Other',      icon: '🔧',  dot: 'cat-dot-other' },
 };
 
+// ─── Tech icon file mapping ───
+const TECH_ICON_FILES = {
+  // Frontend
+  react: 'react.svg',
+  nextjs: 'nextdotjs.svg',
+  vue: 'vuedotjs.svg',
+  nuxtjs: 'nuxt.svg',
+  angular: 'angular.svg',
+  svelte: 'svelte.svg',
+  gatsby: 'gatsby.svg',
+  remix: 'remix.svg',
+  astro: 'astro.svg',
+  preact: 'preact.svg',
+  solidjs: 'solid.svg',
+  alpinejs: 'alpinedotjs.svg',
+  emberjs: 'emberdotjs.svg',
+  // CSS/UI
+  bootstrap: 'bootstrap.svg',
+  tailwind: 'tailwindcss.svg',
+  bulma: 'bulma.svg',
+  materialui: 'materialdesign.svg',
+  // Backend
+  nodejs: 'nodedotjs.svg',
+  express: 'expressdotcom.svg',
+  django: 'django.svg',
+  flask: 'flask.svg',
+  fastapi: 'fastapi.svg',
+  spring: 'springboot.svg',
+  php: 'php.svg',
+  ruby: 'rubyonrails.svg',
+  laravel: 'laravel.svg',
+  // CMS
+  wordpress: 'wordpress.svg',
+  shopify: 'shopify.svg',
+  drupal: 'drupal.svg',
+  joomla: 'joomla.svg',
+  wix: 'wix.svg',
+  webflow: 'webflow.svg',
+  squarespace: 'squarespace.svg',
+  woocommerce: 'woocommerce.svg',
+  prestashop: 'prestashop.svg',
+  bigcommerce: 'bigcommerce.svg',
+  // Hosting/CDN
+  vercel: 'vercel.svg',
+  netlify: 'netlify.svg',
+  google_cloud: 'googlecloud.svg',
+  cloudflare: 'cloudflare.svg',
+  fastly: 'fastly.svg',
+  akamai: 'akamai.svg',
+  // Analytics
+  google_analytics_4: 'googleanalytics.svg',
+  google_tag_manager: 'googletagmanager.svg',
+  hotjar: 'hotjar.svg',
+  mixpanel: 'mixpanel.svg',
+  plausible: 'plausibleanalytics.svg',
+  matomo: 'matomo.svg',
+  // Libraries
+  jquery: 'jquery.svg',
+  axios: 'axios.svg',
+  lodash: 'lodash.svg',
+  threejs: 'threedotjs.svg',
+  d3js: 'd3.svg',
+  chartjs: 'chartdotjs.svg',
+  gsap: 'gsap.svg',
+  swiper: 'swiper.svg',
+  aos: 'bootstrap.svg',
+  momentjs: 'bootstrap.svg',
+  // Build
+  webpack: 'webpack.svg',
+  vite: 'vite.svg',
+  esbuild: 'esbuild.svg',
+  parcel: 'bootstrap.svg',
+  turbopack: 'bootstrap.svg',
+  // Payment
+  stripe: 'stripe.svg',
+  paypal: 'paypal.svg',
+  braintree: 'braintree.svg',
+  square: 'square.svg',
+  razorpay: 'razorpay.svg',
+  // Other
+  firebase: 'firebase.svg',
+  google_fonts: 'googlefonts.svg',
+  font_awesome: 'fontawesome.svg',
+  jsdelivr: 'jsdelivr.svg',
+  unpkg: 'bootstrap.svg',
+  cdnjs: 'bootstrap.svg',
+  aspnet: 'bootstrap.svg',
+  azure: 'bootstrap.svg',
+  aws: 'bootstrap.svg',
+  heroku: 'bootstrap.svg',
+  magento: 'bootstrap.svg',
+  materialize: 'materialdesign.svg',
+  amplitude: 'bootstrap.svg',
+  segment: 'bootstrap.svg',
+  facebook_pixel: 'bootstrap.svg',
+};
+
 // ─── Tech doc links map ───
 const TECH_LINKS = {
   // Frontend frameworks
@@ -165,7 +262,18 @@ function setUrl(url) {
   } catch { el.textContent = url; }
 }
 
+function canLoadPageFavicon(url) {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function loadFavicon(url) {
+  if (!canLoadPageFavicon(url)) return;
+
   try {
     const { origin } = new URL(url);
     const img = document.createElement('img');
@@ -175,7 +283,8 @@ function loadFavicon(url) {
     };
     img.onerror = () => {}; // keep SVG fallback
     img.src = `${origin}/favicon.ico`;
-    img.width = 20; img.height = 20;
+    img.width = 20;
+    img.height = 20;
   } catch {}
 }
 
@@ -433,10 +542,30 @@ function buildTechItem(tech) {
   item.dataset.category = tech.category;
   item.title = `Open ${tech.name} documentation`;
 
-  // Icon
+  // Icon - load SVG from icons folder based on tech ID
   const iconWrap = document.createElement('div');
   iconWrap.className = 'tech-icon-wrap';
-  iconWrap.textContent = meta.icon || '🔧';
+  
+  const iconFile = TECH_ICON_FILES[tech.id];
+  if (iconFile) {
+    // Load SVG icon from icons folder
+    const img = document.createElement('img');
+    img.src = `icons/${iconFile}`;
+    img.alt = tech.name;
+    img.title = tech.name;
+    img.style.width = '24px';
+    img.style.height = '24px';
+    img.style.objectFit = 'contain';
+    img.onerror = () => {
+      // Fallback to emoji if icon fails to load
+      img.style.display = 'none';
+      iconWrap.textContent = meta.icon || '🔧';
+    };
+    iconWrap.appendChild(img);
+  } else {
+    // Use emoji icon if no SVG mapping found
+    iconWrap.textContent = meta.icon || '🔧';
+  }
 
   // Main
   const main = document.createElement('div');
@@ -593,11 +722,20 @@ function renderHistory() {
 
     const fav = document.createElement('div');
     fav.className = 'history-favicon';
-    const img = document.createElement('img');
-    img.width = 14; img.height = 14;
-    img.onerror = () => { fav.textContent = '🌐'; };
-    try { img.src = new URL(entry.url).origin + '/favicon.ico'; } catch { fav.textContent = '🌐'; }
-    fav.appendChild(img);
+    if (canLoadPageFavicon(entry.url)) {
+      const img = document.createElement('img');
+      img.width = 14;
+      img.height = 14;
+      img.onerror = () => { fav.textContent = '🌐'; };
+      try {
+        img.src = new URL(entry.url).origin + '/favicon.ico';
+        fav.appendChild(img);
+      } catch {
+        fav.textContent = '🌐';
+      }
+    } else {
+      fav.textContent = '🌐';
+    }
 
     const main = document.createElement('div');
     main.className = 'history-main';
