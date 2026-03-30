@@ -13,6 +13,7 @@ const ENGINES = [
   { id: "images",       title: "Google Images",     url: "https://www.google.com/search?tbm=isch&q=%s" }
 ];
 
+
 // ── Install: build context menu ────────────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
