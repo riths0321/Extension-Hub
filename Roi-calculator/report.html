@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ROI Report</title>
+    <link rel="stylesheet" href="report.css" />
+  </head>
+  <body>
+    <main class="report-page">
+      <header class="report-header">
+        <h1>Feature ROI Report</h1>
+        <p id="reportSubtitle" class="report-subtitle"></p>
+      </header>
+
+      <section id="reportHero" class="report-hero hidden"></section>
+
+      <section id="reportSummary" class="report-cards"></section>
+
+      <section class="report-table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Category</th>
+              <th>ROI</th>
+              <th>Adj. ROI</th>
+              <th>Net Profit</th>
+              <th>IRR</th>
+              <th>Risk</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="reportRows"></tbody>
+        </table>
+      </section>
+
+      <footer class="report-footer">Feature ROI Pro · All figures are estimates for planning purposes</footer>
+    </main>
+
+    <script src="report.js"></script>
+  </body>
+</html>

@@ -1,71 +1,68 @@
-# 🔍 Tech Detector Pro
+# Tech Detector Pro
 
-## 👨‍💻 Made by Saurabh Tiwari
+Tech Detector Pro is a Manifest V3 Chrome extension that scans the active tab and surfaces the likely technologies used by a website. It keeps the experience local-first, readable, and fast with category grouping, search, history, export actions, and tuned light/dark themes.
 
-### 🧩 Description
-**Tech Detector Pro** is a powerful browser extension designed for developers, designers, and tech enthusiasts. It allows you to instantly detect and analyze the technology stack used by any website you visit. From frontend frameworks to backend technologies, CMS, and analytics tools, get a comprehensive report with a single click.
+## Features
 
-Whether you are competitive analysis, learning about new tech stacks, or just curious, Tech Detector Pro gives you the insights you need instantly.
+- One-click scan of the current tab
+- Grouped results for frontend, backend, CMS, analytics, hosting, libraries, payment, and build tools
+- Search and category filters inside the popup
+- Documentation links for detected technologies
+- Recent local scan history
+- Copy report and export JSON actions
+- Local Manrope fonts with improved light/dark contrast
+- CSP-safe popup setup with local assets only
 
-### 🚀 Features
-- **Comprehensive Detection**: Identifies frontend frameworks, backend technologies, CMS, analytics, hosting providers, and detailed libraries.
-- **Instant Scan**: One-click analysis of the current tab.
-- **Detailed Categorization**: Results are organized by category (Frontend, Backend, CMS, etc.) for easy reading.
-- **Export Options**: Copy results to clipboard, download as JSON, or share the report.
-- **Scan History**: Keeps a local history of your recent scans for quick reference.
-- **Responsive Design**: Modern, clean, and user-friendly interface with a dark mode theme.
+## Project Structure
 
-### 🛠️ Tech Stack
-- **HTML5**: semantic structure for the popup.
-- **CSS3**: Modern styling with CSS variables and flexbox/grid layouts.
-- **JavaScript (Vanilla)**: Core logic for detection and UI interaction.
-- **Chrome Extension (Manifest V3)**: Secure and performant extension architecture.
-
-### 📂 Folder Structure
-```
+```text
 tech-detector-pro/
-├── icons/                  # Extension icons
-├── background.js           # Service worker background logic
-├── content.js              # Content script for analyzing page DOM
-├── manifest.json           # Extension configuration
-├── popup.css               # Styling for the extension popup
-├── popup.html              # Main interface
-├── popup.js                # Popup logic and event handlers
-├── technologies.json       # Database of technology signatures
-└── theme-variables.css     # Design tokens and theme variables
+├── background.js
+├── content.js
+├── DOCUMENTATION.md
+├── icons/
+├── manifest.json
+├── popup.css
+├── popup.html
+├── popup.js
+├── README.md
+├── technologies.json
+└── theme-variables.css
 ```
 
-### ⚙️ Installation (Developer Mode)
-1.  **Clone the repository** to your local machine.
-2.  Open Google Chrome and navigate to `chrome://extensions/`.
-3.  Toggle **Developer mode** in the top-right corner.
-4.  Click **Load unpacked**.
-5.  Select the `tech-detector-pro` folder from the cloned repository.
-6.  The extension is now installed and ready to use!
+## Installation
 
-### 🧠 How It Works
-1.  **Detection**: When you click "Scan", the extension injects a script into the current page to analyze the DOM, scripts, and meta tags.
-2.  **Matching**: It compares the found data against a local database (`technologies.json`) of known technology signatures.
-3.  **Display**: The results are processed and displayed in the popup, categorized for clarity.
-4.  **Storage**: Scan results are saved to local storage for the History feature.
+1. Open `chrome://extensions/`
+2. Enable `Developer mode`
+3. Click `Load unpacked`
+4. Select the `tech-detector-pro` folder
 
-### 🔐 Permissions Explained
-- **`activeTab`**: Required to analyze the current webpage you are visiting.
-- **`scripting`**: Needed to inject the analysis script into the page to detect technologies.
-- **`storage`**: Used to save your scan history and user preferences locally.
-- **`notifications`**: (Optional) To notify you when a scan is complete or if an error occurs.
-- **`host_permissions` ("<all_urls>")**: Necessary to allow the extension to work on any website you visit.
+## How It Works
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Main Interface](https://via.placeholder.com/600x400?text=Tech+Detector+Pro+Interface)
-![Scan Results](https://via.placeholder.com/600x400?text=Scan+Results)
+1. The popup reads the active tab, stored theme, and recent history.
+2. Clicking `Scan Technologies` injects `content.js` into the current page.
+3. The page is analyzed against signatures from `technologies.json`.
+4. Results are rendered in the popup and can be filtered or exported.
+5. Theme preference and scan history are stored locally in Chrome storage.
 
-### 🔒 Privacy Policy
-We value your privacy.
-- **No Data Collection**: This extension does not collect, store, or transmit any personal data or browsing history to external servers.
-- **No Tracking**: There are no analytics or tracking scripts included in this extension.
-- **Local Processing**: All analysis happens directly in your browser.
+## Permissions
 
-### 📄 License
-This project is licensed under the **MIT License**.
+- `activeTab`: access the current tab for scanning
+- `scripting`: inject the content script on demand
+- `storage`: save theme preference and scan history
+- `tabs`: read tab metadata such as the current URL
+
+## Security
+
+- Manifest V3 architecture
+- `script-src 'self'`
+- `style-src 'self'`
+- `font-src 'self'`
+- `object-src 'none'`
+- No remote UI dependencies
+- No inline scripts
+- Popup visibility states use `hidden` instead of inline `display` styles
+
+## Privacy
+
+All scanning happens locally in the browser. The extension does not send scan results or browsing data to external servers.

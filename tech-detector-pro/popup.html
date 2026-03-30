@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="vibrant-tech">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,104 +7,153 @@
   <link rel="stylesheet" href="theme-variables.css">
   <link rel="stylesheet" href="popup.css">
 </head>
-<body data-theme="vibrant-tech">
-  <div class="container">
-    
-    <!-- Header -->
+<body data-theme="light">
+
+  <div class="popup-wrap">
+    <!-- ═══════════ HEADER ═══════════ -->
     <header class="header">
-      <h1>🔍 Tech Detector Pro</h1>
-      <p>Detect technologies used by current website</p>
+      <div class="header-left">
+        <div class="logo-mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <div>
+          <div class="header-title">Tech Detector Pro</div>
+          <div class="header-sub">Website Technology Scanner</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <svg id="themeIconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg id="themeIconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <!-- Current Website -->
-    <div class="current-site">
-      <h3>🌐 Current Website</h3>
-      <p id="currentUrl">Loading...</p>
-    </div>
-
-    <!-- Scan Button -->
-    <div class="scan-section">
-      <button id="scanBtn" class="btn-primary">
-        🚀 Scan Technologies
-      </button>
-      <button id="rescanBtn" class="btn-secondary">
-        🔄 Rescan
-      </button>
-    </div>
-
-    <!-- Loading -->
-    <div id="loading" class="loading">
-      <div class="spinner"></div>
-      <p>Scanning website technologies...</p>
-      <div class="progress">
-        <div class="progress-bar"></div>
+    <!-- ═══════════ CURRENT SITE CARD ═══════════ -->
+    <div class="site-card">
+      <div class="site-info">
+        <div class="site-favicon" id="siteFavicon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <div class="site-text">
+          <div class="site-label">Current Website</div>
+          <div class="site-url" id="currentUrl">Loading…</div>
+        </div>
       </div>
+      <button id="rescanBtn" class="rescan-btn" title="Scan again">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Scan Again
+      </button>
     </div>
 
-    <!-- Results -->
-    <div id="results" class="results">
-      <div class="results-header">
-        <h3>📊 Detected Technologies</h3>
-        <div class="stats">
-          <span id="techCount">0</span> technologies found
+    <!-- ═══════════ SCAN BUTTON ═══════════ -->
+    <div class="scan-area">
+      <button id="scanBtn" class="scan-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span id="scanBtnLabel">Scan Technologies</span>
+      </button>
+    </div>
+
+    <!-- ═══════════ LOADING ═══════════ -->
+    <div id="loading" class="loading-panel" hidden>
+      <div class="loader-ring"></div>
+      <div class="loader-text">Scanning website technologies…</div>
+      <div class="loader-bar-wrap"><div class="loader-bar" id="loaderBar"></div></div>
+    </div>
+
+    <!-- ═══════════ RESULTS ═══════════ -->
+    <div id="results" hidden>
+
+      <!-- Results header with count + search -->
+      <div class="results-top">
+        <div class="results-meta">
+          <span class="results-title">Detected Technologies</span>
+          <span class="results-badge" id="techCount">0</span>
+        </div>
+        <div class="results-subtitle" id="resultsSubtitle"></div>
+        <div class="search-wrap">
+          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search technologies…" autocomplete="off">
+          <button id="searchClearBtn" class="search-clear" title="Clear search" hidden>✕</button>
         </div>
       </div>
 
-      <!-- Categories -->
-      <div class="categories">
-        <button class="category-btn active" data-category="all">All</button>
-        <button class="category-btn" data-category="frontend">Frontend</button>
-        <button class="category-btn" data-category="backend">Backend</button>
-        <button class="category-btn" data-category="cms">CMS</button>
-        <button class="category-btn" data-category="analytics">Analytics</button>
-        <button class="category-btn" data-category="hosting">Hosting</button>
-        <button class="category-btn" data-category="libraries">Libraries</button>
+      <!-- Category filter pills -->
+      <div class="category-bar" id="categoryBar">
+        <button class="cat-pill active" data-category="all">All</button>
+        <button class="cat-pill" data-category="frontend">Frontend</button>
+        <button class="cat-pill" data-category="backend">Backend</button>
+        <button class="cat-pill" data-category="cms">CMS</button>
+        <button class="cat-pill" data-category="analytics">Analytics</button>
+        <button class="cat-pill" data-category="hosting">Hosting</button>
+        <button class="cat-pill" data-category="libraries">Libraries</button>
+        <button class="cat-pill" data-category="payment">Payment</button>
+        <button class="cat-pill" data-category="build_tools">Build</button>
       </div>
 
-      <!-- Tech List -->
-      <div class="tech-list" id="techList">
-        <!-- Technologies will be loaded here -->
-      </div>
+      <!-- Tech list grouped by category -->
+      <div class="tech-list" id="techList"></div>
 
-      <!-- Summary -->
-      <div class="summary">
-        <h4>📈 Technology Summary</h4>
-        <div class="summary-grid" id="summaryGrid">
-          <!-- Summary will be loaded here -->
-        </div>
-      </div>
-    </div>
-
-    <!-- Export Section -->
-    <div class="export-section">
-      <h3>📥 Export Results</h3>
-      <div class="export-buttons">
-        <button id="copyBtn" class="btn-secondary">
-          📋 Copy Report
+      <!-- Export row -->
+      <div class="export-row">
+        <button id="copyBtn" class="export-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copy Report
         </button>
-        <button id="downloadBtn" class="btn-secondary">
-          ⬇ Download JSON
-        </button>
-        <button id="shareBtn" class="btn-secondary">
-          🔗 Share
+        <button id="downloadBtn" class="export-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export JSON
         </button>
       </div>
     </div>
 
-    <!-- History -->
-    <div class="history-section">
-      <h3>📚 Scan History</h3>
+    <!-- ═══════════ SCAN HISTORY ═══════════ -->
+    <div class="history-section" id="historySection">
+      <div class="section-header">
+        <span class="section-title">Scan History</span>
+        <button id="clearHistoryBtn" class="link-btn">Clear</button>
+      </div>
       <div class="history-list" id="historyList">
-        <!-- History items will be loaded here -->
+        <div class="empty-state">
+          <div class="empty-icon">🕐</div>
+          <div class="empty-text">No scan history yet</div>
+        </div>
       </div>
     </div>
 
-    <!-- Footer -->
+    <!-- ═══════════ FOOTER ═══════════ -->
     <footer class="footer">
-      <p>Tech Detector Pro v1.0 | For Developers & Learners</p>
+      <span>Tech Detector Pro v2.0</span>
+      <span class="footer-dot">·</span>
+      <span>For Developers</span>
     </footer>
 
-  </div>
+  </div><!-- /popup-wrap -->
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast" aria-live="polite"></div>
 
   <script src="popup.js"></script>
 </body>

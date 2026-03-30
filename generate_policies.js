@@ -101,10 +101,16 @@ const generateIndexHTML = (extensions) => {
         <div class="card">
             <div class="info">
                 <h3>${ext.name}</h3>
-                <p>Privacy Policy</p>
+                <p>Privacy Policy${ext.hasTerms ? ' & Terms' : ''}</p>
             </div>
             <div class="link-box">https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/${ext.filename}</div>
+            ${ext.hasTerms ? `
+            <div style="display: flex; gap: 10px;">
+                <a href="privacy-policies/${ext.filename}" class="view-btn" style="flex: 1;">Privacy Policy</a>
+                <a href="privacy-policies/${ext.termsFilename}" class="view-btn" style="flex: 1; background-color: #607d8b;">Terms of Service</a>
+            </div>` : `
             <a href="privacy-policies/${ext.filename}" class="view-btn">View Policy</a>
+            `}
         </div>`).join('');
 
     return `<!DOCTYPE html>
@@ -282,8 +288,35 @@ directories.forEach(dir => {
         }
 
         fs.writeFileSync(existingPolicyPath, content);
+        
+        // Handle Terms of Service
+        let hasTerms = false;
+        let termsFilename = '';
+        const t1 = path.join(dirPath, 'terms.html');
+        const t2 = path.join(dirPath, 'terms_of_service.html');
+        const t3 = path.join(policiesDir, filename.replace('.html', '-terms.html'));
 
-        processedExtensions.push({ name, filename });
+        if (fs.existsSync(t1)) {
+            const termsContent = fs.readFileSync(t1, 'utf8');
+            termsFilename = filename.replace('.html', '-terms.html');
+            fs.writeFileSync(path.join(policiesDir, termsFilename), termsContent);
+            fs.unlinkSync(t1);
+            hasTerms = true;
+            console.log(`Moved custom terms: ${name} from terms.html`);
+        } else if (fs.existsSync(t2)) {
+            const termsContent = fs.readFileSync(t2, 'utf8');
+            termsFilename = filename.replace('.html', '-terms.html');
+            fs.writeFileSync(path.join(policiesDir, termsFilename), termsContent);
+            fs.unlinkSync(t2);
+            hasTerms = true;
+            console.log(`Moved custom terms: ${name} from terms_of_service.html`);
+        } else if (fs.existsSync(t3)) {
+            hasTerms = true;
+            termsFilename = filename.replace('.html', '-terms.html');
+            console.log(`Found existing terms: ${name}`);
+        }
+
+        processedExtensions.push({ name, filename, hasTerms, termsFilename });
     }
 });
 
