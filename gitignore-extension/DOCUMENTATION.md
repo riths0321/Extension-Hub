@@ -1,327 +1,104 @@
-# GitIgnore Generator - Extension Documentation
+# GitIgnore Generator Pro Documentation
 
-## 1. Extension Overview
+## Overview
 
-**Purpose**: GitIgnore Generator Pro generates .gitignore files with smart detection and customizable themes. It helps developers quickly create appropriate .gitignore files for their projects with support for different programming languages and frameworks.
+GitIgnore Generator Pro is a Chrome Manifest V3 extension for building `.gitignore` files from a guided popup workflow. The product direction should remain centered on speed, clarity, and local-first generation instead of trying to become a full repository-management platform.
 
-**Current Functionality**:
-- Smart technology/language detection
-- .gitignore file generation
-- Customizable theme support
-- Popup interface for quick generation
-- Options page for settings
-- Icon assets
-- Permission for active tab and scripting
+## Recommended Feature Scope
 
----
+### Core MVP
 
-## 2. Current Features (From Codebase Analysis)
+- Intelligent `.gitignore` generator with automatic project detection
+- Support for multiple languages, frameworks, and development environments
+- Rule-based system with selectable ignore patterns and categories
+- Preview editor showing generated `.gitignore` content before export
+- Export options including copy to clipboard and downloadable `.gitignore` file
+- Template library with reusable presets for different project types
+- Responsive UI with theme customization and settings persistence
 
-### Core Features Implemented:
-1. **GitIgnore Generation**
-   - Template-based .gitignore creation
-   - Language/framework detection
-   - Customizable rules
-   - Standard .gitignore patterns
-   - Multiple language support
+### Phase 2
 
-2. **Theme System**
-   - Theme selection capability
-   - Theme-based .gitignore generation
-   - Visual customization
-   - Preset configurations
-   - Theme persistence
+- Inline explanations and documentation for each rule
+- Custom rule creation and template saving capabilities
+- Automatic scanning of project dependency files for optimized ignore rules
+- Generation of related configuration files such as `.gitattributes`, `.editorconfig`, and `.dockerignore`
+- Best practice recommendations for repository structure
 
-3. **Smart Detection**
-   - Project type detection
-   - Framework identification
-   - Language detection
-   - Automatic rule application
-   - Suggestion based on content
+### Not for Current MVP
 
-4. **User Interface**
-   - Popup for main functionality
-   - Options page for settings
-   - Theme selection interface
-   - Generate button
-   - Download/copy functionality
+- Team governance workflows
+- Organization policy enforcement
+- GitHub, GitLab, or Bitbucket integration flows
+- Secret scanning or full security-audit tooling
+- Collaboration layers such as comments, sharing, ratings, or approvals
 
-5. **Output**
-   - .gitignore file content generation
-   - Download capability
-   - Copy to clipboard
-   - File format (.gitignore)
+## Current Codebase Reality
 
-6. **Permissions**
-   - Active tab access
-   - Content script scripting
-   - File download capability
-   - Storage for preferences
+The current extension already aligns best with a streamlined generator experience:
 
----
+- technology checkboxes
+- platform presets
+- automatic page-based detection
+- generated output preview
+- copy and download actions
+- theme persistence
 
-## 3. Problems & Limitations
+This means the product should build depth around template quality and guided selection, not around enterprise workflow complexity.
 
-### Current Limitations:
-1. **Content Limitations**
-   - Limited language/framework support
-   - Cannot automatically detect all languages
-   - Limited to common patterns
-   - No customization of patterns
-   - Cannot ignore specific patterns
-   - No explanation of rules
+## Architecture
 
-2. **User Experience**
-   - No preview of generated file
-   - Cannot select specific rules
-   - No rule documentation
-   - Limited customization
-   - No rule editing
-   - No versioning
+### Main files
 
-3. **Detection Limitations**
-   - Must manually specify project type
-   - Cannot detect all projects
-   - Limited project types
-   - No dependency file analysis
-   - Cannot scan package.json, pom.xml, etc.
-   - No intelligent guessing
+- `manifest.json`: extension metadata, permissions, and CSP
+- `background.js`: lightweight background setup
+- `popup/popup.html`: popup interface structure
+- `popup/popup.css`: theme system, typography, and layout
+- `popup/popup.js`: generation logic, detection, theme handling, and export actions
 
-4. **Advanced Features Missing**
-   - No gitkeep file generation
-   - No .gitattributes support
-   - No EditorConfig support
-   - No explanation comments
-   - No rule categories
-   - No security scanning
+## UX Direction
 
-5. **Collaboration**
-   - Cannot share configurations
-   - No team presets
-   - No organization standards
-   - No governance
+The UI should communicate:
 
-6. **Accessibility**
-   - No dark mode
-   - Limited documentation
-   - No inline help
-   - No tutorials
-   - Limited explanation
+- fast generation
+- clear selection flow
+- easy output review
+- low-friction copy/download actions
+- consistent, readable typography
 
----
+Typography should be applied consistently across headings, buttons, controls, and the output editor so the popup feels like one polished system rather than mixed browser defaults.
 
-## 4. Feature Enhancements
+## Implementation Priorities
 
-### Recommended Improvements:
+### First priority
 
-1. **Smart Detection**
-   - Analyze package.json for Node projects
-   - Detect Maven/Gradle for Java
-   - Analyze requirements.txt for Python
-   - Check Gemfile for Ruby
-   - Composer.json for PHP
-   - Auto-detect from file content
+- strengthen template quality
+- improve technology detection accuracy
+- introduce clearer rule grouping and categories
+- keep preview and export flow frictionless
 
-2. **Rule Selection**
-   - Checkboxes for each rule
-   - Category-based organization
-   - Rule description/explanation
-   - Why each rule matters
-   - Rule preview
-   - Custom rules input
+### Second priority
 
-3. **Advanced Features**
-   - .gitattributes generation
-   - .gitkeep file creation
-   - EditorConfig support
-   - Global gitignore reference
-   - Inline comments explaining rules
-   - Rule categories (dependencies, OS, IDE)
+- rule descriptions
+- saved custom presets
+- dependency-file-aware recommendations
+- related file generation
 
-4. **Customization**
-   - Custom patterns input
-   - Pattern templates
-   - Save custom presets
-   - Theme-based generation
-   - Organization standards
+## Security and CSP
 
-5. **Documentation & Help**
-   - Rule explanations inline
-   - Links to documentation
-   - Best practices guide
-   - Common pitfalls
-   - Tutorials
-   - Videos
+The extension should remain:
 
-6. **Sharing & Collaboration**
-   - Save and share configurations
-   - Team presets
-   - Organization standards
-   - Company templates
-   - Community templates
+- Manifest V3 based
+- local-first
+- free from remote script or style dependencies
+- aligned with strict popup CSP rules
 
-7. **Additional Outputs**
-   - .gitattributes file
-   - .editorconfig file
-   - .npmrc template
-   - .python-version
-   - Docker .dockerignore
+Any new feature should preserve CSP-safe DOM updates and avoid unnecessary complexity in the popup layer.
 
----
+## Testing Focus
 
-## 5. Unique & Advanced Features
-
-### Innovative Enhancements:
-
-1. **Intelligent Project Analysis**
-   - Scan project files automatically
-   - Detect multiple technologies
-   - Recommend optimal ignores
-   - Security scanning (exposed secrets)
-   - Compliance checking
-
-2. **Template System**
-   - Create custom templates
-   - Team/organization templates
-   - Public template library
-   - Template ratings/reviews
-   - Template versioning
-
-3. **Integration Hub**
-   - GitHub integration (create on repo)
-   - GitLab integration
-   - Bitbucket integration
-   - Direct commit to repo
-   - PR creation
-
-4. **Best Practices**
-   - Security pattern detection
-   - Accidental commit prevention
-   - Credential exposure warnings
-   - Performance recommendations
-   - Size optimization
-
-5. **Governance & Compliance**
-   - Organization standards enforcement
-   - Audit logging
-   - Approval workflows
-   - Policy templates
-   - Compliance checking
-
-6. **Collaboration**
-   - Share templates team-wide
-   - Comment on rules
-   - Discuss patterns
-   - Version control
-   - Change tracking
-
-7. **Visualization**
-   - Preview ignored files
-   - Show what would be ignored
-   - File structure overlay
-   - Size impact of ignores
-
----
-
-## 6. User Productivity Impact
-
-### How Enhancements Benefit Users:
-
-**Time Savings**:
-- Instant .gitignore creation
-- No manual pattern typing
-- Pre-built templates
-- Automatic detection
-- Multi-file generation
-
-**Best Practices**:
-- Follow Git best practices
-- Industry-standard patterns
-- Security best practices
-- Performance optimization
-- Consistency enforcement
-
-**Prevention of Errors**:
-- Prevent accidental commits
-- Protect sensitive files
-- Avoid bloated repositories
-- Maintain clean history
-- Reduce merge conflicts
-
-**Organization Alignment**:
-- Follow team standards
-- Consistent configurations
-- Security compliance
-- Policy enforcement
-- Audit trails
-
-**Team Coordination**:
-- Share team standards
-- Unified approach
-- Reduce inconsistencies
-- Educational value
-- Knowledge sharing
-
----
-
-## 7. Future Scope
-
-### Long-term Vision:
-
-1. **Repository Management Hub**
-   - Repository initialization
-   - Configuration management
-   - File generation
-   - Best practices enforcement
-   - Governance automation
-
-2. **Enterprise Solution**
-   - Organization standards
-   - Governance enforcement
-   - Audit logging
-   - Compliance reporting
-   - Role-based access
-
-3. **Integration Platform**
-   - GitHub Actions automation
-   - GitLab CI/CD integration
-   - Bitbucket Pipelines
-   - Repository templates
-   - Workflow automation
-
-4. **AI-Powered Features**
-   - Intelligent recommendations
-   - Security scanning
-   - Compliance automation
-   - Pattern learning
-   - Predictive configuration
-
-5. **Community Marketplace**
-   - Template sharing
-   - Best practices library
-   - Community standards
-   - Star/rating system
-   - Community discussions
-
-6. **Advanced Governance**
-   - Policy templates
-   - Automated enforcement
-   - Audit trails
-   - Compliance reporting
-   - Integration with security tools
-
----
-
-## Development Constraints
-
-- **Frontend-Only**: File generation in browser
-- **No Backend**: No server-side storage
-- **Internet Not Required**: Works offline
-- **Repository Access**: Cannot modify actual repos from browser
-- **GitHub Limitation**: Requires OAuth for direct writes
-
----
-
-## Summary
-
-GitIgnore Generator can expand from a simple file generator into a comprehensive repository management and governance platform. By adding intelligent detection, template systems, team collaboration, and integration with Git platforms, it would serve development teams wanting to enforce consistent standards and best practices across projects.
+- verify technology selection and badge counts
+- verify auto-detect behavior on supported pages
+- verify generated output quality for mixed stacks
+- verify copy and download flows
+- verify theme persistence and typography consistency
+- verify popup behavior still complies with manifest CSP
