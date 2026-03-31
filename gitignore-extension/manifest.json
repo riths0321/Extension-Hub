@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "GitIgnore Generator Pro",
-  "version": "1.0",
-  "description": "Generate .gitignore files with smart detection and themes",
+  "name": "GitIgnore Pro",
+  "version": "3.0.0",
+  "description": "Premium .gitignore generator with smart detection, presets, live preview, and multi-config output",
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "GitIgnore Generator",
+    "default_title": "GitIgnore Pro",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -22,8 +22,17 @@
     "storage",
     "scripting"
   ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   },
-  "web_accessible_resources": []
+  "web_accessible_resources": [
+    {
+      "resources": ["popup/fullpage.html", "popup/popup.css", "fonts/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

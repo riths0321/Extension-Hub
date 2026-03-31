@@ -1,18 +1,20 @@
-// ── Search engine definitions ─────────────────────────────────────────────────
+// ── Quick Search v3 — Background Service Worker ────────────────────────────────
+
 const ENGINES = [
-  { id: "google",       title: "Google Search",   icon: "G",  url: "https://www.google.com/search?q=%s" },
-  { id: "youtube",      title: "YouTube",          icon: "YT", url: "https://www.youtube.com/results?search_query=%s" },
-  { id: "wikipedia",    title: "Wikipedia",        icon: "W",  url: "https://en.wikipedia.org/wiki/Special:Search?search=%s" },
-  { id: "amazon",       title: "Amazon",           icon: "A",  url: "https://www.amazon.com/s?k=%s" },
-  { id: "github",       title: "GitHub",           icon: "GH", url: "https://github.com/search?q=%s" },
-  { id: "stackoverflow",title: "StackOverflow",    icon: "SO", url: "https://stackoverflow.com/search?q=%s" },
-  { id: "twitter",      title: "Twitter / X",      icon: "X",  url: "https://twitter.com/search?q=%s" },
-  { id: "reddit",       title: "Reddit",           icon: "R",  url: "https://www.reddit.com/search/?q=%s" },
-  { id: "translate",    title: "Google Translate",  icon: "TR", url: "https://translate.google.com/?sl=auto&tl=en&text=%s" },
-  { id: "images",       title: "Google Images",    icon: "IMG",url: "https://www.google.com/search?tbm=isch&q=%s" }
+  { id: "google",       title: "Google Search",    url: "https://www.google.com/search?q=%s" },
+  { id: "youtube",      title: "YouTube",           url: "https://www.youtube.com/results?search_query=%s" },
+  { id: "wikipedia",    title: "Wikipedia",         url: "https://en.wikipedia.org/wiki/Special:Search?search=%s" },
+  { id: "amazon",       title: "Amazon",            url: "https://www.amazon.com/s?k=%s" },
+  { id: "github",       title: "GitHub",            url: "https://github.com/search?q=%s" },
+  { id: "stackoverflow",title: "Stack Overflow",    url: "https://stackoverflow.com/search?q=%s" },
+  { id: "twitter",      title: "Twitter / X",       url: "https://twitter.com/search?q=%s" },
+  { id: "reddit",       title: "Reddit",            url: "https://www.reddit.com/search/?q=%s" },
+  { id: "translate",    title: "Google Translate",  url: "https://translate.google.com/?sl=auto&tl=en&text=%s" },
+  { id: "images",       title: "Google Images",     url: "https://www.google.com/search?tbm=isch&q=%s" }
 ];
 
-// ── Install: build context menu ───────────────────────────────────────────────
+
+// ── Install: build context menu ────────────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
@@ -40,13 +42,13 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
       id: "custom-search",
       parentId: "qsearch-parent",
-      title: "Add Custom Search...",
+      title: "Custom Engines…",
       contexts: ["selection"]
     });
   });
 });
 
-// ── Context menu click ────────────────────────────────────────────────────────
+// ── Context menu click ─────────────────────────────────────────────────────────
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const text = (info.selectionText || "").trim();
   if (!text) return;
@@ -61,7 +63,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     openSearch(engine.url, text);
     saveHistory(text, engine.title);
   } else {
-    // Could be a custom engine id
     chrome.storage.local.get(["customEngines"], (data) => {
       const custom = (data.customEngines || []).find(e => e.id === info.menuItemId);
       if (custom) {
@@ -72,18 +73,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-// ── Keyboard shortcut ─────────────────────────────────────────────────────────
+// ── Keyboard shortcut ──────────────────────────────────────────────────────────
 chrome.commands.onCommand.addListener((command) => {
   if (command === "quick-search") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { type: "showPopup", text: "" });
-      }
+      if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { type: "showPopup", text: "" });
     });
   }
 });
 
-// ── Messages from popup / content ────────────────────────────────────────────
+// ── Message handler ────────────────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (!isTrustedSender(sender)) {
@@ -91,29 +90,59 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // 🔐 Centralized safe tab opening (from content.js & popup.js)
+  // Open a single search tab
   if (msg.type === "openSearchTab") {
     if (!msg.url || !isSafeUrl(msg.url)) {
       sendResponse({ ok: false, reason: "Invalid URL" });
       return;
     }
-
     chrome.tabs.create({ url: msg.url, active: true });
-    if (msg.text && msg.engine) {
-      saveHistory(msg.text, msg.engine);
+    if (msg.text && msg.engine) saveHistory(msg.text, msg.engine);
+    sendResponse({ ok: true });
+    return;
+  }
+
+  // Open multiple searches as tab group
+  if (msg.type === "openTabGroup") {
+    if (!msg.searches || !Array.isArray(msg.searches)) {
+      sendResponse({ ok: false });
+      return;
     }
+    const safeSearches = msg.searches.filter(s => s.url && isSafeUrl(s.url));
+    if (!safeSearches.length) { sendResponse({ ok: false }); return; }
+
+    // Create tabs first, then group them
+    const tabIds = [];
+    let created = 0;
+
+    safeSearches.forEach((search, i) => {
+      chrome.tabs.create({ url: search.url, active: i === 0 }, (tab) => {
+        tabIds.push(tab.id);
+        created++;
+        if (created === safeSearches.length) {
+          // Group the tabs
+          chrome.tabs.group({ tabIds }, (groupId) => {
+            if (chrome.tabGroups && msg.groupName) {
+              chrome.tabGroups.update(groupId, {
+                title: msg.groupName.slice(0, 25),
+                color: "blue"
+              });
+            }
+          });
+        }
+      });
+    });
 
     sendResponse({ ok: true });
     return;
   }
 
-  // History search from popup
+  // Perform search (from history re-search)
   if (msg.type === "performSearch") {
     if (!msg.url || !msg.text || !isSafeUrl(msg.url)) {
       sendResponse({ ok: false });
       return;
     }
-
     const finalUrl = msg.url.replace("%s", encodeURIComponent(msg.text));
     chrome.tabs.create({ url: finalUrl, active: true });
     saveHistory(msg.text, msg.engine);
@@ -129,24 +158,44 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  // Custom engines
+  // Delete single history item
+  if (msg.type === "deleteHistoryItem") {
+    chrome.storage.local.get(["searchHistory"], (data) => {
+      const history = (data.searchHistory || []).filter(h => h.timestamp !== msg.id);
+      chrome.storage.local.set({ searchHistory: history }, () => sendResponse({ ok: true }));
+    });
+    return true;
+  }
+
+  // Clear all history
+  if (msg.type === "clearHistory") {
+    chrome.storage.local.set({ searchHistory: [], favoriteHistory: [] }, () =>
+      sendResponse({ ok: true })
+    );
+    return true;
+  }
+
+  // Save custom engine
   if (msg.type === "saveCustomEngine") {
     chrome.storage.local.get(["customEngines"], (data) => {
       const engines = data.customEngines || [];
       engines.push(msg.engine);
       chrome.storage.local.set({ customEngines: engines }, () => {
-        chrome.contextMenus.create({
-          id: msg.engine.id,
-          parentId: "qsearch-parent",
-          title: msg.engine.name,
-          contexts: ["selection"]
-        });
+        try {
+          chrome.contextMenus.create({
+            id: msg.engine.id,
+            parentId: "qsearch-parent",
+            title: msg.engine.name,
+            contexts: ["selection"]
+          });
+        } catch (_) {}
         sendResponse({ ok: true });
       });
     });
     return true;
   }
 
+  // Remove custom engine
   if (msg.type === "removeCustomEngine") {
     chrome.storage.local.get(["customEngines"], (data) => {
       const filtered = (data.customEngines || []).filter(e => e.id !== msg.id);
@@ -157,14 +206,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     });
     return true;
   }
-
-  if (msg.type === "clearHistory") {
-    chrome.storage.local.set({ searchHistory: [] }, () => sendResponse({ ok: true }));
-    return true;
-  }
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
 function openSearch(urlTemplate, text) {
   chrome.tabs.create({
     url: urlTemplate.replace("%s", encodeURIComponent(text)),
@@ -173,22 +217,19 @@ function openSearch(urlTemplate, text) {
 }
 
 function saveHistory(text, engine) {
-  chrome.storage.local.get(["searchHistory"], (data) => {
+  chrome.storage.local.get(["searchHistory", "historyLimit"], (data) => {
+    const limit   = data.historyLimit || 50;
     const history = data.searchHistory || [];
-    history.push({ text, engine, timestamp: Date.now() });
-    // Keep only last 50
-    if (history.length > 50) history.splice(0, history.length - 50);
+    history.push({ text, engine, timestamp: Date.now(), id: Date.now().toString() });
+    if (history.length > limit) history.splice(0, history.length - limit);
     chrome.storage.local.set({ searchHistory: history });
   });
 }
 
-// ── Security: allow only extension scripts ─────────────────────────
 function isTrustedSender(sender) {
-  // allow extension pages & content scripts only
   return sender.id === chrome.runtime.id;
 }
 
-// ── Security: allow only http/https navigation ─────────────────────
 function isSafeUrl(url) {
   try {
     const u = new URL(url);

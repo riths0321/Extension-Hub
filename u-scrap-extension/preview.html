@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>U-Scraper — Data Preview</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="preview-page">
+<div class="app-container preview-shell">
+  <header class="app-header">
+    <div class="brand">
+      <img src="icons/icon48.png" alt="U-Scraper logo" class="logo">
+      <div class="brand-copy">
+        <div class="brand-row">
+          <h1>U-Scraper</h1>
+          <span class="version-badge">v2.0</span>
+        </div>
+        <p class="brand-subtitle">Review scraped data and export it in the format you need</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="main-nav preview-nav">
+    <button class="nav-item active" data-tab="overview">Overview</button>
+    <button class="nav-item" data-tab="data">Data Table</button>
+    <button class="nav-item" data-tab="media">Media</button>
+    <button class="nav-item" data-tab="raw">Raw JSON</button>
+  </nav>
+
+  <main class="content-area preview-content">
+    <section class="status-card preview-toolbar">
+      <div class="status-text">
+        <h3>Preview Workspace</h3>
+        <p>Inspect the latest scrape, search rows, browse media, and export everything locally.</p>
+      </div>
+      <div class="preview-actions">
+        <button id="export-json-btn" class="btn btn-outline">JSON</button>
+        <button id="export-csv-btn" class="btn btn-outline">CSV</button>
+        <button id="export-txt-btn" class="btn btn-outline">TXT</button>
+        <button id="export-html-btn" class="btn btn-outline">Table</button>
+        <button id="download-media-btn" class="btn btn-outline">Download Media</button>
+        <button id="close-btn" class="btn btn-danger-outline">Close</button>
+      </div>
+    </section>
+
+    <div class="preview-dashboard">
+      <div class="preview-main">
+        <section id="tab-overview" class="tab-content active">
+          <div id="overview-content"><div class="no-data-msg">Loading...</div></div>
+        </section>
+
+        <section id="tab-data" class="tab-content">
+          <div class="results-preview table-panel">
+            <div class="table-controls">
+              <input type="text" id="table-search" placeholder="Search rows..." class="table-search-input">
+              <span id="table-row-count" class="row-count-badge">0 rows</span>
+            </div>
+            <div id="data-table-wrap"><div class="no-data-msg">No tabular data.</div></div>
+          </div>
+        </section>
+
+        <section id="tab-media" class="tab-content">
+          <div class="results-preview media-panel">
+            <div id="media-data"><div class="no-data-msg">No media found.</div></div>
+          </div>
+        </section>
+
+        <section id="tab-raw" class="tab-content">
+          <div class="results-preview raw-panel">
+            <div class="json-controls">
+              <button id="copy-json-btn" class="btn btn-outline compact">Copy JSON</button>
+            </div>
+            <pre id="raw-data" class="json-preview"></pre>
+          </div>
+        </section>
+      </div>
+
+      <aside class="preview-sidebar">
+        <div class="settings-group">
+          <h3>Summary</h3>
+          <div id="summary-stats" class="stats-grid"></div>
+        </div>
+        <div class="settings-group">
+          <h3>Top Links</h3>
+          <div id="quick-links" class="list-container"><ul id="links-list"></ul></div>
+        </div>
+        <div class="settings-group">
+          <h3>Contacts</h3>
+          <div id="contacts-list"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>Local &amp; Secure • v2.0 • Preview stays on your device</p>
+  </footer>
+</div>
+
+<script src="preview.js"></script>
+</body>
+</html>

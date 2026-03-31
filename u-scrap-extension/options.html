@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>U-Scraper Dashboard</title>
+  <link rel="stylesheet" href="popup.css"/>
+  <style>
+    body { width: 100%; min-height: 100vh; background: #f5f7f8; }
+    .app-container { width: 100%; max-height: none; max-width: 900px; margin: 0 auto; }
+    .content-area { overflow-y: visible; }
+    .tab-content { padding: 20px; }
+    .main-nav .nav-item { font-size: 13px; padding: 11px 8px; }
+
+    /* Analytics */
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .metric-card { background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px; text-align: center; }
+    .metric-num { font-size: 28px; font-weight: 700; color: var(--primary); }
+    .metric-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+    .chart-wrap { background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+    .chart-wrap h3 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .5px; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 80px; }
+    .bar { flex: 1; background: var(--primary-light); border-radius: 4px 4px 0 0; position: relative; min-width: 8px; transition: background .2s; }
+    .bar:hover { background: var(--primary); }
+    .bar:hover::after { content: attr(data-label); position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%); background: #1a2e2d; color: #fff; padding: 3px 7px; border-radius: 5px; font-size: 11px; white-space: nowrap; }
+    .bar-labels { display: flex; gap: 4px; }
+    .bar-label { flex: 1; text-align: center; font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top-domains { display: flex; flex-direction: column; gap: 6px; }
+    .domain-row { display: flex; align-items: center; gap: 10px; }
+    .domain-name { flex: 1; font-size: 12px; color: var(--text); font-family: monospace; }
+    .domain-bar-track { flex: 2; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden; }
+    .domain-bar-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+    .domain-count { font-size: 12px; color: var(--text-secondary); min-width: 30px; text-align: right; }
+    .format-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .format-pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .fp-json { background: #e3f2fd; color: #1565c0; }
+    .fp-csv { background: #e8f5e9; color: #2e7d32; }
+    .fp-html { background: #f3e5f5; color: #6a1b9a; }
+    .fp-media { background: #fff3e0; color: #e65100; }
+
+    /* Templates */
+    .templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .template-card { background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px; }
+    .template-card h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .template-meta { font-size: 12px; color: var(--text-secondary); }
+    .template-actions { display: flex; gap: 6px; margin-top: 10px; }
+
+    /* History table */
+    .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .history-table th { background: var(--bg-secondary); padding: 8px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+    .history-table td { padding: 9px 14px; border-bottom: 1px solid var(--border-light); }
+    .history-table tr:hover td { background: #f8fafb; }
+    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+    .status-dot.ok { background: var(--success); }
+    .status-dot.err { background: var(--danger); }
+
+    /* About */
+    .about-section { max-width: 560px; }
+    .feature-list { list-style: none; margin: 12px 0; }
+    .feature-list li { padding: 6px 0; border-bottom: 1px solid var(--border-light); font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .feature-list li::before { content: '✓'; color: var(--primary); font-weight: 700; }
+  </style>
+</head>
+<body class="options-page">
+<div class="app-container">
+  <header class="app-header">
+    <div class="brand">
+      <img src="icons/icon48.png" alt="Logo" class="logo">
+      <div>
+        <h1>U-Scraper Dashboard</h1>
+        <span class="version-badge">v2.0</span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="main-nav">
+    <button class="nav-item active" data-tab="analytics">Analytics</button>
+    <button class="nav-item" data-tab="history">History</button>
+    <button class="nav-item" data-tab="templates">Templates</button>
+    <button class="nav-item" data-tab="settings">Settings</button>
+    <button class="nav-item" data-tab="about">About</button>
+  </nav>
+
+  <main class="content-area">
+
+    <!-- Analytics -->
+    <section id="tab-analytics" class="tab-content active">
+      <div class="analytics-grid" id="analytics-metrics"></div>
+
+      <div class="chart-wrap">
+        <h3>Scrapes — Last 14 days</h3>
+        <div class="bar-chart" id="daily-chart"></div>
+        <div class="bar-labels" id="daily-labels"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="chart-wrap">
+          <h3>Top Domains</h3>
+          <div class="top-domains" id="top-domains"></div>
+        </div>
+        <div class="chart-wrap">
+          <h3>Export Formats Used</h3>
+          <div class="format-pills" id="format-pills"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section id="tab-history" class="tab-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span style="font-size:13px;color:var(--text-secondary);" id="history-count">Loading...</span>
+        <button id="btn-clear-history" class="btn btn-danger compact">Clear All</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Status</th><th>Title / URL</th><th>Domain</th>
+              <th>Items</th><th>Duration</th><th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Templates -->
+    <section id="tab-templates" class="tab-content">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+        Saved scraping configurations. Load them from the popup's Fields tab.
+      </p>
+      <div class="templates-grid" id="templates-grid">
+        <div class="empty-state">No templates saved yet.</div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="tab-settings" class="tab-content">
+      <div class="settings-group">
+        <h3>Scraping Defaults</h3>
+        <label class="toggle-row"><span>Auto-scroll page</span><input type="checkbox" id="setting-autoscroll"></label>
+        <label class="toggle-row"><span>Wait for SPA idle</span><input type="checkbox" id="setting-wait-idle"></label>
+        <label class="toggle-row"><span>Clean & deduplicate data</span><input type="checkbox" id="setting-clean-data"></label>
+      </div>
+      <div class="settings-group">
+        <h3>Export Defaults</h3>
+        <label class="toggle-row"><span>Pretty print JSON</span><input type="checkbox" id="setting-json-pretty"></label>
+        <label class="toggle-row"><span>Include metadata in exports</span><input type="checkbox" id="setting-include-meta"></label>
+      </div>
+      <div class="settings-group">
+        <h3>Notifications</h3>
+        <label class="toggle-row"><span>Show desktop notifications on completion</span><input type="checkbox" id="setting-notifications"></label>
+      </div>
+      <button id="btn-save-settings" class="btn btn-primary" style="margin-top:16px;">Save Settings</button>
+    </section>
+
+    <!-- About -->
+    <section id="tab-about" class="tab-content">
+      <div class="about-section">
+        <div class="status-card" style="margin-bottom:16px;">
+          <div class="status-indicator done"></div>
+        <div class="status-text">
+            <h3>U-Scraper v2.0</h3>
+            <p>Local-first web scraper built for flexible extraction and export</p>
+          </div>
+        </div>
+        <ul class="feature-list">
+          <li>Visual element picker — click to select any element</li>
+          <li>Multi-page & pagination scraping</li>
+          <li>Export to JSON, CSV, and HTML</li>
+          <li>Bulk media download for images, video, and audio</li>
+          <li>Drag-and-drop field mapper with transforms</li>
+          <li>Reusable templates per domain</li>
+          <li>SPA & JavaScript-rendered content support</li>
+          <li>Form-based & authenticated page scraping</li>
+          <li>Data cleaning, normalization, deduplication</li>
+          <li>Real-time progress & desktop notifications</li>
+          <li>Full analytics dashboard</li>
+        </ul>
+        <p style="font-size:13px;color:var(--text-secondary);margin-top:14px;">
+          All data stays on your device. No servers, no tracking, no ads.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>U-Scraper v2.0 — Local & Secure</p>
+  </footer>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

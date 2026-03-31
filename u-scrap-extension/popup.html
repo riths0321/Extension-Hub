@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>U-Scraper</title>
+  <link rel="stylesheet" href="popup.css"/>
+</head>
+<body>
+<div class="app-container">
+  <header class="app-header">
+    <div class="brand">
+      <img src="icons/icon48.png" alt="Logo" class="logo">
+      <div class="brand-copy">
+        <div class="brand-row">
+          <h1>U-Scraper</h1>
+          <span class="version-badge">v2.0</span>
+        </div>
+        <p class="brand-subtitle">Smart scraping and export for the current page</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="main-nav">
+    <button class="nav-item active" data-tab="scrape">Scrape</button>
+    <button class="nav-item" data-tab="history">History</button>
+    <button class="nav-item" data-tab="settings">Settings</button>
+  </nav>
+
+  <main class="content-area">
+
+    <!-- ── SCRAPE TAB ─────────────────────────────────────────────── -->
+    <section id="tab-scrape" class="tab-content active">
+      <div class="status-card" id="status-card">
+        <div class="status-indicator ready" id="status-indicator"></div>
+        <div class="status-text">
+          <h3 id="status-heading">Ready</h3>
+          <p id="status-details">Configure fields or start a full-page scrape</p>
+        </div>
+      </div>
+
+      <div class="scrape-intro">
+        Scrape the current page, review the result, and export it in the format you need.
+      </div>
+
+      <div class="progress-bar-wrap hidden" id="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <span class="progress-label" id="progress-label">0%</span>
+      </div>
+
+      <div class="controls-grid">
+        <div class="controls-header">
+          <span class="controls-title">Scrape Setup</span>
+          <span class="controls-subtitle">Choose how the current page should be scraped</span>
+        </div>
+        <div class="control-group">
+          <label for="scrape-type">Scrape Mode</label>
+          <div class="select-wrap">
+            <select id="scrape-type">
+              <option value="full-page">Full Page</option>
+              <option value="custom-fields">Custom Fields</option>
+              <option value="multi-page">Multi-Page</option>
+            </select>
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="scrape-speed">Scrape Speed</label>
+          <div class="select-wrap">
+            <select id="scrape-speed">
+              <option value="slow">Slow</option>
+              <option value="medium" selected>Medium</option>
+              <option value="fast">Fast</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-page options -->
+      <div id="multi-page-opts" class="sub-options hidden" style="margin-top: 10px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px;">
+        <label style="font-size: 11px; font-weight: 700;">MAX PAGES TO CRAWL</label>
+        <input type="number" id="max-pages" min="1" max="50" value="5" class="compact-input" style="width: 100%; margin-top: 5px;">
+      </div>
+
+      <div class="action-buttons">
+        <button id="btn-start" class="btn btn-primary">▶ Start Scraping</button>
+        <button id="btn-stop" class="btn btn-danger" disabled>■ Stop</button>
+      </div>
+
+      <div class="results-preview hidden" id="results-area">
+        <div class="results-header">
+          <span>Collected: <strong id="result-count">0</strong> items</span>
+        </div>
+        <button id="btn-view-results" class="btn btn-primary btn-view-results">Preview Data</button>
+        <div class="export-row">
+          <span class="export-label">Export:</span>
+          <button id="btn-export-json" class="btn btn-export" data-format="json">JSON</button>
+          <button id="btn-export-csv" class="btn btn-export" data-format="csv">CSV</button>
+          <button id="btn-export-txt" class="btn btn-export" data-format="txt">TXT</button>
+          <button id="btn-export-html" class="btn btn-export" data-format="html">Table</button>
+          <button id="btn-download-media" class="btn btn-export" data-format="media">Download All Media</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── HISTORY TAB ───────────────────────────────────────────── -->
+    <section id="tab-history" class="tab-content">
+      <div class="history-header">
+        <div>
+          <div class="section-label">Recent Activity</div>
+          <p class="history-subtitle">Review your latest scrapes and clear the list when needed.</p>
+        </div>
+        <button id="btn-clear-history" class="btn btn-danger-outline compact history-clear-btn">Clear History</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <div class="empty-state">No history yet.</div>
+      </div>
+    </section>
+
+    <!-- ── SETTINGS TAB ──────────────────────────────────────────── -->
+    <section id="tab-settings" class="tab-content">
+      <div class="settings-group">
+        <h3>Scraping</h3>
+        <label class="toggle-row">
+          <span>Auto-scroll page</span>
+          <input type="checkbox" id="setting-autoscroll" checked>
+        </label>
+        <label class="toggle-row">
+          <span>Wait for SPA idle</span>
+          <input type="checkbox" id="setting-wait-idle" checked>
+        </label>
+        <label class="toggle-row">
+          <span>Clean & deduplicate</span>
+          <input type="checkbox" id="setting-clean-data" checked>
+        </label>
+      </div>
+      <div class="settings-group">
+        <h3>Export</h3>
+        <label class="toggle-row">
+          <span>Pretty print JSON</span>
+          <input type="checkbox" id="setting-json-pretty" checked>
+        </label>
+        <label class="toggle-row">
+          <span>Include metadata</span>
+          <input type="checkbox" id="setting-include-meta" checked>
+        </label>
+      </div>
+      <div class="settings-group">
+        <h3>Notifications</h3>
+        <label class="toggle-row">
+          <span>Show completion alerts</span>
+          <input type="checkbox" id="setting-notifications" checked>
+        </label>
+      </div>
+      <button id="btn-save-settings" class="btn btn-primary" style="width:100%;margin-top:12px;">Save Settings</button>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Local & Secure • v2.0 • <a href="#" id="open-options-link">Dashboard →</a></p>
+  </footer>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
