@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=400, initial-scale=1" />
+  <title>Password Vault Pro</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+<div class="container">
+
+  <!-- ══════════════════════════════════
+       LOCK SCREEN
+  ══════════════════════════════════ -->
+  <div id="lockScreen" class="screen">
+    <div class="lock-hero">
+      <div class="lock-icon-wrap">
+        <img src="icons/icon48.png" alt="Lock" class="lock-icon-img" />
+      </div>
+      <h1 class="lock-title">Password Vault Pro</h1>
+      <p class="lock-subtitle">Enter your master password to unlock</p>
+    </div>
+
+    <div class="master-input-wrap">
+      <span class="input-icon">
+        <svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#key"></use></svg>
+      </span>
+      <input type="password" id="masterPassword" placeholder="Master password" autocomplete="current-password" />
+      <button class="input-eye" id="toggleMasterPw" type="button" aria-label="Toggle visibility">
+        <svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#eye"></use></svg>
+      </button>
+    </div>
+
+    <div id="lockError" class="error-text">Incorrect password. Please try again.</div>
+    <button class="btn-unlock" id="unlockBtn" type="button">Unlock Vault</button>
+    <div class="setup-hint" id="setupHint">First time? Set a master password above (min 8 chars)</div>
+    <button class="link-btn" id="forgotMasterBtn" type="button">Forgot master password? Reset vault</button>
+
+    <div class="lock-features">
+      <div class="feature">
+        <div class="feature-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#lock"></use></svg></div>
+        <span>AES-256 local encryption</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#bolt"></use></svg></div>
+        <span>Crypto-secure generator</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#cloud-off"></use></svg></div>
+        <span>Zero cloud - stays on device</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       DASHBOARD (all tabs)
+  ══════════════════════════════════ -->
+  <div id="dashboard" class="screen hidden">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div class="brand">
+          <div class="brand-icon"><img src="icons/icon48.png" alt="PM" /></div>
+          <span class="brand-name">Password Vault Pro</span>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" id="themeToggleBtn" title="Toggle theme">
+            <svg class="icon" aria-hidden="true"><use href="icons/ui-sprite.svg#moon"></use></svg>
+          </button>
+          <button class="icon-btn" id="lockBtn" title="Lock vault">
+            <svg class="icon" aria-hidden="true"><use href="icons/ui-sprite.svg#lock"></use></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="tab-bar" role="tablist">
+        <button class="tab active" data-tab="vault" role="tab">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#key"></use></svg>
+          Vault
+        </button>
+        <button class="tab" data-tab="generator" role="tab">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#bolt"></use></svg>
+          Generator
+        </button>
+        <button class="tab" data-tab="health" role="tab">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#heart"></use></svg>
+          Health
+        </button>
+      </div>
+    </div>
+
+    <!-- ── TAB: VAULT ───────────────────────────── -->
+    <div id="tab-vault" class="tab-panel active">
+      <div class="subheader">
+        <div class="stats-bar">
+          <div class="stat-chip"><div class="dot"></div><span id="passwordCount">0 saved</span></div>
+          <div class="stat-chip" id="weakChip"><div class="dot warn" id="weakDot"></div><span id="weakCount">0 weak</span></div>
+          <div class="stat-chip" id="dupChip" style="display:none"><div class="dot danger"></div><span id="dupCount">0 reused</span></div>
+        </div>
+        <div class="search-wrap">
+          <span class="search-icon">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#search"></use></svg>
+          </span>
+          <input type="text" id="search" placeholder="Search site, username, tag…" autocomplete="off" />
+        </div>
+        <!-- Tag filter row -->
+        <div class="tag-filter-row" id="tagFilterRow">
+          <button class="tag-filter active" data-tag="">All</button>
+        </div>
+      </div>
+
+      <div class="passwords-list" id="passwordsList">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg class="icon icon-lg" aria-hidden="true"><use href="icons/ui-sprite.svg#key"></use></svg>
+          </div>
+          <div class="empty-text">No passwords saved yet</div>
+          <div class="empty-subtext">Click "Add Password" to get started</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-action primary" id="addPassword">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#plus"></use></svg>
+          Add Password
+        </button>
+        <button class="btn-action" id="importBtn">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#download"></use></svg>
+          Import
+        </button>
+        <button class="btn-action" id="exportBtn">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#upload"></use></svg>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <!-- ── TAB: GENERATOR ──────────────────────── -->
+    <div id="tab-generator" class="tab-panel hidden">
+      <div class="gen-body">
+
+        <!-- Mode toggle -->
+        <div class="gen-mode-row">
+          <button class="mode-btn active" data-mode="password" id="modePassword">Random</button>
+          <button class="mode-btn" data-mode="passphrase" id="modePassphrase">Passphrase</button>
+        </div>
+
+        <!-- Output box -->
+        <div class="gen-output-wrap">
+          <div id="genOutput" class="gen-output">Click Generate</div>
+          <div class="gen-strength-bar"><div id="genStrengthFill" class="gen-strength-fill"></div></div>
+          <div class="gen-output-meta">
+            <span id="genStrengthLabel" class="strength-badge">—</span>
+            <span id="genEntropy" class="gen-entropy">— bits</span>
+          </div>
+        </div>
+
+        <!-- PASSWORD MODE options -->
+        <div id="pwOptions">
+          <div class="gen-row">
+            <label class="gen-label">Length: <strong id="lengthVal">16</strong></label>
+            <input type="range" id="lengthSlider" min="8" max="64" value="16" class="gen-slider" />
+          </div>
+          <div class="gen-checks">
+            <label class="gen-check"><input type="checkbox" id="chkUpper" checked /><span>A–Z</span></label>
+            <label class="gen-check"><input type="checkbox" id="chkLower" checked /><span>a–z</span></label>
+            <label class="gen-check"><input type="checkbox" id="chkNumbers" checked /><span>0–9</span></label>
+            <label class="gen-check"><input type="checkbox" id="chkSymbols" checked /><span>!@#</span></label>
+            <label class="gen-check"><input type="checkbox" id="chkNoAmbiguous" /><span>No 0/O/l</span></label>
+          </div>
+        </div>
+
+        <!-- PASSPHRASE MODE options -->
+        <div id="ppOptions" class="hidden">
+          <div class="gen-row">
+            <label class="gen-label">Words: <strong id="wordCountVal">4</strong></label>
+            <input type="range" id="wordCountSlider" min="3" max="8" value="4" class="gen-slider" />
+          </div>
+          <div class="gen-row">
+            <label class="gen-label">Separator</label>
+            <select id="separatorSelect" class="gen-select">
+              <option value="-">Hyphen  (word-word)</option>
+              <option value=".">Dot     (word.word)</option>
+              <option value="_">Underscore</option>
+              <option value=" ">Space</option>
+              <option value="">None</option>
+            </select>
+          </div>
+          <label class="gen-check"><input type="checkbox" id="chkCapitalize" checked /><span>Capitalize first letter</span></label>
+          <label class="gen-check" style="margin-top:6px"><input type="checkbox" id="chkAddNumber" checked /><span>Append number</span></label>
+        </div>
+
+        <!-- Batch -->
+        <div class="gen-row" style="margin-top:6px">
+          <label class="gen-label">Generate</label>
+          <select id="batchCount" class="gen-select">
+            <option value="1">1 password</option>
+            <option value="5">5 passwords</option>
+            <option value="10">10 passwords</option>
+          </select>
+        </div>
+
+        <!-- Actions -->
+        <div class="gen-actions">
+          <button class="btn-gen-primary" id="generateBtn">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#bolt"></use></svg>
+            Generate
+          </button>
+          <button class="btn-gen-secondary" id="copyGenBtn" title="Copy to clipboard">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#clipboard"></use></svg>
+            Copy
+          </button>
+          <button class="btn-gen-secondary" id="saveToVaultBtn" title="Save to vault">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#save"></use></svg>
+            Save to Vault
+          </button>
+          <button class="btn-gen-secondary" id="autoFillGenBtn" title="Auto-fill on current page">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#pencil"></use></svg>
+            Fill
+          </button>
+        </div>
+
+        <!-- Batch results -->
+        <div id="batchResults" class="batch-results hidden"></div>
+
+        <!-- History -->
+        <div class="gen-history-wrap">
+          <div class="gen-history-header">
+            <span>Recent generated</span>
+            <button class="link-btn" id="clearHistoryBtn">Clear</button>
+          </div>
+          <div id="genHistory" class="gen-history"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── TAB: HEALTH ─────────────────────────── -->
+    <div id="tab-health" class="tab-panel hidden">
+      <div class="health-body">
+        <div class="health-grid">
+          <div class="health-card" id="hc-total">
+            <div class="hc-num" id="hcTotal">0</div>
+            <div class="hc-label">Total passwords</div>
+          </div>
+          <div class="health-card warn" id="hc-weak">
+            <div class="hc-num" id="hcWeak">0</div>
+            <div class="hc-label">Weak passwords</div>
+          </div>
+          <div class="health-card danger" id="hc-reused">
+            <div class="hc-num" id="hcReused">0</div>
+            <div class="hc-label">Reused passwords</div>
+          </div>
+          <div class="health-card info" id="hc-old">
+            <div class="hc-num" id="hcOld">0</div>
+            <div class="hc-label">Older than 90 days</div>
+          </div>
+          <div class="health-card breach" id="hc-breach">
+            <div class="hc-num" id="hcBreach">—</div>
+            <div class="hc-label">In data breaches</div>
+          </div>
+          <div class="health-card ok" id="hc-score">
+            <div class="hc-num" id="hcScore">—</div>
+            <div class="hc-label">Vault score</div>
+          </div>
+        </div>
+
+        <div class="health-actions">
+          <button class="btn-health-primary" id="checkBreachBtn">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#search"></use></svg>
+            Check Breaches (HIBP)
+          </button>
+          <button class="btn-health-secondary" id="changeMasterBtn">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#key"></use></svg>
+            Change Master Password
+          </button>
+        </div>
+
+        <!-- Issue list -->
+        <div class="health-issues" id="healthIssues">
+          <div class="health-empty">Run a breach check or add passwords to see issues here.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dashboard -->
+
+  <!-- ══════════════════════════════════
+       ADD / EDIT MODAL
+  ══════════════════════════════════ -->
+  <div id="passwordModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#lock"></use></svg></div>
+          <span id="modalTitle">Add Password</span>
+        </h3>
+        <button class="close-btn" id="closeModal" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Website / App</label>
+          <input type="text" id="website" placeholder="example.com" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Username / Email</label>
+          <input type="text" id="username" placeholder="you@example.com" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <div class="password-input">
+            <input type="password" id="password" placeholder="Enter or generate a password" autocomplete="new-password" />
+            <button class="show-password" id="showPassword" type="button" aria-label="Toggle visibility">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#eye"></use></svg>
+            </button>
+          </div>
+        </div>
+        <!-- Quick generate inside modal -->
+        <button class="btn-inline-gen" id="inlineGenBtn" type="button">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#bolt"></use></svg>
+          Generate strong password
+        </button>
+        <div class="form-group">
+          <label>Tag <span class="optional-label">(optional)</span></label>
+          <select id="entryTag" class="form-select">
+            <option value="">No tag</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+            <option value="Finance">Finance</option>
+            <option value="Social">Social</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes <span class="optional-label">(optional)</span></label>
+          <textarea id="notes" rows="2" placeholder="Any extra notes…"></textarea>
+        </div>
+        <div class="password-strength" id="passwordStrength">
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <div class="strength-text" id="strengthText">Password strength</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelBtn" type="button">Cancel</button>
+        <button class="btn-primary"   id="savePassword" type="button">Save Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       DETAILS MODAL
+  ══════════════════════════════════ -->
+  <div id="detailsModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon" id="detailsFavicon">
+            <svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#key"></use></svg>
+          </div>
+          <span id="detailsSite">Details</span>
+        </h3>
+        <button class="close-btn" id="closeDetails" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="details-field">
+          <div class="details-label">Website</div>
+          <div class="details-value"><span id="detailsWebsiteVal">—</span></div>
+        </div>
+        <div class="details-field">
+          <div class="details-label">Username / Email</div>
+          <div class="details-value">
+            <span id="detailsUsernameVal">—</span>
+            <button class="copy-inline-btn" id="copyDetailsUsername" title="Copy username" aria-label="Copy username">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#clipboard"></use></svg>
+            </button>
+          </div>
+        </div>
+        <div class="details-field">
+          <div class="details-label">Password</div>
+          <div class="details-value masked" id="detailsPassword">
+            <span id="detailsPasswordVal">********</span>
+            <div class="details-actions">
+              <button class="copy-inline-btn" id="toggleDetailsPassword" title="Reveal" aria-label="Reveal password">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#eye"></use></svg>
+              </button>
+              <button class="copy-inline-btn" id="copyDetailsPassword" title="Copy password" aria-label="Copy password">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#clipboard"></use></svg>
+              </button>
+              <button class="copy-inline-btn" id="copyBothBtn" title="Copy user and password" aria-label="Copy user and password">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#user"></use></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="details-field" id="detailsNotesWrap">
+          <div class="details-label">Notes</div>
+          <div class="details-value notes-font"><span id="detailsNotesVal">—</span></div>
+        </div>
+        <div class="details-field" id="detailsTagWrap" style="display:none">
+          <div class="details-label">Tag</div>
+          <div class="details-value"><span id="detailsTagVal">—</span></div>
+        </div>
+        <!-- Age info -->
+        <div class="details-age" id="detailsAge"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="editFromDetails" type="button">Edit</button>
+        <button class="btn-action-sm" id="autofillDetails" type="button">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="icons/ui-sprite.svg#pencil"></use></svg>
+          Auto-fill
+        </button>
+        <button class="btn-primary" id="closeDetailsBtn" type="button">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SAVE GENERATED PASSWORD MODAL
+  ══════════════════════════════════ -->
+  <div id="saveGenModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#save"></use></svg></div>
+          Save to Vault
+        </h3>
+        <button class="close-btn" id="closeSaveGen" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Generated Password</label>
+          <div class="details-value" id="genPasswordPreview" style="font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace;word-break:break-all;display:block;padding:10px 12px;"></div>
+        </div>
+        <div class="form-group">
+          <label>Website / App</label>
+          <input type="text" id="saveGenWebsite" placeholder="example.com" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Username / Email</label>
+          <input type="text" id="saveGenUsername" placeholder="you@example.com" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Tag</label>
+          <select id="saveGenTag" class="form-select">
+            <option value="">No tag</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+            <option value="Finance">Finance</option>
+            <option value="Social">Social</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelSaveGen" type="button">Cancel</button>
+        <button class="btn-primary"   id="confirmSaveGen" type="button">Save to Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       DELETE MODAL
+  ══════════════════════════════════ -->
+  <div id="deleteModal" class="modal hidden">
+    <div class="modal-content delete-confirm-modal">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#trash"></use></svg></div>
+          Delete Password
+        </h3>
+        <button class="close-btn" id="closeDelete" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-message">Are you sure you want to delete the password for <strong id="deleteTarget">this entry</strong>? This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelDelete"  type="button">Cancel</button>
+        <button class="btn-danger"    id="confirmDelete" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       IMPORT MODAL
+  ══════════════════════════════════ -->
+  <div id="importModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#download"></use></svg></div>
+          Import Passwords
+        </h3>
+        <button class="close-btn" id="closeImport" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Select JSON backup file</label>
+          <input type="file" id="importFile" accept=".json" />
+        </div>
+        <div class="import-info">
+          <p><strong>Format:</strong> JSON array exported from this extension</p>
+          <p><strong>Note:</strong> Merges with existing — no duplicates by ID</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelImport"  type="button">Cancel</button>
+        <button class="btn-primary"   id="confirmImport" type="button">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       EXPORT CONFIRM MODAL
+  ══════════════════════════════════ -->
+  <div id="exportConfirmModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#upload"></use></svg></div>
+          Export Vault
+        </h3>
+        <button class="close-btn" id="cancelExport2" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-message" style="color:var(--text-dim)">This will download an <strong>unencrypted</strong> JSON file containing all your passwords. Store it securely.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelExport"  type="button">Cancel</button>
+        <button class="btn-primary"   id="confirmExport" type="button">Download Backup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       RESET VAULT MODAL
+  ══════════════════════════════════ -->
+  <div id="resetModal" class="modal hidden">
+    <div class="modal-content delete-confirm-modal">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#alert"></use></svg></div>
+          Reset Vault
+        </h3>
+        <button class="close-btn" id="closeReset" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-message">This will delete all saved passwords on this device. You will need to set a new master password.</p>
+        <p class="delete-message" style="margin-top:6px;">This action cannot be undone.</p>
+        <div class="form-group" style="margin-top:12px;">
+          <label>Type RESET to confirm</label>
+          <input type="text" id="resetConfirmInput" placeholder="RESET" autocomplete="off" />
+        </div>
+        <label class="confirm-check">
+          <input type="checkbox" id="resetConfirmCheck" />
+          I understand this will delete all saved passwords
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelReset" type="button">Cancel</button>
+        <button class="btn-danger" id="confirmReset" type="button" disabled>Reset Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       CHANGE MASTER PASSWORD MODAL
+  ══════════════════════════════════ -->
+  <div id="changeMasterModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>
+          <div class="modal-header-icon"><svg class="icon icon-md" aria-hidden="true"><use href="icons/ui-sprite.svg#key"></use></svg></div>
+          Change Master Password
+        </h3>
+        <button class="close-btn" id="closeChangeMaster" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="currentMaster" placeholder="Current master password" />
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newMaster" placeholder="New master password (min 8 chars)" />
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmMaster" placeholder="Repeat new password" />
+        </div>
+        <div id="changeMasterError" class="error-text"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancelChangeMaster" type="button">Cancel</button>
+        <button class="btn-primary"   id="confirmChangeMaster" type="button">Change Password</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.container -->
+
+<script src="popup.js"></script>
+<script src="dropdowns.js"></script>
+</body>
+</html>
