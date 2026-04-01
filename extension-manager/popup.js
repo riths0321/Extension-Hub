@@ -69,6 +69,7 @@ class ExtensionManagerPro {
     this.bindEvents();
     await this.loadMetadata();
     await this.loadExtensions();
+    this.settingsModal.updateProfiles(this.metadata.profiles);
     this.bindManagementListeners();
   }
 
@@ -93,9 +94,6 @@ class ExtensionManagerPro {
     disabledCount: document.getElementById("disabled-count"),
     riskCount: document.getElementById("risk-count"),
     
-    // Profile elements
-    profileSelect: document.getElementById("profile-select"),
-    
     // Batch toolbar elements
     selectionCount: document.getElementById("selection-count"),
     batchToolbar: document.getElementById("batch-toolbar"),
@@ -103,33 +101,18 @@ class ExtensionManagerPro {
     // Import/Export
     importFile: document.getElementById("import-file"),
     toastRoot: document.getElementById("toast-root"),
+    modalRoot: document.getElementById("modal-root"),
     
     // Buttons - Header
     refreshButton: document.getElementById("refresh-button"),
     exportButton: document.getElementById("export-button"),
     importButton: document.getElementById("import-button"),
     
-    // Buttons - Profile controls
-    saveProfileButton: document.getElementById("save-profile-button"),
-    applyProfileButton: document.getElementById("apply-profile-button"),
-    deleteProfileButton: document.getElementById("delete-profile-button"),
-    
-    // Buttons - Batch operations
-    batchEnableButton: document.getElementById("batch-enable-button"),
-    batchDisableButton: document.getElementById("batch-disable-button"),
-    clearSelectionButton: document.getElementById("clear-selection-button"),
-    
     // Buttons - All extensions
     enableAllButton: document.getElementById("enable-all-button"),
     disableAllButton: document.getElementById("disable-all-button")
   };
 
-  // Log which elements are missing (for debugging)
-  Object.entries(this.elements).forEach(([key, element]) => {
-    if (!element) {
-      console.warn(`Element not found: ${key}`);
-    }
-  });
 }
 
   bindEvents() {
@@ -146,19 +129,6 @@ class ExtensionManagerPro {
     this.elements.importButton.addEventListener("click", () => this.elements.importFile?.click());
   }
   
-  // Profile buttons
-  if (this.elements.saveProfileButton) {
-    this.elements.saveProfileButton.addEventListener("click", () => this.saveProfile());
-  }
-  
-  if (this.elements.applyProfileButton) {
-    this.elements.applyProfileButton.addEventListener("click", () => this.applySelectedProfile());
-  }
-  
-  if (this.elements.deleteProfileButton) {
-    this.elements.deleteProfileButton.addEventListener("click", () => this.deleteSelectedProfile());
-  }
-  
   // All extensions buttons
   if (this.elements.enableAllButton) {
     this.elements.enableAllButton.addEventListener("click", () => this.runAllOperation(true));
@@ -168,22 +138,6 @@ class ExtensionManagerPro {
     this.elements.disableAllButton.addEventListener("click", () => this.runAllOperation(false));
   }
   
-  // Batch operation buttons
-  if (this.elements.batchEnableButton) {
-    this.elements.batchEnableButton.addEventListener("click", () => this.runBatchOperation(true));
-  }
-  
-  if (this.elements.batchDisableButton) {
-    this.elements.batchDisableButton.addEventListener("click", () => this.runBatchOperation(false));
-  }
-  
-  if (this.elements.clearSelectionButton) {
-    this.elements.clearSelectionButton.addEventListener("click", () => {
-      this.state.selected.clear();
-      this.render();
-    });
-  }
-
   // Search input
   if (this.elements.searchInput) {
     this.elements.searchInput.addEventListener("input", (event) => {
@@ -205,11 +159,6 @@ class ExtensionManagerPro {
       this.state.filter = event.target.value;
       this.render();
     });
-  }
-
-  // Profile select
-  if (this.elements.profileSelect) {
-    this.elements.profileSelect.addEventListener("change", () => this.renderProfiles());
   }
 
   // Import file
@@ -358,33 +307,9 @@ class ExtensionManagerPro {
   render() {
     this.filteredExtensions = this.getVisibleExtensions();
     this.updateStats();
-    this.renderProfiles();
     this.renderList();
     this.updateBatchToolbar();
   }
-
-  renderProfiles() {
-  const profiles = this.metadata.profiles || {};
-  const profileNames = Object.keys(profiles).sort((left, right) => left.localeCompare(right));
-
-  if (!this.elements.profileSelect) {
-    console.warn('Profile select element not found');
-    return;
-  }
-
-  const previousValue = this.elements.profileSelect.value;
-  
-  this.elements.profileSelect.replaceChildren();
-  this.elements.profileSelect.appendChild(this.createOption("", "Select a profile"));
-  
-  profileNames.forEach((name) => {
-    this.elements.profileSelect.appendChild(this.createOption(name, name));
-  });
-
-  if (profileNames.includes(previousValue)) {
-    this.elements.profileSelect.value = previousValue;
-  }
-}
 
   renderList() {
     this.elements.grid.replaceChildren();
@@ -518,7 +443,11 @@ class ExtensionManagerPro {
       return;
     }
 
-    const confirmed = window.confirm(`Remove "${extension.name}"? This will uninstall it from Chrome.`);
+    const confirmed = await this.confirmDialog({
+      title: "Remove extension",
+      message: `Remove "${extension.name}"? This will uninstall it from Chrome.`,
+      confirmText: "Remove"
+    });
     if (!confirmed) {
       return;
     }
@@ -567,7 +496,11 @@ class ExtensionManagerPro {
       return;
     }
 
-    const confirmed = window.confirm(`${enabled ? "Enable" : "Disable"} all available extensions?`);
+    const confirmed = await this.confirmDialog({
+      title: enabled ? "Enable all" : "Disable all",
+      message: `${enabled ? "Enable" : "Disable"} all available extensions?`,
+      confirmText: enabled ? "Enable all" : "Disable all"
+    });
     if (!confirmed) {
       return;
     }
@@ -587,7 +520,7 @@ class ExtensionManagerPro {
 
     await this.storage.saveProfile(profileName.trim(), profile);
     this.metadata.profiles = await this.storage.getProfiles();
-    this.renderProfiles();
+    this.settingsModal.updateProfiles(this.metadata.profiles);
     this.toast(`Saved profile "${profileName.trim()}"`);
   }
 
@@ -620,7 +553,7 @@ async applyProfile(profileName) {
     
     await this.storage.deleteProfile(profileName);
     this.metadata.profiles = await this.storage.getProfiles();
-    this.renderProfiles();
+    this.settingsModal.updateProfiles(this.metadata.profiles);
     this.toast(`Deleted profile "${profileName}"`);
   }
 
@@ -705,6 +638,60 @@ async applyProfile(profileName) {
     window.setTimeout(() => {
       node.remove();
     }, 2400);
+  }
+
+  confirmDialog({ title = "Confirm", message = "", confirmText = "Confirm" } = {}) {
+    return new Promise((resolve) => {
+      const root = this.elements.modalRoot || document.body;
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+
+      const card = document.createElement("div");
+      card.className = "modal-card";
+
+      const header = document.createElement("div");
+      header.className = "modal-header";
+      const h2 = document.createElement("h2");
+      h2.textContent = title;
+      const close = document.createElement("button");
+      close.className = "modal-close";
+      close.type = "button";
+      close.setAttribute("aria-label", "Close");
+      close.textContent = "✕";
+      header.append(h2, close);
+
+      const body = document.createElement("div");
+      body.className = "modal-body";
+      const p = document.createElement("p");
+      p.className = "modal-message";
+      p.textContent = message;
+      body.appendChild(p);
+
+      const footer = document.createElement("div");
+      footer.className = "modal-footer";
+      const cancel = document.createElement("button");
+      cancel.className = "ghost-button";
+      cancel.type = "button";
+      cancel.textContent = "Cancel";
+      const ok = document.createElement("button");
+      ok.className = "primary-button";
+      ok.type = "button";
+      ok.textContent = confirmText;
+      footer.append(cancel, ok);
+
+      card.append(header, body, footer);
+      overlay.appendChild(card);
+      root.appendChild(overlay);
+
+      const cleanup = (result) => {
+        overlay.remove();
+        resolve(result);
+      };
+      close.addEventListener("click", () => cleanup(false));
+      cancel.addEventListener("click", () => cleanup(false));
+      ok.addEventListener("click", () => cleanup(true));
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) cleanup(false); });
+    });
   }
 
   formatDate(timestamp) {

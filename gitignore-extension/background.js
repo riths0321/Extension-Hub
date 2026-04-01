@@ -1,8 +1,3 @@
-// ======== CHROME REVIEWER-SAFE BACKGROUND SCRIPT ========
-// ✅ NO network requests
-// ✅ NO file probing
-// ✅ DOM-only detection
-// ✅ Privacy-first approach
 
 /**
  * Detect tech stack using ONLY DOM analysis (no network requests)

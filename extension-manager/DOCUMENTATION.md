@@ -2,257 +2,163 @@
 
 ## 1. Overview
 
-`Extension Manager Pro` is a Manifest V3 Chrome extension for quick extension management from a popup interface.
+Extension Manager Pro is a Manifest V3 Chrome extension for fast extension management from a single popup.
 
-It is designed around a simple use case:
-
-- view installed extensions
-- search and filter them quickly
-- enable or disable them
-- inspect essential details
-- remove or open settings when needed
-
-The current product intentionally favors a compact popup workflow over a heavy dashboard.
+Primary goals:
+- View installed extensions
+- Search and filter quickly
+- Enable/disable
+- Inspect details
+- Remove or open settings
 
 ---
 
 ## 2. Architecture
 
 ### Core Files
+- manifest.json
+  - MV3 config and CSP
 
-- `manifest.json`
-  Chrome extension configuration
+- popup.html
+  - Popup layout and templates
 
-- `popup.html`
-  Popup structure and layout
+- popup.css
+  - Theme, layout, and component styles
 
-- `popup.css`
-  Theme, layout, and component styling
+- popup.js
+  - Main logic: rendering, filtering, actions, backup
 
-- `popup.js`
-  Main extension list logic, rendering, search, filters, actions, import/export
+- details-modal.js
+  - Details modal UI and events
 
-- `details-modal.js`
-  Extension detail modal renderer and interactions
+- settings-modal.js
+  - Settings modal (profiles, backup, display)
 
-- `storage.js`
-  Wrapper around `chrome.storage.local` for favorites, tags, and local metadata
+- dropdowns.js
+  - Custom dropdown system (CSP-safe)
 
-- `background.js`
-  Lightweight service worker for command support
+- storage.js
+  - chrome.storage.local wrapper
+
+- background.js
+  - Lightweight service worker (keyboard shortcut handler)
 
 ---
 
 ## 3. Implemented Features
 
 ### Extension Listing
-
-- uses `chrome.management.getAll()`
-- excludes the current extension
-- shows installed extensions in card layout
-- displays:
-  - icon
-  - name
-  - version
-  - description
-  - status
+- Uses chrome.management.getAll()
+- Excludes self
+- Shows icon, name, version, description, status
 
 ### Search and Filtering
-
-- real-time search
-- search fields:
-  - name
-  - description
-  - developer label
-- filters:
-  - all
-  - enabled
-  - disabled
-  - favorites
-
-### Sorting
-
-- name
-- install date surrogate (`first seen`)
-- enabled status
-- developer
+- Search by name, description, developer
+- Filters: all, enabled, disabled, favorites
 
 ### Actions
-
-- enable extension
-- disable extension
-- batch enable selected
-- batch disable selected
-- open details modal
-- open settings/options page
-- uninstall extension when removable
+- Enable/disable toggle
+- Remove (when allowed)
+- Open settings/options page
+- Batch enable/disable
 
 ### Details Modal
+- Name, version, developer label
+- Permissions and risky warnings
+- Favorites toggle
+- Tags
 
-- extension name
-- version
-- developer
-- install type
-- homepage URL
-- description
-- permissions
-- security warnings
-- tags
-- favorite toggle
-
-### Storage-backed Features
-
-Stored with `chrome.storage.local`:
-
-- favorites
-- tags
-- first seen timestamps
-- backup/import metadata
+### Settings Modal
+- Profile management
+- Backup export/import
+- Display toggles
 
 ### Backup and Restore
-
-- export JSON backup
-- import JSON backup
-- restore extension enabled states where Chrome allows it
+- Export JSON
+- Import JSON
+- Restore extension enabled states (if Chrome allows)
 
 ### UI States
-
-- loading state
-- empty state
-- toast feedback
-- statistics summary
+- Loading
+- Empty
+- Toast feedback
+- Compact stats section
 
 ---
 
 ## 4. UI Structure
 
-Current popup layout:
-
-1. Header
-2. Statistics summary
-3. Search and filter controls
-4. Batch action area
+Popup layout:
+1. Header with actions
+2. Compact stats grid
+3. Search and filter
+4. Batch controls
 5. Extension list
 
-This matches the project’s current lightweight UX direction.
+Settings and details use modal overlays.
 
 ---
 
 ## 5. Theme System
 
-The current visual system is documented separately in:
+Baseline:
+- Font: Manrope (local files)
+- White panels
+- Primary blue actions
+- Rounded UI controls
 
-- `THEME_DESIGN.md`
-
-Approved design baseline:
-
-- font: `Manrope`
-- white background
-- primary blue actions
-- black heading text
-- grey secondary text
-- rounded rectangle controls
-- light blue borders and soft cards
-
-Primary color references:
-
-- `#FFFFFF`
-- `#2563EB`
-- `#111111`
-- `#6B7280`
+Local font files:
+- fonts/Manrope-Regular.ttf
+- fonts/Manrope-Medium.ttf
+- fonts/Manrope-SemiBold.ttf
+- fonts/Manrope-Bold.ttf
 
 ---
 
 ## 6. CSP and Security Notes
 
-The current codebase is aligned with MV3 popup CSP expectations:
+Current CSP (extension pages):
+- default-src 'self'
+- script-src 'self'
+- style-src 'self'
+- img-src 'self' data: chrome://extension-icon/
+- font-src 'self'
+- connect-src 'none'
+- object-src 'none'
+- base-uri 'none'
 
-- no inline event handlers
-- no inline script blocks
-- no remote script loading
-- no `eval`
-- no `new Function`
-
-Additionally:
-
-- previous `innerHTML` usage in popup rendering was removed
-- popup and modal UI are now rendered with DOM APIs for stronger XSS hygiene
-
-Security-related UI support:
-
-- risky permission highlighting
-- broad host permission warning
-- warning count per extension
+Security practices:
+- No eval
+- No inline scripts
+- DOM APIs for rendering
+- No alert/confirm/prompt (custom modal UI used)
+- Custom dropdowns without innerHTML SVG injection
 
 ---
 
 ## 7. Technical Notes
 
 ### Developer Label
+Derived from:
+- homepageUrl hostname when present
+- otherwise installType
 
-Developer info is inferred from:
-
-- `homepageUrl` hostname when available
-- fallback to `installType`
-
-### Install Date Sorting
-
-Chrome Management API does not expose a true install timestamp.
-
-Current workaround:
-
-- a local `first seen` timestamp is stored in `chrome.storage.local`
-- this value is used as the install-date-like sort key
-
-### Settings Button
-
-The settings action:
-
-- opens `optionsUrl` when present
-- otherwise opens `chrome://extensions/?id=<extension-id>`
+### Install Date
+Chrome does not expose install date. We store a local first-seen timestamp in storage.
 
 ---
 
-## 8. Current Product Decisions
+## 8. Known Limitations
 
-The extension previously explored broader feature ideas, but the current direction is intentionally more focused.
-
-Removed from active popup UX:
-
-- profile management controls
-- performance monitoring section
-
-Reason:
-
-- they added clutter to the popup
-- they were not essential to the core extension-management workflow
+- Some extensions cannot be disabled/removed (policy or Chrome protected)
+- True install date not available
+- Some icons may fall back to default
 
 ---
 
-## 9. Known Limitations
+## 9. Recommended Next Steps
 
-- Chrome may block changes for protected or policy-managed extensions
-- uninstall is not available for every extension
-- true install date is not available from the API
-- some extension icons may fall back to the default icon
-- favorites and tags are local to the browser profile using `chrome.storage.local`
-
----
-
-## 10. Recommended Future Direction
-
-Keep the extension focused on quick management.
-
-Good future improvements:
-
-- small accessibility pass
-- improved keyboard navigation
-- local bundled Manrope font files for exact typography consistency
-- optional settings page for non-core preferences
-
-Avoid:
-
-- heavy multi-section dashboards
-- adding unrelated productivity tools
-- overloading the popup with rarely used controls
+- Accessibility pass (keyboard focus, ARIA)
+- Optional settings page for advanced preferences
+- Inline SVG icon set (for more consistent UI)
 
