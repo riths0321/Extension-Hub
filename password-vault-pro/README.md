@@ -2,6 +2,7 @@
 
 A local‑first password manager Chrome extension with AES‑256 encryption, master password protection, generator, breach checks, and a health dashboard. Built for MV3 with strict CSP and no remote fonts.
 
+
 ## Features
 - AES‑256‑GCM encrypted vault (local only)
 - PBKDF2 master password hashing
