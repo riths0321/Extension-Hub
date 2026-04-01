@@ -1,81 +1,236 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TOTP Authenticator Pro</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1><img src="assets/icon48.png" class="logo"> TOTP Authenticator</h1>
-      <button id="add-account" class="add-btn">+ Add Account</button>
-    </header>
-    
-    <div class="search-container">
-      <input type="text" id="search" placeholder="Search accounts..." autocomplete="off">
+
+<div id="view-lock" class="view">
+  <div id="lock-card" class="auth-card">
+    <div class="auth-logo">
+      <img src="icons/icon48.png" width="40" height="40" alt="TOTP Pro">
     </div>
-    
-    <div id="accounts-list" class="accounts-list">
-      <!-- Accounts will be dynamically loaded here -->
-      <div class="empty-state">
-        <p>No accounts added yet</p>
-        <p>Click "+ Add Account" to get started</p>
-      </div>
-    </div>
-    
-    <!-- Add Account Modal -->
-    <div id="add-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Add TOTP Account</h2>
-          <span class="close">&times;</span>
-        </div>
-        <div class="modal-body">
-          <form id="add-form">
-            <div class="form-group">
-              <label for="account-name">Account Name</label>
-              <input type="text" id="account-name" placeholder="e.g., GitHub, Gmail" required>
-            </div>
-            <div class="form-group">
-              <label for="secret-key">Secret Key</label>
-              <div class="secret-input-container">
-                <input type="text" id="secret-key" placeholder="Enter base32 secret" required>
-                <button type="button" id="show-secret" class="toggle-btn">Show</button>
-              </div>
-              <small class="hint">Enter the base32 secret from your 2FA setup</small>
-            </div>
-            <div class="form-group">
-              <label for="issuer">Issuer (Optional)</label>
-              <input type="text" id="issuer" placeholder="Company/Service name">
-            </div>
-            <div class="form-group">
-              <button type="submit" class="submit-btn">Add Account</button>
-              <button type="button" class="cancel-btn">Cancel</button>
-            </div>
-          </form>
+    <h1 class="auth-title">TOTP Authenticator</h1>
+    <p class="auth-subtitle">Enter your master password to unlock your local 2FA vault.</p>
+    <form id="lock-form" class="auth-form" autocomplete="off">
+      <div class="field-wrap">
+        <label class="field-label" for="lock-password">Master Password</label>
+        <div class="field-row">
+          <input id="lock-password" type="password" class="field-input"
+                 placeholder="Enter password" autocomplete="current-password" required>
+          <button type="button" id="lock-toggle-pw" class="toggle-btn">Show</button>
         </div>
       </div>
+      <button id="lock-submit" type="submit" class="btn btn-primary btn-full" data-text="Unlock Vault">Unlock Vault</button>
+    </form>
+    <div class="auth-tips">
+      <div class="auth-tips-title">Why TOTP Authenticator?</div>
+      <div class="auth-tips-item">Zero cloud sync. Everything stays on your device.</div>
+      <div class="auth-tips-item">AES-256-GCM encryption protects every secret.</div>
+      <div class="auth-tips-item">Fast search, QR import, and one-tap code copy.</div>
     </div>
-    
-    <!-- Confirm Delete Modal -->
-    <div id="confirm-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Delete Account</h2>
-          <span class="close-confirm">&times;</span>
+  </div>
+</div>
+
+<div id="view-setup" class="view" hidden>
+  <div id="setup-card" class="auth-card">
+    <div class="auth-logo">
+      <img src="icons/icon48.png" width="40" height="40" alt="TOTP Pro">
+    </div>
+    <h1 class="auth-title">Create Your Vault</h1>
+    <p class="auth-subtitle">Set a master password to encrypt your TOTP secrets locally.</p>
+    <form id="setup-form" class="auth-form" autocomplete="off">
+      <div class="field-wrap">
+        <label class="field-label" for="setup-password">Master Password</label>
+        <input id="setup-password" type="password" class="field-input"
+               placeholder="At least 8 characters" autocomplete="new-password" required minlength="8">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="setup-confirm">Confirm Password</label>
+        <input id="setup-confirm" type="password" class="field-input"
+               placeholder="Repeat password" autocomplete="new-password" required>
+      </div>
+      <p class="security-note">Secrets are encrypted locally. Your password never leaves this device.</p>
+      <button id="setup-submit" type="submit" class="btn btn-primary btn-full" data-text="Create Vault">Create Vault</button>
+    </form>
+  </div>
+</div>
+
+<div id="view-vault" class="view" hidden>
+  <header class="toolbar">
+    <div class="toolbar-left">
+      <img src="icons/icon16.png" width="18" height="18" alt="" class="toolbar-logo">
+      <div class="toolbar-brand">
+        <span class="toolbar-eyebrow">Offline TOTP</span>
+        <span class="toolbar-title">TOTP Authenticator</span>
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <button id="scan-qr-btn" class="icon-btn" title="Scan QR code" aria-label="Scan QR code">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <path d="M14 14h3v3M17 20h3M20 17v3"/>
+        </svg>
+      </button>
+      <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+      </button>
+      <button id="lock-btn" class="icon-btn icon-btn-danger" title="Lock vault (Ctrl+L)" aria-label="Lock vault">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="vault-overview" aria-label="Vault overview">
+    <div class="overview-copy">
+      <span class="overview-kicker">Fresh codes, always local</span>
+      <h2 class="overview-title">Your rotating 2FA hub</h2>
+      <p class="overview-subtitle">Scan QR setups, organize by service, and copy the latest code in one tap.</p>
+    </div>
+    <div class="overview-metrics">
+      <div class="metric-card">
+        <span id="overview-count" class="metric-value">0</span>
+        <span class="metric-label">accounts</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-value">30s</span>
+        <span class="metric-label">refresh cycle</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="search-bar">
+    <div class="search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input id="search-input" type="search" class="search-input"
+             placeholder="Search services, issuers, or tags" autocomplete="off" spellcheck="false">
+    </div>
+    <button id="add-account-btn" class="btn btn-primary btn-sm">Add Code</button>
+  </div>
+
+  <div id="accounts-list" class="accounts-list" role="list"></div>
+  <input id="qr-file-input" type="file" accept="image/*" hidden aria-hidden="true">
+</div>
+
+<div id="account-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modal-title" class="modal-title">Add Account</h2>
+      <button class="modal-close" data-close="account-modal" aria-label="Close">&times;</button>
+    </div>
+    <form id="account-form" class="modal-body" autocomplete="off">
+      <div class="field-wrap">
+        <label class="field-label" for="acc-name">Account Name <span class="required">*</span></label>
+        <input id="acc-name" type="text" class="field-input" placeholder="e.g. GitHub, Gmail" required>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="acc-secret">Secret Key <span class="required">*</span></label>
+        <div class="field-row">
+          <input id="acc-secret" type="password" class="field-input" placeholder="Base32 secret" required autocomplete="off">
+          <button type="button" id="acc-toggle-pw" class="toggle-btn">Show</button>
         </div>
-        <div class="modal-body">
-          <p id="confirm-message">Are you sure you want to delete this account?</p>
-          <div class="form-group" style="text-align: right; margin-top: 20px;">
-            <button id="confirm-delete" class="submit-btn">Delete</button>
-            <button id="cancel-delete" class="cancel-btn">Cancel</button>
-          </div>
-        </div>
+        <span class="field-hint">Enter the Base32 secret from your 2FA setup.</span>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="acc-issuer">Issuer / Service</label>
+        <input id="acc-issuer" type="text" class="field-input" placeholder="e.g. Google, Microsoft">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="acc-tags">Tags <span class="field-hint-inline">(comma-separated)</span></label>
+        <input id="acc-tags" type="text" class="field-input" placeholder="work, personal, finance">
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="acc-cancel" class="btn btn-ghost">Cancel</button>
+        <button id="acc-submit" type="submit" class="btn btn-primary" data-text="Save Account">Save Account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="delete-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2 class="modal-title">Delete Account</h2>
+    </div>
+    <div class="modal-body">
+      <p class="delete-msg">Delete <strong id="delete-name"></strong>? This cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="delete-cancel" class="btn btn-ghost">Cancel</button>
+        <button id="delete-confirm" class="btn btn-danger">Delete</button>
       </div>
     </div>
   </div>
-  
-  <script src="totp.js"></script>
-  <script src="popup.js"></script>
+</div>
+
+<div id="settings-modal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Settings</h2>
+      <button class="modal-close" data-close="settings-modal" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-section">
+        <h3 class="settings-section-title">Security</h3>
+        <div class="setting-row">
+          <label class="field-label" for="setting-autolock">Auto-lock after</label>
+          <select id="setting-autolock" class="field-select">
+            <option value="1">1 minute</option>
+            <option value="5" selected>5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label class="field-label" for="setting-autocopy">Auto-copy on code refresh</label>
+          <label class="toggle-switch">
+            <input id="setting-autocopy" type="checkbox" checked>
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3 class="settings-section-title">Backup and Restore</h3>
+        <div class="field-wrap">
+          <label class="field-label" for="export-password">Export Password</label>
+          <input id="export-password" type="password" class="field-input" placeholder="Backup encryption password">
+        </div>
+        <button id="export-btn" class="btn btn-outline btn-full">Export Encrypted Backup</button>
+        <div class="divider"></div>
+        <div class="field-wrap">
+          <label class="field-label" for="import-password">Import Password</label>
+          <input id="import-password" type="password" class="field-input" placeholder="Backup decryption password">
+        </div>
+        <button id="import-trigger" class="btn btn-outline btn-full">Import Backup File</button>
+        <input id="import-file" type="file" accept=".enc,.txt" hidden aria-hidden="true">
+      </div>
+      <div class="modal-actions">
+        <button id="settings-cancel" class="btn btn-ghost">Cancel</button>
+        <button id="settings-save" class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="js/crypto.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/totp.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/popup.js"></script>
+<script src="dropdowns.js"></script>
 </body>
 </html>

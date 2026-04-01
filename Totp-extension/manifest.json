@@ -1,28 +1,31 @@
 {
   "manifest_version": 3,
-  "name": "TOTP Authenticator",
-  "version": "1.0.0",
-  "description": "Generate TOTP codes for 2-factor authentication",
+  "name": "TOTP Authenticator Pro",
+  "version": "2.0.0",
+  "description": "Secure, encrypted TOTP authenticator with master password protection",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "assets/icon16.png",
-      "48": "assets/icon48.png",
-      "128": "assets/icon128.png"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "clipboardWrite", "alarms"],
   "icons": {
-    "16": "assets/icon16.png",
-    "48": "assets/icon48.png",
-    "128": "assets/icon128.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
+  "background": {
+    "service_worker": "js/background.js"
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/icon16.png", "assets/icon48.png", "assets/icon128.png"],
+      "resources": ["icons/icon16.png", "icons/icon48.png", "icons/icon128.png"],
       "matches": ["<all_urls>"]
     }
   ]
