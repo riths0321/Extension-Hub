@@ -1,132 +1,109 @@
 # Extension Manager Pro
 
-`Extension Manager Pro` is a lightweight Chrome extension that helps users manage installed extensions from a single popup.
+Extension Manager Pro is a lightweight Chrome extension that helps users manage installed extensions from a single popup.
 
-It is built with:
-
+Built with:
 - Manifest V3
-- pure HTML, CSS, and JavaScript
-- Chrome `management` API
-- Chrome `storage` API
+- Pure HTML, CSS, and JavaScript
+- Chrome management API
+- Chrome storage API
 
 ## Current Product Scope
 
-The extension is focused on quick extension management, not a full multi-page dashboard.
-
-Core workflow:
+Focused on fast extension management (not a multi-page dashboard):
 
 1. Open popup
 2. Search or filter installed extensions
 3. Enable or disable quickly
-4. Open settings, inspect details, or remove when needed
+4. Inspect details, open settings, or remove when needed
 
 ## Current Features
 
 ### Extension Management
+- List installed Chrome extensions via chrome.management.getAll()
+- Exclude the manager extension itself
+- Show icon, name, version, status, and summary
+- Enable/disable extensions with toggle
+- Uninstall extensions when allowed
+- Open extension settings/options page
 
-- list installed Chrome extensions using `chrome.management.getAll()`
-- exclude the manager extension itself
-- show extension icon, name, version, status, and summary details
-- enable or disable extensions with a toggle
-- uninstall extensions with a simple remove action
-- open extension settings/options page when available
-
-### Search, Filter, and Sort
-
-- search extensions by name, description, and developer
-- filter by:
-  - all
-  - enabled
-  - disabled
-  - favorites
-- sort by:
-  - name
-  - install date surrogate (`first seen`)
-  - enabled status
-  - developer
+### Search, Filter, Sort
+- Search by name, description, developer
+- Filter: all, enabled, disabled, favorites
+- Sort by name
 
 ### Details and Organization
-
-- extension details modal
-- permission list display
-- risky permission highlighting
-- favorite extensions
-- custom tags stored in `chrome.storage.local`
+- Details modal
+- Permission list with risky highlight
+- Favorites
+- Custom tags stored in chrome.storage.local
 
 ### Batch and Backup
-
-- multi-select extensions
-- batch enable
-- batch disable
-- export extension state and saved metadata as JSON
-- import saved JSON and restore supported states
+- Multi-select extensions
+- Batch enable/disable
+- Export backup JSON
+- Import backup JSON (restore allowed states)
 
 ### UI and UX
-
-- clean popup layout
-- loading state
-- empty state
-- extension statistics
-- responsive popup design
-- blue/white product-aligned theme
-- Manrope-first typography
+- Compact stats section
+- Clean, user-friendly layout
+- Loading and empty states
+- Toast feedback
+- Manrope-first typography (local fonts)
+- Custom dropdowns (CSP-safe)
+- Custom confirmation dialogs (no alert/confirm/prompt)
 
 ## Theme
 
-The extension follows the shared design system documented in:
-
-- [THEME_DESIGN.md](./THEME_DESIGN.md)
-
-Theme baseline:
-
-- background: `#FFFFFF`
-- primary blue: `#2563EB`
-- primary text: `#111111`
-- secondary text: `#6B7280`
-- font family: `Manrope`
+Baseline:
+- Background: #FFFFFF
+- Primary blue: #2563EB
+- Primary text: #111111
+- Secondary text: #6B7280
+- Font: Manrope
 
 ## Permissions
-
-The extension currently uses:
-
-- `management`
-- `storage`
+- management
+- storage
 
 ## File Structure
 
-```text
+```
 extension-manager/
 ├── manifest.json
 ├── popup.html
 ├── popup.css
 ├── popup.js
+├── dropdowns.js
 ├── details-modal.js
+├── settings-modal.js
 ├── storage.js
 ├── background.js
-├── THEME_DESIGN.md
+├── README.md
 ├── DOCUMENTATION.md
-└── icons/
-    ├── icon16.png
-    ├── icon48.png
-    └── icon128.png
+├── icons/
+│   ├── icon16.png
+│   ├── icon48.png
+│   └── icon128.png
+└── fonts/
+    ├── Manrope-Regular.ttf
+    ├── Manrope-Medium.ttf
+    ├── Manrope-SemiBold.ttf
+    └── Manrope-Bold.ttf
 ```
 
 ## Installation
 
-1. Open `chrome://extensions/`
+1. Open chrome://extensions
 2. Enable Developer mode
-3. Click `Load unpacked`
-4. Select the `extension-manager` folder
+3. Click Load unpacked
+4. Select the extension-manager folder
 
 ## Notes
-
-- some extensions cannot be disabled or removed if Chrome or policy restrictions apply
-- true install date is not exposed by the Chrome Management API, so sorting uses a local `first seen` value
-- settings button opens the extension options page when available, otherwise falls back to the Chrome extensions page
+- Some extensions cannot be disabled or removed due to Chrome or policy restrictions
+- Install date is not exposed; we use a local first-seen timestamp
+- Extension icons may fall back to the default icon
 
 ## Documentation
 
-For deeper implementation notes, see:
-
-- [DOCUMENTATION.md](./DOCUMENTATION.md)
-
+See DOCUMENTATION.md for deeper implementation notes.
