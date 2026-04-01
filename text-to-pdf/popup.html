@@ -1,45 +1,206 @@
 <!doctype html>
 <html>
-
 <head>
+  <title>Text to PDF</title>
   <meta charset="UTF-8">
-  <title>Text to PDF Pro</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="popup.css">
 </head>
-
 <body>
-  <div class="card">
-    <h3>Text to PDF</h3>
+<div class="container">
 
-    <div class="input-group">
-      <label>Filename</label>
-      <input id="fileName" placeholder="e.g., notes-2026" />
-    </div>
-
-    <div class="input-group">
-      <label>Content</label>
-      <textarea id="textInput" placeholder="Start typing..."></textarea>
-    </div>
-
-    <div class="footer-info">
-      <span id="charCount">0</span> characters
-      <span id="wordCount">0 words</span>
-    </div>
-
-    <div class="btn-container">
-      <button id="pdfBtn" class="pdf-btn" disabled>Export as PDF</button>
-      <button id="txtBtn" class="txt-btn" disabled>Download .txt</button>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="logo-mark">📄</div>
+      <div class="header-text">
+        <div class="brand-name">Text to PDF</div>
+        <div class="brand-tag">OFFLINE · SMART FORMATTING · FLEXIBLE PRESETS</div>
+      </div>
     </div>
   </div>
 
-  <!-- Hidden Render Zone -->
-  <div id="pdfRenderContainer"></div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="convert">📄 Convert</button>
+    <button class="tab" data-tab="settings">⚙ Settings</button>
+    <button class="tab" data-tab="presets">🎨 Presets</button>
+  </div>
 
-  <script src="lib/marked.min.js"></script>
-  <script src="lib/purify.min.js"></script>
-  <script src="lib/html2canvas.min.js"></script>
-  <script src="lib/jspdf.umd.min.js"></script>
-  <script src="popup.js" ></script>
+  <!-- ── CONVERT TAB ── -->
+  <div class="tab-content active" id="convert-tab">
+
+    <div class="form-group">
+      <label>File Name</label>
+      <input type="text" id="fileName" placeholder="document" />
+    </div>
+
+    <div class="form-group">
+      <label>Text Content</label>
+      <textarea id="textInput" placeholder="Paste or type your text here…"></textarea>
+      <div class="stats">
+        <div class="stat-chip"><span id="charCount">0</span> chars</div>
+        <div class="stat-chip"><span id="wordCount">0</span> words</div>
+        <div class="stat-chip"><span id="lineCount">0</span> lines</div>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <label class="toggle-item">
+        <input type="checkbox" id="formatToggle">
+        <div class="toggle-dot"></div>
+        <span class="toggle-label-text">✨ Smart Format</span>
+      </label>
+      <label class="toggle-item">
+        <input type="checkbox" id="watermarkToggle">
+        <div class="toggle-dot"></div>
+        <span class="toggle-label-text">🔒 Watermark</span>
+      </label>
+      <label class="toggle-item">
+        <input type="checkbox" id="pageNumbersToggle">
+        <div class="toggle-dot"></div>
+        <span class="toggle-label-text">🔢 Page Numbers</span>
+      </label>
+    </div>
+
+    <button id="pdfBtn" class="btn-generate">Generate PDF →</button>
+
+    <div class="progress-wrap" id="progressContainer">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">Preparing document…</div>
+    </div>
+
+    <div id="alert" class="alert"></div>
+  </div>
+
+  <!-- ── SETTINGS TAB ── -->
+  <div class="tab-content" id="settings-tab">
+
+    <div class="settings-grid">
+      <div class="form-group">
+        <label>Page Size</label>
+        <select id="pageSize">
+          <option value="a4">A4</option>
+          <option value="letter">Letter</option>
+          <option value="legal">Legal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Orientation</label>
+        <select id="orientation">
+          <option value="portrait">Portrait</option>
+          <option value="landscape">Landscape</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:12px">
+      <label>Margins</label>
+      <div class="range-row">
+        <input type="range" id="margin" min="5" max="30" value="15" step="1">
+        <span id="marginValue" class="range-val">15mm</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Font Size</label>
+      <div class="range-row">
+        <input type="range" id="fontSize" min="8" max="20" value="11" step="1">
+        <span id="fontSizeValue" class="range-val">11pt</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Font Family</label>
+      <select id="fontFamily">
+        <option value="helvetica">Helvetica</option>
+        <option value="arial">Arial</option>
+        <option value="verdana">Verdana</option>
+        <option value="tahoma">Tahoma</option>
+        <option value="times">Times New Roman</option>
+        <option value="georgia">Georgia</option>
+        <option value="garamond">Garamond</option>
+        <option value="baskerville">Baskerville</option>
+        <option value="courier">Courier</option>
+        <option value="courier-new">Courier New</option>
+        <option value="monaco">Monaco</option>
+        <option value="consolas">Consolas</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Line Height</label>
+      <div class="range-row">
+        <input type="range" id="lineHeight" min="5" max="12" value="7" step="0.5">
+        <span id="lineHeightValue" class="range-val">7pt</span>
+      </div>
+    </div>
+
+    <button id="saveSettingsBtn" class="btn-save">💾 Save Settings</button>
+  </div>
+
+  <!-- ── PRESETS TAB ── -->
+  <div class="tab-content" id="presets-tab">
+
+    <p class="preset-intro">Pick a layout style. Presets override Settings values and apply instantly on next export.</p>
+
+    <div class="preset-grid">
+      <div class="preset-card active" data-preset="standard">
+        <div>
+          <div class="preset-name">Standard</div>
+          <div class="preset-meta">11pt · 15mm margins · balanced</div>
+          <div class="preset-desc">Everyday docs, notes, and general text export.</div>
+        </div>
+        <span class="preset-badge badge-standard">DEFAULT</span>
+      </div>
+
+      <div class="preset-card" data-preset="compact">
+        <div>
+          <div class="preset-name">Compact</div>
+          <div class="preset-meta">9pt · 10mm margins · tight</div>
+          <div class="preset-desc">Drafts, logs, and longer content — more per page.</div>
+        </div>
+        <span class="preset-badge badge-compact">DENSE</span>
+      </div>
+
+      <div class="preset-card" data-preset="readable">
+        <div>
+          <div class="preset-name">Readable</div>
+          <div class="preset-meta">13pt · 20mm margins · spacious</div>
+          <div class="preset-desc">Reports, letters, and content made for reading.</div>
+        </div>
+        <span class="preset-badge badge-readable">AIRY</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <label>Watermark Text</label>
+      <input type="text" id="watermarkText" placeholder="CONFIDENTIAL" value="CONFIDENTIAL">
+    </div>
+
+    <div class="form-group">
+      <label>Header Text</label>
+      <input type="text" id="headerText" placeholder="Optional header">
+    </div>
+
+    <div class="form-group">
+      <label>Footer Text</label>
+      <input type="text" id="footerText" placeholder="Optional footer">
+    </div>
+
+    <label class="toggle-item" style="width:fit-content">
+      <input type="checkbox" id="autoSaveToggle">
+      <div class="toggle-dot"></div>
+      <span class="toggle-label-text">💾 Auto-save settings</span>
+    </label>
+
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
 </body>
-
 </html>
