@@ -8,7 +8,7 @@ import {
   STACK_DEFINITIONS
 } from './state.js';
 
-import { analyzeProjectInput, buildArtifacts, highlightCode } from './generator.js';
+import { analyzeProjectInput, buildArtifacts } from './generator.js';
 import { detectStacksFromActiveTab }                          from './detector.js';
 import { loadPersistedState, persistState, saveCustomTemplate, deleteCustomTemplate } from './storage.js';
 
@@ -448,7 +448,7 @@ function renderFileTabs() {
 function renderEditor() {
   const content = state.files[state.activeFile] ?? '';
   els.codeEditor.value = content;
-  els.editorHighlight.textContent = highlightCode(content);
+  renderHighlighted(content);
   updateLineCount(content);
   syncEditorDensity();
   updateFooterMeta();
@@ -462,10 +462,25 @@ function syncEditorDensity() {
 
 function handleEditorInput(e) {
   state.files[state.activeFile] = e.target.value;
-  els.editorHighlight.textContent = highlightCode(e.target.value);
+  renderHighlighted(e.target.value);
   updateLineCount(e.target.value);
   els.statusText.textContent = `Editing ${FILE_META[state.activeFile]?.filename ?? state.activeFile}`;
   queuePersist();
+}
+
+function renderHighlighted(content) {
+  const frag = document.createDocumentFragment();
+  const lines = (content ?? '').split('\n');
+  lines.forEach((line, idx) => {
+    const span = document.createElement('span');
+    if (line.startsWith('#')) span.className = 'editor-line-comment';
+    else if (line.startsWith('[') && line.endsWith(']')) span.className = 'editor-line-header';
+    else span.className = 'editor-line-rule';
+    span.textContent = line || ' ';
+    frag.appendChild(span);
+    if (idx < lines.length - 1) frag.appendChild(document.createTextNode('\n'));
+  });
+  els.editorHighlight.replaceChildren(frag);
 }
 
 function updateLineCount(content) {
