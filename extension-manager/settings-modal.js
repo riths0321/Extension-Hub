@@ -54,13 +54,21 @@ export class SettingsModal {
     // Append to root
     this.root.innerHTML = '';
     this.root.appendChild(modalContent);
+
+    if (window.CADropdowns && profileSelect) {
+      window.CADropdowns.build(profileSelect);
+    }
   }
 
   updateProfileSelect(selectElement) {
     if (!selectElement) return;
     
-    selectElement.innerHTML = '<option value="">Select a profile</option>';
-    
+    selectElement.replaceChildren();
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a profile';
+    selectElement.appendChild(placeholder);
+
     Object.keys(this.currentProfiles).sort().forEach(profileName => {
       const option = document.createElement('option');
       option.value = profileName;
@@ -100,10 +108,9 @@ export class SettingsModal {
 
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
-        const profileName = prompt('Enter profile name:');
-        if (profileName) {
-          this.onSaveProfile(profileName.trim());
-        }
+        this.promptModal('Save profile', 'Enter a profile name').then((profileName) => {
+          if (profileName) this.onSaveProfile(profileName.trim());
+        });
       });
     }
 
@@ -113,7 +120,7 @@ export class SettingsModal {
         if (profileName) {
           this.onApplyProfile(profileName);
         } else {
-          alert('Please select a profile first');
+          this.alertModal('Please select a profile first');
         }
       });
     }
@@ -121,11 +128,13 @@ export class SettingsModal {
     if (deleteBtn && profileSelect) {
       deleteBtn.addEventListener('click', () => {
         const profileName = profileSelect.value;
-        if (profileName && confirm(`Delete profile "${profileName}"?`)) {
-          this.onDeleteProfile(profileName);
-        } else if (!profileName) {
-          alert('Please select a profile first');
+        if (!profileName) {
+          this.alertModal('Please select a profile first');
+          return;
         }
+        this.confirmModal('Delete profile', `Delete profile "${profileName}"?`).then((ok) => {
+          if (ok) this.onDeleteProfile(profileName);
+        });
       });
     }
 
@@ -153,5 +162,125 @@ export class SettingsModal {
         this.onToggleRiskWarnings(e.target.checked);
       });
     }
+  }
+
+  alertModal(message, title = 'Notice') {
+    return this.confirmModal(title, message, { confirmText: 'OK', showCancel: false });
+  }
+
+  confirmModal(title, message, options = {}) {
+    const { confirmText = 'Confirm', showCancel = true } = options;
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      const card = document.createElement('div');
+      card.className = 'modal-card';
+
+      const header = document.createElement('div');
+      header.className = 'modal-header';
+      const h2 = document.createElement('h2');
+      h2.textContent = title;
+      const close = document.createElement('button');
+      close.className = 'modal-close';
+      close.type = 'button';
+      close.setAttribute('aria-label', 'Close');
+      close.textContent = '✕';
+      header.append(h2, close);
+
+      const body = document.createElement('div');
+      body.className = 'modal-body';
+      const p = document.createElement('p');
+      p.className = 'modal-message';
+      p.textContent = message;
+      body.appendChild(p);
+
+      const footer = document.createElement('div');
+      footer.className = 'modal-footer';
+      const ok = document.createElement('button');
+      ok.className = 'primary-button';
+      ok.type = 'button';
+      ok.textContent = confirmText;
+      if (showCancel) {
+        const cancel = document.createElement('button');
+        cancel.className = 'ghost-button';
+        cancel.type = 'button';
+        cancel.textContent = 'Cancel';
+        footer.append(cancel, ok);
+        cancel.addEventListener('click', () => cleanup(false));
+      } else {
+        footer.append(ok);
+      }
+
+      const cleanup = (result) => {
+        overlay.remove();
+        resolve(result);
+      };
+
+      ok.addEventListener('click', () => cleanup(true));
+      close.addEventListener('click', () => cleanup(false));
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+
+      card.append(header, body, footer);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+    });
+  }
+
+  promptModal(title, placeholder) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      const card = document.createElement('div');
+      card.className = 'modal-card';
+
+      const header = document.createElement('div');
+      header.className = 'modal-header';
+      const h2 = document.createElement('h2');
+      h2.textContent = title;
+      const close = document.createElement('button');
+      close.className = 'modal-close';
+      close.type = 'button';
+      close.setAttribute('aria-label', 'Close');
+      close.textContent = '✕';
+      header.append(h2, close);
+
+      const body = document.createElement('div');
+      body.className = 'modal-body';
+      const input = document.createElement('input');
+      input.className = 'modal-input';
+      input.type = 'text';
+      input.placeholder = placeholder;
+      body.appendChild(input);
+
+      const footer = document.createElement('div');
+      footer.className = 'modal-footer';
+      const cancel = document.createElement('button');
+      cancel.className = 'ghost-button';
+      cancel.type = 'button';
+      cancel.textContent = 'Cancel';
+      const ok = document.createElement('button');
+      ok.className = 'primary-button';
+      ok.type = 'button';
+      ok.textContent = 'Save';
+      footer.append(cancel, ok);
+
+      const cleanup = (value) => {
+        overlay.remove();
+        resolve(value);
+      };
+
+      cancel.addEventListener('click', () => cleanup(''));
+      close.addEventListener('click', () => cleanup(''));
+      ok.addEventListener('click', () => cleanup(input.value.trim()));
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(''); });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') cleanup(input.value.trim());
+      });
+
+      card.append(header, body, footer);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      setTimeout(() => input.focus(), 0);
+    });
   }
 }
