@@ -24,17 +24,27 @@
         <p>Smart ignore generation</p>
       </div>
     </div>
-    <button id="themeToggle" class="icon-button" type="button" aria-label="Toggle theme">
-      <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" hidden>
-        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    <div class="topbar-actions">
+      <button id="openFullPageBtn" class="fullpage-button" type="button"
+              title="Open full workspace in a new tab" aria-label="Open full page">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <path d="M15 3h6v6M10 14 21 3M21 14v7H3V5h7"
+                stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="themeToggle" class="icon-button" type="button" aria-label="Toggle theme">
+        <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" hidden>
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <!-- ── STATUS BANNER (shown after auto-detect) ── -->
@@ -76,14 +86,6 @@
     <div class="footer-right">
       <button id="copyBtn"         class="secondary-button" type="button">Copy</button>
       <button id="downloadBtn"     class="primary-button"   type="button">Download</button>
-      <button id="openFullPageBtn" class="fullpage-button"  type="button"
-              title="Open full workspace in a new tab">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-          <path d="M15 3h6v6M10 14 21 3M21 14v7H3V5h7"
-                stroke="currentColor" stroke-width="2.2"
-                stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
     </div>
   </footer>
 

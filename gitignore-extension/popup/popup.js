@@ -1,19 +1,3 @@
-/**
- * GitIgnore Pro — popup.js
- *
- * Scope: ONLY popup.html (380×≤580px control panel)
- * What it does:
- *   • Theme toggle (persisted)
- *   • Stack selection + live preview (compact)
- *   • Auto-detect (background → result in banner)
- *   • Copy / Download current file
- *   • Reset to defaults
- *   • Open Full Workspace (chrome.tabs.create)
- *
- * What it does NOT do:
- *   • No category panel, no preset grid, no config toggles,
- *     no scan input UI, no template saving — all in fullpage.html
- */
 
 import {
   ALL_CATEGORY_IDS,

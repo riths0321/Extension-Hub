@@ -1,13 +1,3 @@
-/**
- * GitIgnore Pro — fullpage.js
- *
- * Scope: ONLY fullpage.html (full tab, no size constraints)
- * Contains ALL heavy UI: stack picker, categories, presets,
- * config toggles, scan input, custom rules, warnings, editor.
- *
- * Shares state storage with popup.js via chrome.storage.local.
- */
-
 import {
   ALL_CATEGORY_IDS,
   CATEGORY_DEFINITIONS,
@@ -458,7 +448,7 @@ function renderFileTabs() {
 function renderEditor() {
   const content = state.files[state.activeFile] ?? '';
   els.codeEditor.value = content;
-  els.editorHighlight.innerHTML = highlightCode(content);
+  els.editorHighlight.textContent = highlightCode(content);
   updateLineCount(content);
   syncEditorDensity();
   updateFooterMeta();
@@ -472,7 +462,7 @@ function syncEditorDensity() {
 
 function handleEditorInput(e) {
   state.files[state.activeFile] = e.target.value;
-  els.editorHighlight.innerHTML = highlightCode(e.target.value);
+  els.editorHighlight.textContent = highlightCode(e.target.value);
   updateLineCount(e.target.value);
   els.statusText.textContent = `Editing ${FILE_META[state.activeFile]?.filename ?? state.activeFile}`;
   queuePersist();
