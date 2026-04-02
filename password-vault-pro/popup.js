@@ -439,8 +439,8 @@ class App {
     if (!fill || !text) return;
     const s = this._strength(pw);
     fill.className = `strength-fill strength-${s}`;
+    text.className = `strength-text strength-text-${s}`;
     text.textContent = { weak:'Weak password', medium:'Medium strength', strong:'Strong password' }[s];
-    text.style.color = { weak:'var(--red)', medium:'var(--amber)', strong:'var(--green)' }[s];
   }
 
   /* ─── Duplicate detection ────────────────────────── */
@@ -471,7 +471,7 @@ class App {
     document.getElementById('weakCount').textContent     = `${weak} weak`;
     document.getElementById('weakDot').className         = `dot ${weak > 0 ? 'danger' : 'warn'}`;
     const dupChip = document.getElementById('dupChip');
-    dupChip.style.display = reused > 0 ? '' : 'none';
+    dupChip.classList.toggle('hidden', reused === 0);
     document.getElementById('dupCount').textContent = `${reused} reused`;
   }
 
@@ -539,7 +539,7 @@ class App {
       const item = document.createElement('div');
       item.className = 'password-item';
       item.dataset.id = p.id;
-      item.style.animationDelay = `${idx * 0.035}s`;
+      item.classList.add(`stagger-${Math.min(idx + 1, 12)}`);
 
       /* Canvas avatar */
       const canvas = document.createElement('canvas');
@@ -812,7 +812,7 @@ class App {
 
     /* Tag */
     const tagWrap = document.getElementById('detailsTagWrap');
-    tagWrap.style.display = pw.tag ? '' : 'none';
+    tagWrap.classList.toggle('hidden', !pw.tag);
     document.getElementById('detailsTagVal').textContent = pw.tag || '';
 
     /* Age */
@@ -977,7 +977,13 @@ class App {
     const wrap = document.getElementById('genHistory');
     if (!wrap) return;
     wrap.innerHTML = '';
-    if (!this._genHistory.length) { wrap.innerHTML = '<div style="font-size:0.78rem;color:var(--text-faint);padding:4px 0">No history yet</div>'; return; }
+    if (!this._genHistory.length) {
+      const empty = document.createElement('div');
+      empty.className = 'gen-history-empty';
+      empty.textContent = 'No history yet';
+      wrap.appendChild(empty);
+      return;
+    }
     this._genHistory.forEach(({ pw, time }) => {
       const item = document.createElement('div'); item.className='hist-item';
       const pwEl = document.createElement('span'); pwEl.className='hist-pw'; pwEl.textContent=pw;
