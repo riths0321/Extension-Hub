@@ -1,40 +1,44 @@
 {
   "manifest_version": 3,
-  "name": "Cookie Cleaner Pro",
-  "version": "1.0.0",
-  "description": "Clean cookies while keeping logged-in sites safe",
-  "author": "Your Name",
-  
+  "name": "Smart Cookie Manager",
+  "version": "2.0.0",
+  "description": "All-in-one cookie cleaning, expiry monitoring, and session protection",
+  "author": "Smart Cookie Manager",
+
   "permissions": [
     "cookies",
     "storage",
-    "activeTab"
+    "activeTab",
+    "notifications",
+    "alarms",
+    "tabs",
+    "history"
   ],
-  
+
   "host_permissions": [
     "<all_urls>"
   ],
-  
+
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
-  
+
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Cookie Cleaner Pro",
+    "default_title": "Smart Cookie Manager",
     "default_icon": {
       "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "48": "icons/icon16.png",
+      "128": "icons/icon16.png"
     }
   },
-  
+
   "icons": {
     "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "48": "icons/icon16.png",
+    "128": "icons/icon16.png"
   },
-  
+
   "background": {
     "service_worker": "background.js",
     "type": "module"
