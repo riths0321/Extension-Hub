@@ -1,8 +1,4 @@
-/**
- * dropdowns.js — ConvertAll Premium Dropdown System v2
- * CSP-safe · no eval · no dynamic styles · MV3 compliant
- * Styles are in popup.css (not injected via JS)
- */
+
 (function () {
   'use strict';
 
@@ -11,23 +7,16 @@
   var ITEM  = 'ca-item';
   var OPEN  = 'ca-open';
   var ACT   = 'ca-active';
+  var HIDE  = 'ca-native-select';
+  var ABOVE = 'ca-above';
 
-  /* ── 1. Position menu with fixed coords ─────────────────── */
+  /* ── 1. Position menu with CSS classes only ─────────────── */
   function positionMenu(trigger, menu) {
     var rect = trigger.getBoundingClientRect();
     var vp   = window.innerHeight || document.documentElement.clientHeight;
     var mH   = 242;
-
-    menu.style.width = rect.width + 'px';
-    menu.style.left  = rect.left  + 'px';
-
-    if (rect.bottom + mH + 8 <= vp) {
-      menu.style.top    = (rect.bottom + 6) + 'px';
-      menu.style.bottom = 'auto';
-    } else {
-      menu.style.bottom = (vp - rect.top + 6) + 'px';
-      menu.style.top    = 'auto';
-    }
+    var shouldOpenAbove = rect.bottom + mH + 8 > vp && rect.top > mH;
+    menu.classList.toggle(ABOVE, shouldOpenAbove);
   }
 
   /* ── 2. Helper ───────────────────────────────────────────── */
@@ -65,11 +54,11 @@
     trigger.appendChild(tText);
     trigger.appendChild(tCaret);
 
-    /* menu — goes to body */
+    /* menu */
     var menu = document.createElement('div');
     menu.className = MENU;
     menu.setAttribute('role', 'listbox');
-    document.body.appendChild(menu);
+    wrap.appendChild(menu);
     menu._ownerWrap = wrap;
 
     /* search */
@@ -220,7 +209,8 @@
 
     /* insert wrapper in DOM */
     wrap.appendChild(trigger);
-    select.style.display = 'none';
+    select.classList.add(HIDE);
+    select.setAttribute('aria-hidden', 'true');
     select.parentNode.insertBefore(wrap, select.nextSibling);
 
     return wrap;

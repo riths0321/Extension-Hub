@@ -97,7 +97,7 @@
         <div class="stats-bar">
           <div class="stat-chip"><div class="dot"></div><span id="passwordCount">0 saved</span></div>
           <div class="stat-chip" id="weakChip"><div class="dot warn" id="weakDot"></div><span id="weakCount">0 weak</span></div>
-          <div class="stat-chip" id="dupChip" style="display:none"><div class="dot danger"></div><span id="dupCount">0 reused</span></div>
+          <div class="stat-chip hidden" id="dupChip"><div class="dot danger"></div><span id="dupCount">0 reused</span></div>
         </div>
         <div class="search-wrap">
           <span class="search-icon">
@@ -189,11 +189,11 @@
             </select>
           </div>
           <label class="gen-check"><input type="checkbox" id="chkCapitalize" checked /><span>Capitalize first letter</span></label>
-          <label class="gen-check" style="margin-top:6px"><input type="checkbox" id="chkAddNumber" checked /><span>Append number</span></label>
+          <label class="gen-check gen-check-spaced"><input type="checkbox" id="chkAddNumber" checked /><span>Append number</span></label>
         </div>
 
         <!-- Batch -->
-        <div class="gen-row" style="margin-top:6px">
+        <div class="gen-row gen-row-spaced">
           <label class="gen-label">Generate</label>
           <select id="batchCount" class="gen-select">
             <option value="1">1 password</option>
@@ -398,7 +398,7 @@
           <div class="details-label">Notes</div>
           <div class="details-value notes-font"><span id="detailsNotesVal">—</span></div>
         </div>
-        <div class="details-field" id="detailsTagWrap" style="display:none">
+        <div class="details-field hidden" id="detailsTagWrap">
           <div class="details-label">Tag</div>
           <div class="details-value"><span id="detailsTagVal">—</span></div>
         </div>
@@ -431,7 +431,7 @@
       <div class="modal-body">
         <div class="form-group">
           <label>Generated Password</label>
-          <div class="details-value" id="genPasswordPreview" style="font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace;word-break:break-all;display:block;padding:10px 12px;"></div>
+          <div class="details-value details-value-block" id="genPasswordPreview"></div>
         </div>
         <div class="form-group">
           <label>Website / App</label>
@@ -524,7 +524,7 @@
         <button class="close-btn" id="cancelExport2" type="button">✕</button>
       </div>
       <div class="modal-body">
-        <p class="delete-message" style="color:var(--text-dim)">This will download an <strong>unencrypted</strong> JSON file containing all your passwords. Store it securely.</p>
+        <p class="delete-message">This will download an <strong>unencrypted</strong> JSON file containing all your passwords. Store it securely.</p>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" id="cancelExport"  type="button">Cancel</button>
@@ -547,8 +547,8 @@
       </div>
       <div class="modal-body">
         <p class="delete-message">This will delete all saved passwords on this device. You will need to set a new master password.</p>
-        <p class="delete-message" style="margin-top:6px;">This action cannot be undone.</p>
-        <div class="form-group" style="margin-top:12px;">
+        <p class="delete-message delete-message-spaced">This action cannot be undone.</p>
+        <div class="form-group form-group-spaced">
           <label>Type RESET to confirm</label>
           <input type="text" id="resetConfirmInput" placeholder="RESET" autocomplete="off" />
         </div>

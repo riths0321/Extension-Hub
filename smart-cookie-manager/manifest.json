@@ -8,11 +8,9 @@
   "permissions": [
     "cookies",
     "storage",
-    "activeTab",
     "notifications",
     "alarms",
-    "tabs",
-    "history"
+    "tabs"
   ],
 
   "host_permissions": [
@@ -20,7 +18,7 @@
   ],
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; child-src 'none'; form-action 'none'; base-uri 'none'"
   },
 
   "action": {
