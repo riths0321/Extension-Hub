@@ -55,6 +55,7 @@ smart-cookie-manager/
 ├── popup.html        # Unified UI shell
 ├── popup.css         # Premium dark/light theme
 ├── popup.js          # Full UI controller
+├── content.js        # Content script (reserved)
 └── icons/
     ├── icon16.png
     ├── icon48.png

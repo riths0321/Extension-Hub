@@ -1,0 +1,16 @@
+.tts-highlight {
+  background-color: #ffeb3b;
+  transition: background-color 0.3s ease;
+  animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.tts-highlight.fade-out {
+  background-color: transparent;
+  transition: background-color 1s ease;
+}

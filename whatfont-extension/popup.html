@@ -8,83 +8,240 @@
 </head>
 <body>
   <main class="app">
+
+    <!-- ── Header ── -->
     <header class="hero">
       <img src="images/logo.svg" alt="WhatFont" class="logo" />
-      <div>
+      <div class="hero-text">
         <h1>WhatFont</h1>
-        <p>Identify fonts on the current page</p>
+        <p>Font Inspector Pro</p>
+      </div>
+      <div class="hero-actions">
+        <button id="darkModeBtn" class="icon-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+          <svg id="darkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="lightIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
       </div>
     </header>
 
-    <section class="panel status-panel">
-      <div>
-        <p class="label">Current tab</p>
-        <p id="tabInfo" class="value">Loading...</p>
-      </div>
+    <!-- ── Status Bar ── -->
+    <div class="status-bar">
+      <span id="tabInfo" class="tab-url">Loading...</span>
       <div id="statusBadge" class="badge">Inactive</div>
-    </section>
+    </div>
 
-    <section class="panel">
-      <h2>Detection</h2>
-      <div class="row between">
-        <label for="toggleHover" class="label-inline">Enable font detection</label>
-        <label class="switch">
-          <input type="checkbox" id="toggleHover">
-          <span class="slider"></span>
-        </label>
+    <!-- ── Tab Navigation ── -->
+    <nav class="tab-bar" id="tabBar">
+      <button class="tab-btn active" data-tab="detect">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Detect
+      </button>
+      <button class="tab-btn" data-tab="fonts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        Fonts
+        <span id="fontsTabCount" class="tab-count hidden">0</span>
+      </button>
+      <button class="tab-btn" data-tab="saved">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Saved
+        <span id="savedTabCount" class="tab-count hidden">0</span>
+      </button>
+      <button class="tab-btn" data-tab="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- Tab: Detect                                    -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="tab-content" id="tab-detect">
+
+      <div class="panel">
+        <div class="row between">
+          <span class="section-label">Enable Detection</span>
+          <label class="switch">
+            <input type="checkbox" id="toggleHover">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="modes" id="modeGroup">
+          <button type="button" class="mode-btn active" data-mode="hover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M6 14v-3a2 2 0 0 0-4 0v7c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-4.5"/></svg>
+            Hover
+          </button>
+          <button type="button" class="mode-btn" data-mode="click">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+            Click
+          </button>
+          <button type="button" class="mode-btn" data-mode="scan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Scan All
+          </button>
+        </div>
+
+        <div class="actions">
+          <button type="button" id="startBtn" class="btn primary">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Start
+          </button>
+          <button type="button" id="stopBtn" class="btn secondary" disabled>
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>
+            Stop
+          </button>
+        </div>
       </div>
 
-      <div class="modes" id="modeGroup">
-        <button type="button" class="mode-btn active" data-mode="hover">Hover</button>
-        <button type="button" class="mode-btn" data-mode="click">Click</button>
-        <button type="button" class="mode-btn" data-mode="scan">Scan</button>
+      <!-- Live Font Card -->
+      <div class="panel" id="livePanel">
+        <div class="row between">
+          <span class="section-label">Live Detection</span>
+          <span id="liveBadge" class="live-badge hidden">● LIVE</span>
+        </div>
+        <div id="liveContent">
+          <p class="empty">Start detection — hover over text to see live results</p>
+        </div>
       </div>
-    </section>
 
-    <section class="panel">
-      <h2>Settings</h2>
-      <div class="settings-grid">
-        <label><input type="checkbox" id="showDownload" checked> Show Google Fonts link</label>
-        <label><input type="checkbox" id="showCSS" checked> Show CSS snippet</label>
-        <label><input type="checkbox" id="highlightText"> Highlight selected text</label>
+    </div><!-- /tab-detect -->
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- Tab: Fonts                                     -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="tab-content hidden" id="tab-fonts">
+      <div class="panel">
+        <div class="row between">
+          <span class="section-label">Detected Fonts <span id="fontCountLabel" class="count-chip">0</span></span>
+          <div class="row gap-6">
+            <div class="dropdown-wrap">
+              <button type="button" id="exportBtn" class="text-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+              <div id="exportMenu" class="dropdown-menu hidden">
+                <button type="button" id="exportJSON" class="dropdown-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  JSON
+                </button>
+                <button type="button" id="exportCSS" class="dropdown-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  CSS Variables
+                </button>
+              </div>
+            </div>
+            <button type="button" id="clearBtn" class="text-btn danger">Clear</button>
+          </div>
+        </div>
+        <div id="fontsList" class="fonts-list"></div>
       </div>
-      <div class="row between">
-        <label for="panelPosition">Panel position</label>
-        <select id="panelPosition">
-          <option value="top-right">Top Right</option>
-          <option value="top-left">Top Left</option>
-          <option value="bottom-right">Bottom Right</option>
-          <option value="bottom-left">Bottom Left</option>
-          <option value="follow">Follow Mouse</option>
-        </select>
+    </div><!-- /tab-fonts -->
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- Tab: Saved (Bookmarks)                        -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="tab-content hidden" id="tab-saved">
+      <div class="panel">
+        <div class="row between">
+          <span class="section-label">Saved Fonts <span id="savedCountLabel" class="count-chip">0</span></span>
+          <button type="button" id="clearSavedBtn" class="text-btn danger">Clear All</button>
+        </div>
+        <p class="hint-text">Click the ☆ star in Font Details to save a font.</p>
+        <div id="savedList" class="fonts-list"></div>
       </div>
-    </section>
+    </div><!-- /tab-saved -->
 
-    <section class="panel" id="detectedPanel">
-      <div class="row between">
-        <h2>Detected Fonts</h2>
-        <button type="button" id="clearBtn" class="text-btn">Clear</button>
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- Tab: Settings                                 -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="tab-content hidden" id="tab-settings">
+      <div class="panel">
+        <span class="section-label" style="display:block;margin-bottom:8px">Display Options</span>
+        <div class="settings-grid">
+          <label class="setting-row"><input type="checkbox" id="showDownload" checked>
+            <span>Google Fonts search link</span>
+          </label>
+          <label class="setting-row"><input type="checkbox" id="showCSS" checked>
+            <span>CSS snippet in details</span>
+          </label>
+          <label class="setting-row"><input type="checkbox" id="showContrast" checked>
+            <span>WCAG contrast ratio</span>
+          </label>
+          <label class="setting-row"><input type="checkbox" id="highlightText">
+            <span>Highlight inspected text</span>
+          </label>
+        </div>
       </div>
-      <div id="fontsList" class="fonts-list"></div>
-    </section>
-
-    <section class="panel hidden" id="detailsPanel">
-      <div class="row between">
-        <h2>Font Details</h2>
-        <button type="button" id="backBtn" class="text-btn">Back</button>
+      <div class="panel">
+        <span class="section-label" style="display:block;margin-bottom:8px">Overlay Panel</span>
+        <div class="overlay-setting">
+          <label for="panelPositionBtn" class="setting-label overlay-setting-label">Position on page</label>
+          <div class="overlay-select" id="panelPositionWrap">
+            <input type="hidden" id="panelPosition" value="top-right">
+            <button type="button" id="panelPositionBtn" class="overlay-select-btn" aria-haspopup="listbox" aria-expanded="false">
+              <span id="panelPositionLabel">Top Right</span>
+              <span class="overlay-select-caret">▴</span>
+            </button>
+            <div class="overlay-select-menu hidden" id="panelPositionMenu" role="listbox">
+              <button type="button" class="overlay-option active" data-value="top-right">Top Right</button>
+              <button type="button" class="overlay-option" data-value="top-left">Top Left</button>
+              <button type="button" class="overlay-option" data-value="bottom-right">Bottom Right</button>
+              <button type="button" class="overlay-option" data-value="bottom-left">Bottom Left</button>
+              <button type="button" class="overlay-option" data-value="follow">Follow Mouse</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="currentPreview" class="preview">Aa Bb Cc 123</div>
-      <div id="currentDetails" class="details-grid"></div>
-    </section>
+    </div><!-- /tab-settings -->
 
-    <section class="actions">
-      <button type="button" id="startBtn" class="btn primary">Start</button>
-      <button type="button" id="stopBtn" class="btn secondary" disabled>Stop</button>
-    </section>
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- Font Details Panel (overlay, hidden by default)-->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="tab-content hidden" id="tab-details">
+      <div class="panel">
+        <div class="row between">
+          <span class="section-label">Font Details</span>
+          <div class="row gap-6">
+            <button type="button" id="bookmarkBtn" class="icon-btn bookmark-btn" title="Save this font">
+              <svg id="bookmarkIconEmpty" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg id="bookmarkIconFilled" class="hidden" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+            <button type="button" id="copyCSS" class="icon-btn" title="Copy CSS">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+            <button type="button" id="backBtn" class="text-btn">← Back</button>
+          </div>
+        </div>
 
+        <!-- Custom Preview -->
+        <div id="currentPreview" class="preview">Aa Bb Cc 0–9</div>
+        <input type="text" id="previewText" class="preview-input" placeholder="✏ Type custom preview text…" maxlength="80">
+
+        <!-- Color Row -->
+        <div class="color-row" id="colorRow">
+          <div class="color-chip-wrap">
+            <span class="color-chip" id="fgChip"></span>
+            <span class="color-label" id="fgLabel"></span>
+          </div>
+          <span class="color-sep">on</span>
+          <div class="color-chip-wrap">
+            <span class="color-chip" id="bgChip"></span>
+            <span class="color-label" id="bgLabel"></span>
+          </div>
+          <div id="contrastBlock" class="contrast-block hidden">
+            <span id="contrastValue" class="contrast-value"></span>
+            <span id="contrastBadge" class="contrast-badge"></span>
+          </div>
+        </div>
+
+        <div id="currentDetails" class="details-grid"></div>
+      </div>
+    </div><!-- /tab-details -->
+
+    <!-- ── Message bar ── -->
     <p id="message" class="message">Ready</p>
-  </main>
 
+  </main>
   <script src="popup.js"></script>
 </body>
 </html>

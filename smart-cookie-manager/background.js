@@ -1,6 +1,4 @@
 
-// ─── CONSTANTS & DEFAULTS ───────────────────────────────────────────────────
-
 const DEFAULT_SETTINGS = {
   // Whitelist
   whitelist: ['google.com', 'github.com', 'youtube.com'],
@@ -256,19 +254,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       case 'addToWhitelist': {
         const settings = await getSettings();
         const wl = [...(settings?.whitelist || [])];
-        const domain = cleanDomain(request.domain || '');
-        if (domain && !wl.includes(domain)) {
-          await saveSettings({ ...settings, whitelist: [...wl, domain] });
+        if (!wl.includes(request.domain)) {
+          await saveSettings({ ...settings, whitelist: [...wl, request.domain] });
         }
         return { success: true };
       }
 
       case 'removeFromWhitelist': {
         const settings = await getSettings();
-        const domain = cleanDomain(request.domain || '');
         await saveSettings({
           ...settings,
-          whitelist: (settings.whitelist || []).filter(d => d !== domain)
+          whitelist: (settings.whitelist || []).filter(d => d !== request.domain)
         });
         return { success: true };
       }
@@ -280,10 +276,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       case 'importWhitelist': {
         const settings = await getSettings();
-        const merged = [...new Set([
-          ...(settings?.whitelist || []),
-          ...(request.domains || []).map(cleanDomain).filter(Boolean)
-        ])];
+        const merged = [...new Set([...(settings?.whitelist || []), ...request.domains])];
         await saveSettings({ ...settings, whitelist: merged });
         return { success: true, count: merged.length };
       }

@@ -1,69 +1,79 @@
-# 🔍 WhatFont - Font Identifier
+# WhatFont - Font Identifier
 
-## 👨‍💻 Made by Saurabh Tiwari
+WhatFont is a Chrome extension for inspecting typography on real web pages without opening DevTools. It supports hover inspection, click inspection, full-page scanning, live results in the popup, saved fonts, CSS copying, contrast checks, and a themed on-page overlay.
 
-### 🧩 Description
-**WhatFont** is the easiest way to identify fonts on web pages. Instead of inspecting elements via DevTools to find font families, simply hover over any text on a webpage, and WhatFont will instantly tell you the font name, size, weight, line height, and color.
+## Features
 
-It's an essential utility for web designers, developers, and typographers who want to inspect web typography effortlessly.
+- Hover mode to inspect fonts by moving over text
+- Click mode to inspect and hold font details on a selected element
+- Scan All mode to collect font variants across the current page
+- Live Detection card in the popup with quick copy support
+- On-page overlay popup with copy button
+- Font details view with CSS snippet copy
+- WCAG contrast ratio display
+- Saved fonts / bookmarks tab
+- Light and dark popup theme
+- Adjustable overlay position, including Follow Mouse
+- Keyboard toggle with `Alt + W`
 
-### 🚀 Features
-- **Hover Mode**: Instantly identify fonts by moving your mouse over text.
-- **Click Mode**: Click on any text to pin detailed font information.
-- **Scan All Mode**: Get a report of all fonts used on the current page.
-- **Detailed Info**: Shows Family, Style, Weight, Size, Line Height, and Hex Color.
-- **CSS Snippet**: One-click copy for the font's CSS rule.
-- **Dark/Light Theme**: Auto-adapts or uses a custom theme.
+## Current UI
 
-### 🛠️ Tech Stack
-- **HTML5**: Popup structure.
-- **CSS3**: Styling for the popup and the injected tooltips.
-- **JavaScript (Vanilla)**: Detection and interaction logic.
-- **Chrome Extension (Manifest V3)**: Modern extension architecture.
+- Popup tabs: Detect, Fonts, Saved, Settings
+- Detect tab: on/off toggle, mode switcher, start/stop controls, live detection card
+- Fonts tab: detected font list with export and clear actions
+- Saved tab: bookmarked fonts
+- Settings tab: display options and overlay position control
+- On-page overlay: themed card with font family, size, weight, style, color, contrast, and copy action
 
-### 📂 Folder Structure
-```
+## Project Structure
+
+```text
 whatfont-extension/
-├── images/                 # Icons and assets
-├── themes/                 # Theme stylesheets
+├── background.js
+├── content.js
+├── manifest.json
+├── popup.css
+├── popup.html
+├── popup.js
+├── themes/
 │   └── themes.css
-├── background.js           # Background service worker
-├── content.js              # Script injected into pages
-├── manifest.json           # Extension manifest
-├── popup.css               # Popup styling
-├── popup.html              # Popup UI
-└── popup.js                # Popup logic
+└── images/
 ```
 
-### ⚙️ Installation (Developer Mode)
-1.  **Clone** the repository.
-2.  Open Chrome to `chrome://extensions/`.
-3.  Turn on **Developer mode**.
-4.  Click **Load unpacked**.
-5.  Select the `whatfont-extension` folder.
-6.  Pin the extension and start inspecting fonts!
+## Installation
 
-### 🧠 How It Works
-1.  **Activation**: Clicking the extension icon or "Start Detection" injects a script.
-2.  **Event Listeners**: The script listens for `mouseover` and `click` events on DOM elements.
-3.  **Computation**: It uses `window.getComputedStyle(element)` to fetch typography properties.
-4.  **Display**: A custom tooltip is rendered in the DOM near your cursor with the font details.
+1. Open `chrome://extensions/`
+2. Enable `Developer mode`
+3. Click `Load unpacked`
+4. Select this project folder
+5. Pin the extension and open any normal `http` or `https` page
 
-### 🔐 Permissions Explained
-- **`activeTab`**: Only runs on the tab you are currently using.
-- **`scripting`**: Required to inject the font detection tooltips and listeners.
-- **`storage`**: Saves your settings (e.g., theme, default mode).
-- **`host_permissions` ("<all_urls>")**: To allow font identification on any website.
+## How To Use
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Hover Detection](https://via.placeholder.com/600x400?text=Hover+Detection)
-![Font Details](https://via.placeholder.com/600x400?text=Font+Details)
+1. Open the extension popup
+2. Choose `Hover`, `Click`, or `Scan All`
+3. Start detection
+4. Inspect text on the page
+5. Copy details from the live popup card or the on-page overlay if needed
 
-### 🔒 Privacy Policy
-- **Respectful & Private**: We purely read the styling of the text you hover over.
-- **No Data Collected**: No text content or browsing data is sent anywhere.
-- **Zero Tracking**: No user tracking or analytics.
+Shortcut:
 
-### 📄 License
-This project is licensed under the **MIT License**.
+- `Alt + W` toggles detection on the current page
+
+## Permissions
+
+- `activeTab`: interact with the current tab
+- `storage`: save theme, mode, bookmarks, and settings
+- `scripting`: inject content script and styles when needed
+- `tabs`: track the active tab and tab state
+- `clipboardWrite`: support copy actions
+- `host_permissions: <all_urls>`: allow font inspection across websites
+
+## Notes
+
+- Chrome protected pages such as `chrome://` pages and some browser-controlled pages cannot be inspected
+- If you reload the extension during development, refresh any already open webpage tabs before testing again
+
+## License
+
+MIT
