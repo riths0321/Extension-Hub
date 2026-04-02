@@ -1,34 +1,38 @@
-// Listen for messages from the service worker
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'PARSE_XML') {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(message.xmlString, 'text/xml');
+  if (message.type !== "PARSE_XML") {
+    return;
+  }
 
-        const fullCountNode = xmlDoc.getElementsByTagName('fullcount')[0];
-        const fullCount = fullCountNode ? fullCountNode.textContent : null;
+  try {
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(message.xmlString, "text/xml");
+    const fullCount = Number.parseInt(
+      xml.querySelector("fullcount")?.textContent || "0",
+      10
+    );
 
-        if (fullCount !== null) {
-            // Also parse recent entries for the popup
-            const entries = Array.from(xmlDoc.getElementsByTagName('entry')).map(entry => {
-                const title = entry.getElementsByTagName('title')[0]?.textContent || 'No Subject';
-                const summary = entry.getElementsByTagName('summary')[0]?.textContent || '';
-                const authorName = entry.getElementsByTagName('author')[0]?.getElementsByTagName('name')[0]?.textContent || 'Unknown';
-                const link = entry.getElementsByTagName('link')[0]?.getAttribute('href') || '';
-                const issued = entry.getElementsByTagName('issued')[0]?.textContent || entry.getElementsByTagName('modified')[0]?.textContent || '';
+    const entries = Array.from(xml.querySelectorAll("entry")).map((entry) => ({
+      id: entry.querySelector("id")?.textContent || "",
+      title: entry.querySelector("title")?.textContent || "",
+      summary: entry.querySelector("summary")?.textContent || "",
+      issued: entry.querySelector("issued")?.textContent || "",
+      link: entry.querySelector("link")?.getAttribute("href") || "",
+      authorName: entry.querySelector("author > name")?.textContent || ""
+    }));
 
-                return {
-                    title,
-                    summary,
-                    authorName,
-                    link,
-                    issued
-                };
-            });
+    sendResponse({
+      type: "PARSE_RESULT",
+      count: Number.isNaN(fullCount) ? 0 : fullCount,
+      entries
+    });
+  } catch (error) {
+    sendResponse({
+      type: "PARSE_RESULT",
+      count: 0,
+      entries: [],
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
 
-            sendResponse({ type: 'PARSE_RESULT', count: fullCount, entries: entries });
-        } else {
-            sendResponse({ type: 'PARSE_ERROR', error: 'Could not find fullcount node' });
-        }
-    }
-    return true; // Keep the message channel open for async response
+  return true;
 });

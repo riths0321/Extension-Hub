@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="popup.css">
     <script src="popup.js" defer></script>
 </head>
@@ -10,48 +11,120 @@
 <body>
     <div class="container">
         <header>
-            <div class="brand">Gmail Analytics</div>
+            <div class="brand">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="currentColor"/>
+                </svg>
+                <span>Gmail Analytics Pro</span>
+            </div>
             <div class="header-controls">
-                <div class="account-selector">Primary</div>
-                <div class="time-selector">Today</div>
+                <button id="export-btn" class="icon-btn" title="Export Data">📤</button>
+                <button id="theme-toggle" class="icon-btn" title="Toggle Theme">🌓</button>
+                <div class="status-indicator" id="status-indicator">
+                    <div class="status-dot"></div>
+                </div>
+                <button id="refresh-btn" class="icon-btn" title="Refresh">🔄</button>
+                <button id="menu-btn" class="icon-btn" title="Menu">☰</button>
             </div>
         </header>
 
-        <div id="loading">Syncing data...</div>
+        <!-- Export Dropdown -->
+        <div id="export-dropdown" class="menu-dropdown hidden">
+            <div class="menu-item" data-format="csv">📄 Export as CSV</div>
+            <div class="menu-item" data-format="json">📋 Export as JSON</div>
+        </div>
+
+        <!-- Menu Dropdown -->
+        <div id="menu-dropdown" class="menu-dropdown hidden">
+            <div class="menu-item" data-action="digest">📊 Generate Digest</div>
+            <div class="menu-item" data-action="backup">💾 Backup Data</div>
+            <div class="menu-item" data-action="settings">⚙️ Settings</div>
+        </div>
+
+        <div id="loading" class="loading-state">
+            <div class="loader"></div>
+            <p>Fetching your emails...</p>
+        </div>
 
         <div id="not-logged-in" class="hidden">
-            <p>Authorization Required</p>
-            <button id="login-btn" class="primary-btn">Connect Gmail</button>
+            <div class="error-icon">🔐</div>
+            <h3>Sign in Required</h3>
+            <p>Please sign in to your Gmail account</p>
+            <button id="login-btn" class="primary-btn">Connect Gmail →</button>
         </div>
 
-        <div id="content" class="hidden">
+            <div id="content" class="hidden">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📧</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Unread</div>
+                            <div class="stat-value" id="unread-count">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Received Today</div>
+                            <div class="stat-value" id="total-count">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Priority</div>
+                            <div class="stat-value" id="priority-count">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-info">
+                            <div class="stat-label">Productivity</div>
+                            <div class="stat-value" id="productivity-score">0</div>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- KPI Section -->
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-label">Total Unread</div>
-                    <div class="kpi-value" id="unread-count">0</div>
-                    <div class="kpi-trend">Live</div>
+                <div class="filter-section">
+                    <div class="filter-header">
+                        <span>🔍 Quick Filters</span>
+                        <span class="filter-count" id="filter-count">0 emails</span>
+                    </div>
+                    <div class="filter-container">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="unread">Unread</button>
+                        <button class="filter-btn" data-filter="priority">⭐ Priority</button>
+                        <button class="filter-btn" data-filter="today">Today</button>
+                        <button class="filter-btn" data-filter="week">This Week</button>
+                        <button class="filter-btn" data-filter="month">This Month</button>
+                        <button class="filter-btn" data-filter="work">💼 Work</button>
+                        <button class="filter-btn" data-filter="personal">👤 Personal</button>
+                        <button class="filter-btn" data-filter="spam">🚫 Spam</button>
+                    </div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Recent Threads</div>
-                    <div class="kpi-value" id="thread-count">0</div>
-                    <div class="kpi-trend">Visible</div>
+
+                <div class="emails-section">
+                    <div class="section-header">
+                        <span>📧 Unread Messages</span>
+                        <span class="section-badge" id="email-count-badge">0</span>
+                    </div>
+                    <div class="email-list" id="email-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <div class="empty-title">No unread emails</div>
+                        </div>
+                    </div>
                 </div>
+
+            <div class="quick-actions">
+                <button id="inbox-btn" class="action-btn primary">📧 Open Gmail</button>
+                <button id="mark-read-btn" class="action-btn secondary">✓ Mark All Read</button>
+                <button id="smart-scan-btn" class="action-btn tertiary">🔍 Smart Scan</button>
             </div>
 
-            <!-- Recent Insights -->
-            <div>
-                <div class="section-title">Latest Insights</div>
-                <div class="email-list" id="email-list">
-                    <!-- Injected via JS -->
-                </div>
+            <div class="update-info" id="update-info">
+                <span>🟢 Last updated: Just now</span>
             </div>
-
-        </div>
-
-        <div class="dock">
-            <button id="inbox-btn" class="primary-btn">View Full Analytics (Inbox)</button>
         </div>
     </div>
 </body>

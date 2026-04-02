@@ -1,25 +1,43 @@
 {
   "manifest_version": 3,
-  "name": "__MSG_gmailcheck_name__",
-  "version": "5.0.0",
-  "description": "__MSG_gmailcheck_description__",
-  "default_locale": "en",
-  "icons": {
-    "128": "icon_128.png"
+  "name": "Gmail Analytics Pro",
+  "version": "2.0.0",
+  "description": "Track unread Gmail messages, quick inbox stats, and mark emails as read.",
+  "permissions": [
+    "alarms",
+    "storage",
+    "notifications",
+    "offscreen",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/*",
+    "https://www.googleapis.com/*"
+  ],
+  "oauth2": {
+    "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.modify"
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
   },
-  "action": {
-    "default_icon": "gmail_not_logged_in.png",
-    "default_popup": "popup.html"
-  },
-  "permissions": [
-    "alarms",
-    "offscreen",
-    "storage"
-  ],
-  "host_permissions": [
-    "https://mail.google.com/"
-  ]
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }
