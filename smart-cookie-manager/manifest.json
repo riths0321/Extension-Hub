@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Cookie Manager",
+  "version": "2.0.0",
+  "description": "All-in-one cookie cleaning, expiry monitoring, and session protection",
+  "author": "Smart Cookie Manager",
+
+  "permissions": [
+    "cookies",
+    "storage",
+    "notifications",
+    "alarms",
+    "tabs"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-src 'none'; child-src 'none'; form-action 'none'; base-uri 'none'"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Smart Cookie Manager",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon16.png",
+      "128": "icons/icon16.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon16.png",
+    "128": "icons/icon16.png"
+  },
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
