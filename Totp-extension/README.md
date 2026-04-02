@@ -1,4 +1,4 @@
-# OTP Chrome Extension
+# TOTP Chrome Extension
 
 A Chrome extension for generating Time-based One-Time Password (TOTP) codes for 2-factor authentication.
 

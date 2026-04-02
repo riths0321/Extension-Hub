@@ -1,330 +1,156 @@
-# Gmail Analytics - Extension Documentation
+# Gmail Analytics Pro Documentation
 
-## 1. Extension Overview
+## Overview
 
-**Purpose**: Gmail Analytics provides email statistics and insights from Gmail accounts. It displays unread email count, thread count, recent emails with sender information, and requires Gmail login for data access.
+Gmail Analytics Pro is a Manifest V3 Chrome extension focused on lightweight inbox monitoring. It combines Gmail Atom feed polling for unread message previews with Gmail API calls for inbox stats and mark-as-read actions.
 
-**Current Functionality**:
-- Gmail login integration
-- Unread email count display
-- Thread count display
-- Recent emails list with sender names
-- Email subjects and snippets
-- Email timestamps
-- Click to open email in Gmail
-- Login status indication
-- Not-logged-in state handling
-- Localization support structure
+The extension is made of three main parts:
 
----
+- `background.js`: polling, notifications, icon badge updates, Gmail API actions
+- `offscreen.js`: XML parsing for the Gmail Atom feed
+- `popup.js`: dashboard rendering, filtering, exporting, and user actions
 
-## 2. Current Features (From Codebase Analysis)
+## Runtime Flow
 
-### Core Features Implemented:
-1. **Gmail Integration**
-   - Chrome storage for login status
-   - Gmail URL integration
-   - Unread email feed access
-   - Thread data retrieval
-   - Gmail authentication flow
+### 1. Background polling
 
-2. **Data Display**
-   - Unread email count
-   - Thread count
-   - Recent emails list
-   - Sender names (with HTML escaping)
-   - Email subjects
-   - Email snippets/previews
-   - Timestamp display
-   - Time formatting (relative time)
+The background service worker creates an alarm named `poll` and refreshes inbox data every 1 minute.
 
-3. **User Interface**
-   - Content display when logged in
-   - Not-logged-in state messaging
-   - Login button
-   - Inbox button for quick access
-   - Email row display
-   - Profile indicator
+Main jobs:
 
-4. **Functionality**
-   - Click email to open in Gmail
-   - Direct Gmail links
-   - Email list rendering
-   - HTML content escaping (security)
-   - Time formatting utility
+- fetch `https://mail.google.com/mail/feed/atom`
+- parse the feed through the offscreen document
+- store unread count, entry list, login state, and timestamp in `chrome.storage.local`
+- update the action badge
+- show notifications when unread count increases
 
-5. **Storage & Persistence**
-   - Chrome storage for login state
-   - Data caching
-   - Session persistence
+### 2. Offscreen parsing
 
----
+Because the extension runs on Manifest V3, XML parsing is delegated to an offscreen document.
 
-## 3. Problems & Limitations
+`offscreen.js` listens for `PARSE_XML` messages and returns:
 
-### Current Limitations:
-1. **Gmail Integration**
-   - Must be logged in to Gmail
-   - Limited to Gmail only (no other email providers)
-   - No API key configuration option
-   - No OAuth scope customization
-   - Limited permission requests
+- `count`: unread message count from `fullcount`
+- `entries`: parsed feed entries with id, title, summary, issued date, link, and author name
 
-2. **Data Display**
-   - No advance filters
-   - Cannot filter by sender
-   - Cannot filter by subject
-   - Cannot sort emails
-   - No search functionality
-   - Limited time filtering
+### 3. Popup dashboard
 
-3. **Analytics Missing**
-   - No email statistics/trends
-   - No sender analytics
-   - No response time metrics
-   - No email volume trends
-   - No category breakdowns
-   - No conversation analytics
+The popup reads cached data from storage and builds a small analytics layer on top of it.
 
-4. **User Experience**
-   - No dark mode
-   - No customization options
-   - Limited keyboard shortcuts
-   - No offline capability
-   - No notification settings
-   - No filter presets
+Derived popup features:
 
-5. **Advanced Features**
-   - No label organization
-   - No folder filtering
-   - Cannot view attachments
-   - No email body preview
-   - No attachment indicators
-   - No priority/importance display
+- priority score based on keywords
+- spam-like classification based on keywords and text patterns
+- category grouping into Work, Personal, Other, or Spam
+- productivity score based on recent non-spam message volume
+- quick filters and list rendering
 
-6. **Performance**
-   - No caching optimization
-   - Limited data loaded
-   - No pagination
-   - Refreshes entire list
+## Supported Actions
 
----
+### Refresh
 
-## 4. Feature Enhancements
+The popup sends a `REFRESH` message to the background service worker, which re-fetches the Atom feed and updates storage.
 
-### Recommended Improvements:
+### Mark one email as read
 
-1. **Advanced Filtering**
-   - Filter by sender/domain
-   - Filter by subject keywords
-   - Filter by date range
-   - Filter by labels
-   - Filter by importance
-   - Custom filter combinations
+The popup sends `MARK_READ` with the selected Gmail feed entry id. The background extracts the Gmail thread id and calls:
 
-2. **Email Analytics**
-   - Email volume chart
-   - Top senders list
-   - Response time metrics
-   - Email frequency trends
-   - Reply rate analysis
-   - Average response time
+- `POST /gmail/v1/users/me/threads/{threadId}/modify`
 
-3. **Label Management**
-   - Display emails by label
-   - Label-based statistics
-   - Quick access to important labels
-   - Label color indicators
-   - Unread counts by label
+with `removeLabelIds: ["UNREAD"]`.
 
-4. **Rich Previews**
-   - Email body preview
-   - Attachment indicators
-   - Image previews
-   - Link detection
-   - Starred emails highlight
-   - Importance markers
+### Mark all visible non-spam emails as read
 
-5. **Notifications**
-   - Unread email alerts
-   - VIP sender notifications
-   - Keyword alerts
-   - Custom notification rules
-   - Desktop notifications
+The popup sends `MARK_ALL_READ` with a list of ids. The background loops through them and applies the same Gmail API modify call.
 
-6. **Customization**
-   - Theme options (light/dark)
-   - Display preferences
-   - Refresh interval setting
-   - Column customization
-   - Sort options
+### Export and backup
 
-7. **Additional Email Providers**
-   - Outlook integration
-   - Yahoo Mail support
-   - ProtonMail
-   - Other imap services
-   - Multiple account support
+Popup exports are generated in-browser:
 
----
+- CSV export for email rows
+- JSON export for email rows
+- backup export for current local extension storage
 
-## 5. Unique & Advanced Features
+## Data Model
 
-### Innovative Enhancements:
+The popup works with entries shaped like:
 
-1. **Email Intelligence Dashboard**
-   - Comprehensive analytics overview
-   - Email trends and patterns
-   - Time-based insights
-   - Sender relationship tracking
-   - Email priority analysis
+```json
+{
+  "id": "message-id",
+  "title": "Email subject",
+  "summary": "Preview text",
+  "issued": "2026-04-02T12:34:56Z",
+  "link": "https://mail.google.com/...",
+  "authorName": "Sender Name"
+}
+```
 
-2. **Smart Insights**
-   - Most important senders
-   - Most common topics
-   - Email workload trends
-   - Peak email times
-   - Response lag identification
-   - Email volume forecast
+Derived UI fields:
 
-3. **Productivity Analytics**
-   - Email time analysis
-   - Distraction metrics
-   - Productivity score
-   - Focus time tracking
-   - Meeting load from calendar
-   - Context-switching detection
+- `priorityScore`
+- `category`
+- `isRead`
 
-4. **AI-Powered Features**
-   - Smart prioritization
-   - Important email detection
-   - Spam prevention
-   - Auto-response suggestions
-   - Meeting time optimization
-   - Email classification
+## Storage Keys
 
-5. **Meeting Integration**
-   - Calendar event creation from emails
-   - Meeting request tracking
-   - Calendar conflicts detection
-   - RSVP management
-   - Meeting prep dashboard
+The extension currently stores these values in `chrome.storage.local`:
 
-6. **Collaboration**
-   - Forward to team
-   - Reply templates
-   - Delegation options
-   - Team inbox sharing
-   - Shared label access
+- `unreadCount`
+- `entries`
+- `lastUpdated`
+- `loggedIn`
+- `todayReceivedCount`
+- `theme`
 
-7. **Reporting**
-   - Email activity reports
-   - Trend analysis reports
-   - Team report summaries
-   - Export analytics
-   - Scheduled reports
+## Manifest Notes
 
----
+Current permissions:
 
-## 6. User Productivity Impact
+- `alarms`
+- `storage`
+- `notifications`
+- `offscreen`
+- `identity`
 
-### How Enhancements Benefit Users:
+Host permissions:
 
-**Email Management**:
-- Quick overview of inbox status
-- Unread email tracking
-- Important email identification
-- Organized email viewing
-- Reduced email search time
+- `https://mail.google.com/*`
+- `https://www.googleapis.com/*`
 
-**Time Efficiency**:
-- Quick unread count awareness
-- Direct email access
-- Avoid context switching
-- Focused inbox management
-- Reduced email overload
+OAuth scopes:
 
-**Insights & Knowledge**:
-- Understand email patterns
-- Identify response delays
-- Recognize important senders
-- Track communication trends
-- Email-based productivity metrics
+- `https://www.googleapis.com/auth/gmail.readonly`
+- `https://www.googleapis.com/auth/gmail.modify`
 
-**Workflow Integration**:
-- Quick access from browser
-- Direct Gmail integration
-- Calendar synchronization
-- Task creation from emails
-- Unified communication view
+## File Map
 
-**Decision Making**:
-- Data-driven email strategies
-- Communication pattern insights
-- Workload assessment
-- Priority understanding
-- Resource allocation
+```text
+gmail-analytics/
+├── manifest.json
+├── background.js
+├── offscreen.html
+├── offscreen.js
+├── popup.html
+├── popup.js
+├── popup.css
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
 
----
+## Limitations
 
-## 7. Future Scope
+- Gmail-only extension
+- depends on active Gmail sign-in
+- unread feed is based on Gmail Atom feed availability
+- spam and priority detection are heuristic, not Gmail-native classifications
+- popup analytics are lightweight and not persisted as separate reports
 
-### Long-term Vision:
+## Maintenance Guidance
 
-1. **Unified Communication Platform**
-   - Multiple email provider support
-   - Chat integration
-   - Video call logs
-   - Meeting management
-   - Document collaboration
-
-2. **Advanced Analytics Hub**
-   - Comprehensive email analytics
-   - Communication metrics
-   - Team collaboration insights
-   - Productivity benchmarking
-   - Business intelligence
-
-3. **Mobile App**
-   - Native iOS/Android apps
-   - Mobile analytics dashboard
-   - Push notifications
-   - Quick reply capability
-   - Offline access
-
-4. **Enterprise Solutions**
-   - Team collaboration workspace
-   - Admin dashboards
-   - Compliance monitoring
-   - eDiscovery support
-   - DLP (Data Loss Prevention)
-
-5. **AI Integration**
-   - Intelligent prioritization
-   - Smart triage
-   - Auto-response generation
-   - Meeting scheduling assistant
-   - Communication analytics
-
-6. **Integration Ecosystem**
-   - Slack integration
-   - Microsoft Teams
-   - Calendar integration
-   - Salesforce sync
-   - HubSpot integration
-
----
-
-## Development Constraints
-
-- **Frontend-Only**: All processing in browser
-- **Internet Required**: Must access Gmail servers
-- **Gmail Dependency**: Requires active Gmail account
-- **OAuth**: Limited by Gmail OAuth scopes
-- **API Rate Limits**: Subject to Gmail API limits
-
----
-
-## Summary
-
-Gmail Analytics can expand from a simple email counter into a comprehensive communication and productivity platform. By adding advanced filtering, analytics dashboards, multi-email support, and AI-powered insights, it would serve professionals looking to optimize email management and communication efficiency. Integration with calendars and task managers would enhance productivity further.
+- Keep `manifest.json` aligned with actual permissions and scopes
+- Avoid documenting removed features unless they exist in code
+- If locale support is restored later, add `_locales/en/messages.json` and reintroduce `default_locale`
+- Keep `background.js` notification and action icon paths aligned with `manifest.json`

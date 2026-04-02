@@ -1,51 +1,65 @@
-# 📧 Gmail Analytics (Checker)
+# Gmail Analytics Pro
 
-## 👨‍💻 Made by Saurabh Tiwari
+Gmail Analytics Pro is a Chrome extension that gives a quick view of your Gmail inbox from the toolbar popup. It shows unread activity, recent messages, simple priority signals, spam-like message detection, and lets you mark messages as read without opening Gmail first.
 
-### 🧩 Description
-**Gmail Analytics** keeps you updated on your inbox without opening Gmail. See your unread count directly on the extension icon and get notified of new messages. It's a lightweight wrapper to keep you connected.
+## Features
 
-### 🚀 Features
-- **Badge Count**: Shows unread email count on the toolbar icon.
-- **Preview**: Click to see a snippet of recent emails.
-- **Notifications**: Desktop alerts for new mail.
-- **Secure**: Uses official Gmail authentication cookies.
+- Unread count badge on the extension icon
+- Popup dashboard with unread, received-today, priority, and productivity stats
+- Recent email list with sender, subject, snippet, and relative time
+- Quick filters for unread, priority, today, week, month, work, personal, and spam
+- Mark one email or multiple emails as read
+- CSV and JSON export from the popup
+- Smart scan, digest, and local backup actions
+- Light and dark theme toggle
+- Desktop notification when new unread mail arrives
 
-### 🛠️ Tech Stack
-- **JavaScript**: Fetching feed data.
-- **Chrome Extension (Manifest V3)**: Alarms for polling.
+## How It Works
 
-### 📂 Folder Structure
+The extension reads the Gmail Atom feed to fetch unread inbox data. The XML feed is parsed inside an offscreen document, then the popup reads the stored data from `chrome.storage.local`.
+
+For actions that change Gmail state, such as marking messages as read or calculating today's received count, the extension uses the Gmail API through `chrome.identity.getAuthToken`.
+
+## Project Files
+
+```text
+gmail-analytics/
+├── manifest.json
+├── background.js
+├── offscreen.html
+├── offscreen.js
+├── popup.html
+├── popup.js
+├── popup.css
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
 ```
-GmailAnalytics/
-├── background.js      # Polling service
-├── popup.html         # Preview UI
-└── manifest.json      # Config
-```
 
-### ⚙️ Installation (Developer Mode)
-1.  Clone repo.
-2.  Go to `chrome://extensions`.
-3.  Enable **Developer mode**.
-4.  Load unpacked -> `GmailAnalytics`.
+## Permissions
 
-### 🧠 How It Works
-1.  **Polling**: Periodically fetches the Gmail Atom feed (`https://mail.google.com/mail/feed/atom`).
-2.  **Parsing**: XML parsing to extract unread count and latest 5 emails.
-3.  **Badge**: Updates `chrome.action.setBadgeText`.
+- `alarms`: runs periodic inbox polling
+- `storage`: saves fetched email data, timestamps, and theme
+- `notifications`: shows new mail alerts
+- `offscreen`: parses the Gmail Atom XML feed
+- `identity`: gets OAuth access tokens for Gmail API calls
 
-### 🔐 Permissions Explained
-- **`host_permissions`**: Access to `mail.google.com` to fetch the feed.
-- **`alarms`**: To schedule background checks.
-- **`offscreen`**: (Manifest V3) To parse DOM/XML in background if needed.
+## OAuth Scopes
 
-### 📸 Screenshots
-*(Placeholder for screenshots)*
-![Inbox Preview](https://via.placeholder.com/600x400?text=Inbox+Preview)
+- `https://www.googleapis.com/auth/gmail.readonly`
+- `https://www.googleapis.com/auth/gmail.modify`
 
-### 🔒 Privacy Policy
-- **Direct Connection**: Connects directly to Gmail. No middleman servers.
-- **Credentials**: Uses your existing browser session.
+## Setup
 
-### 📄 License
-This project is licensed under the **MIT License**.
+1. Open `chrome://extensions/`
+2. Enable Developer mode
+3. Click Load unpacked
+4. Select the `gmail-analytics` folder
+5. Replace `YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com` in `manifest.json` with your real OAuth client ID
+
+## Notes
+
+- The extension works only with Gmail
+- Gmail must be signed in for feed access and API actions
+- Export and backup are local browser-side actions

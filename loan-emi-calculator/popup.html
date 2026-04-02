@@ -1,81 +1,248 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Loan EMI Calculator</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="app">
-    <header class="hero">
-      <h1>Loan EMI Calculator
-      </h1>
-      <p>Estimate monthly EMI, total repayment, and interest burden.</p>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EMI Pro</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
 
-    <section class="card form-card">
-      <label class="field">
-        <span>Loan Amount</span>
-        <div class="input-wrap">
-          <span class="prefix">₹</span>
-          <input type="number" id="amount" placeholder="500000" min="1" step="1" />
-        </div>
-      </label>
-
-      <div class="grid-2">
-        <label class="field">
-          <span>Interest Rate (p.a.)</span>
-          <div class="input-wrap">
-            <input type="number" id="rate" placeholder="8.5" min="0" step="0.01" />
-            <span class="suffix">%</span>
+      <!-- Header with Theme Toggle -->
+      <header class="hero">
+        <div class="hero-left">
+          <div class="logo-mark">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor"/>
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
           </div>
-        </label>
+          <div>
+            <h1>EMI</h1>
+            <p class="hero-sub">Smart Loan Intelligence</p>
+          </div>
+        </div>
+        <!-- Theme Toggle Button -->
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light mode">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </header>
 
-        <label class="field">
-          <span>Tenure (months)</span>
-          <input type="number" id="months" placeholder="60" min="1" step="1" />
-        </label>
-      </div>
+      <!-- Loan Parameters -->
+      <section class="card">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Loan Parameters
+        </div>
 
-      <div class="quick-row">
-        <button class="quick" data-months="12" type="button">1Y</button>
-        <button class="quick" data-months="36" type="button">3Y</button>
-        <button class="quick" data-months="60" type="button">5Y</button>
-        <button class="quick" data-months="120" type="button">10Y</button>
-      </div>
+        <div class="amount-block">
+          <label class="field-label">Principal Amount</label>
+          <div class="amount-wrap">
+            <span class="curr">₹</span>
+            <input type="number" id="amount" value="500000" placeholder="500000" />
+          </div>
+        </div>
 
+        <div class="grid-2">
+          <div>
+            <label class="field-label">Interest Rate</label>
+            <div class="mini-wrap">
+              <input type="number" id="rate" value="8.5" step="0.1" placeholder="8.5" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div>
+            <label class="field-label">Tenure</label>
+            <div class="mini-wrap">
+              <input type="number" id="months" value="60" placeholder="60" />
+              <span class="unit">mo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chips-block">
+          <span class="chips-label">Quick tenure →</span>
+          <button class="chip" data-months="12">1Y</button>
+          <button class="chip" data-months="36">3Y</button>
+          <button class="chip" data-months="60">5Y</button>
+          <button class="chip" data-months="120">10Y</button>
+          <button class="chip" data-months="180">15Y</button>
+          <button class="chip" data-months="240">20Y</button>
+        </div>
+      </section>
+
+      <!-- Strategy -->
+      <section class="card strategy-card">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Smart Strategy
+        </div>
+        <div class="strategy-row">
+          <div>
+            <label class="field-label">Monthly Prepayment</label>
+            <p class="hint">Extra payment to slash interest faster</p>
+          </div>
+          <div class="mini-wrap gold-wrap">
+            <span class="curr sm">₹</span>
+            <input type="number" id="prepayment" value="0" placeholder="0" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Compare -->
+      <section class="card compare-card">
+        <div class="card-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          Compare Loans
+        </div>
+        <p class="hint mb-12">See which option saves you more money</p>
+        <div class="grid-2">
+          <div>
+            <label class="field-label">Alt. Rate</label>
+            <div class="mini-wrap">
+              <input type="number" id="compareRate" placeholder="7.5" step="0.1" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div>
+            <label class="field-label">Alt. Tenure</label>
+            <div class="mini-wrap">
+              <input type="number" id="compareMonths" placeholder="48" />
+              <span class="unit">mo</span>
+            </div>
+          </div>
+        </div>
+        <button id="compareBtn" class="compare-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Run Comparison
+        </button>
+        <div id="comparisonResult" class="comparison-result">
+          <p class="hint center">Enter alt. rate &amp; tenure above to compare →</p>
+        </div>
+      </section>
+
+      <!-- CTA Buttons -->
       <div class="actions">
-        <button id="calculate" class="btn primary" type="button">Calculate EMI</button>
-        <button id="reset" class="btn ghost" type="button">Reset</button>
+        <button id="calculate" class="btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Calculate
+        </button>
+        <button id="reset" class="btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.81"/></svg>
+          Reset
+        </button>
       </div>
-      <p id="message" class="message" role="status" aria-live="polite"></p>
-    </section>
 
-    <section class="card result-card">
-      <div class="result-row">
-        <span>Monthly EMI</span>
-        <strong id="emi">-</strong>
-      </div>
-      <div class="result-row">
-        <span>Total Interest</span>
-        <strong id="interest">-</strong>
-      </div>
-      <div class="result-row">
-        <span>Total Payment</span>
-        <strong id="total">-</strong>
-      </div>
-      <div class="result-row muted">
-        <span>Principal Share</span>
-        <strong id="principalShare">-</strong>
-      </div>
-      <div class="result-row muted">
-        <span>Interest Share</span>
-        <strong id="interestShare">-</strong>
-      </div>
-    </section>
-  </main>
+      <!-- Results -->
+      <section class="card result-card" id="resultCard">
 
-  <script src="popup.js"></script>
-</body>
+        <!-- EMI Display -->
+        <div class="emi-display">
+          <div class="emi-ring-wrap">
+            <svg class="emi-ring-svg" viewBox="0 0 120 120" width="120" height="120">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(251,191,36,0.1)" stroke-width="6"/>
+              <circle id="progressRing" cx="60" cy="60" r="52" fill="none"
+                stroke="url(#gGold)" stroke-width="6" stroke-linecap="round"
+                stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1)"/>
+              <defs>
+                <linearGradient id="gGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f59e0b"/>
+                  <stop offset="100%" stop-color="#fde68a"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="emi-inner">
+              <p class="emi-tag">Monthly EMI</p>
+              <h2 id="emi" class="emi-val">₹ —</h2>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown Strip -->
+        <div class="breakdown-strip">
+          <div class="bk-item">
+            <span class="bk-label">Principal</span>
+            <span class="bk-val" id="principalDisplay">—</span>
+          </div>
+          <div class="bk-sep"></div>
+          <div class="bk-item">
+            <span class="bk-label">Interest</span>
+            <span class="bk-val amber" id="interest">—</span>
+          </div>
+          <div class="bk-sep"></div>
+          <div class="bk-item">
+            <span class="bk-label">Total</span>
+            <span class="bk-val" id="total">—</span>
+          </div>
+        </div>
+
+        <!-- Ratio Bar -->
+        <div class="ratio-section" id="ratioSection" style="display:none">
+          <div class="ratio-legend">
+            <span class="leg-dot teal"></span><span>Principal</span>
+            <span class="leg-dot amber" style="margin-left:12px"></span><span>Interest</span>
+          </div>
+          <div class="ratio-bar">
+            <div class="ratio-seg teal-seg" id="principalBar"></div>
+            <div class="ratio-seg amber-seg" id="interestBar"></div>
+          </div>
+          <div class="ratio-pcts">
+            <span id="principalPct"></span>
+            <span id="interestPct"></span>
+          </div>
+        </div>
+
+        <!-- Insight Panels -->
+        <div class="insight-panel" id="healthScoreBox" style="display:none">
+          <div class="ip-header">
+            <span class="ip-emoji">💪</span>
+            <span class="ip-title">Financial Health</span>
+            <button id="updateIncomeBtn" class="ip-action-btn">Edit Income</button>
+          </div>
+          <div class="ip-rows">
+            <div class="ip-row"><span>EMI-to-Income</span><strong id="emiRatio">—</strong></div>
+            <div class="ip-row"><span>Rating</span><strong id="healthRating">—</strong></div>
+          </div>
+          <p class="ip-note" id="healthAdvice"></p>
+        </div>
+
+        <div class="insight-panel prepay-panel" id="prepay-insight" style="display:none">
+          <div class="ip-header">
+            <span class="ip-emoji">🚀</span>
+            <span class="ip-title">Prepayment Impact</span>
+          </div>
+          <div class="ip-rows">
+            <div class="ip-row"><span>Interest Saved</span><strong id="savedInterest" class="green">—</strong></div>
+            <div class="ip-row"><span>Time Saved</span><strong id="savedTime" class="green">—</strong></div>
+          </div>
+        </div>
+
+        <div class="insight-panel sip-panel" id="sip-insight" style="display:none">
+          <div class="ip-header">
+            <span class="ip-emoji">📈</span>
+            <span class="ip-title">SIP Offset Strategy</span>
+          </div>
+          <p class="ip-note">Invest <strong id="sipAmount">₹0</strong>/month in SIP (@12% returns) to recover your total loan interest.</p>
+        </div>
+      </section>
+
+      <p id="message" class="toast-msg"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
 </html>
