@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "WhatFont - Font Identifier",
-  "version": "1.1.0",
-  "description": "Identify fonts used on any website by hovering or clicking text.",
+  "version": "2.0.0",
+  "description": "Identify fonts on any website. Hover, click, or scan. Includes WCAG contrast check, CSS export, bookmarks, dark mode, and more.",
   "permissions": [
     "activeTab",
     "storage",
     "scripting",
-    "tabs"
+    "tabs",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -19,24 +20,19 @@
       "48": "images/icon48.png",
       "128": "images/icon128.png"
     },
-    "default_title": "WhatFont - Identify Fonts"
+    "default_title": "WhatFont - Font Inspector"
   },
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "css": [
-        "themes/themes.css"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["themes/themes.css"],
       "run_at": "document_end",
-      "all_frames": false
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "icons": {
@@ -46,17 +42,11 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "images/*",
-        "fonts/*",
-        "themes/*"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "resources": ["images/*", "fonts/*", "themes/*"],
+      "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {
-     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   }
 }

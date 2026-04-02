@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Cookie Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app" id="app">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <img src="icons/icon16.png" alt="Smart Cookie Manager icon">
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">SmartCookie</span>
+          <span class="brand-tag">Manager</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-chip">
+        <span class="stat-num" id="statTotal">—</span>
+        <span class="stat-lbl">Total</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-chip danger">
+        <span class="stat-num" id="statCritical">—</span>
+        <span class="stat-lbl">Critical</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-chip warning">
+        <span class="stat-num" id="statExpiring">—</span>
+        <span class="stat-lbl">Expiring</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-chip success">
+        <span class="stat-num" id="statProtected">—</span>
+        <span class="stat-lbl">Protected</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-chip cleaned">
+        <span class="stat-num" id="statCleaned">—</span>
+        <span class="stat-lbl">Cleaned</span>
+      </div>
+    </div>
+
+    <!-- NAV TABS -->
+    <nav class="nav-tabs">
+      <button class="tab active" data-tab="monitor">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.5 4a.5.5 0 00-1 0v3.5a.5.5 0 00.146.354l2 2a.5.5 0 00.708-.708L8.5 8.293V5z"/></svg>
+        Monitor
+      </button>
+      <button class="tab" data-tab="cleaner">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 3a.5.5 0 000 1h11a.5.5 0 000-1h-11zm2 3a.5.5 0 000 1h7a.5.5 0 000-1h-7zm2 3a.5.5 0 000 1h3a.5.5 0 000-1h-3z"/></svg>
+        Cleaner
+      </button>
+      <button class="tab" data-tab="whitelist">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
+        Protect
+      </button>
+      <button class="tab" data-tab="analytics">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 0h1v15h15v1H0V0zm10 3.5a.5.5 0 01.5-.5h4a.5.5 0 01.5.5v4a.5.5 0 01-1 0V4.9l-3.613 4.417a.5.5 0 01-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 01-.808-.588l4-5.5a.5.5 0 01.758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 01-.5-.5z"/></svg>
+        Analytics
+      </button>
+    </nav>
+
+    <!-- PANEL: MONITOR -->
+    <div class="panel active" id="panel-monitor">
+      <div class="panel-toolbar">
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.099zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/></svg>
+          <input type="text" id="monitorSearch" class="search-input" placeholder="Search name or domain…">
+          <button class="search-clear hidden" id="searchClear">✕</button>
+        </div>
+        <button class="refresh-btn" id="refreshBtn" title="Refresh">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z"/><path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+
+      <div class="monitor-controls">
+        <div class="sort-dropdown" id="sortDropdown">
+          <button class="sort-select" id="sortSelectBtn" title="Sort cookies" type="button" aria-expanded="false">
+            <span id="sortSelectLabel">↕ Status</span>
+          </button>
+          <div class="sort-dropdown-menu hidden" id="sortDropdownMenu">
+            <button type="button" class="sort-option active" data-value="status">↕ Status</button>
+            <button type="button" class="sort-option" data-value="name">↕ Name</button>
+            <button type="button" class="sort-option" data-value="domain">↕ Domain</button>
+            <button type="button" class="sort-option" data-value="expiry">↕ Expiry</button>
+          </div>
+        </div>
+        <button class="ctrl-btn" id="groupToggle" title="Group by domain">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1V2zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V2zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1V2zM1 7a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H2a1 1 0 01-1-1V7zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V7zm5 0a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1V7z"/></svg>
+          Group
+        </button>
+        <div class="export-wrap">
+          <button class="ctrl-btn" id="exportDropdownBtn" title="Export cookies">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 01.5.5v2.5a1 1 0 001 1h12a1 1 0 001-1v-2.5a.5.5 0 011 0v2.5a2 2 0 01-2 2H2a2 2 0 01-2-2v-2.5a.5.5 0 01.5-.5z"/><path d="M7.646 11.854a.5.5 0 00.708 0l3-3a.5.5 0 00-.708-.708L8.5 10.293V1.5a.5.5 0 00-1 0v8.793L5.354 8.146a.5.5 0 10-.708.708l3 3z"/></svg>
+            Export
+          </button>
+          <div class="export-dropdown hidden" id="exportDropdown">
+            <button id="exportJsonBtn">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M14 4.5V14a2 2 0 01-2 2H4a2 2 0 01-2-2V2a2 2 0 012-2h5.5L14 4.5zm-3 0A1.5 1.5 0 019.5 3V1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V4.5h-2z"/></svg>
+              Export as JSON
+            </button>
+            <button id="exportCsvBtn">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.18 4.616a2.931 2.931 0 00-1.61.83C2.649 6.37 2 8.117 2 10.21c0 1.414.233 2.843.84 3.987.614 1.152 1.624 2.003 3.124 2.003 1.25 0 2.164-.506 2.718-1.243.396-.527.531-1.073.531-1.507v-.03h-1.4v.03c0 .248-.054.509-.218.737-.285.38-.78.612-1.631.612-1.0 0-1.627-.53-2.033-1.312-.414-.79-.62-1.915-.62-3.274 0-1.79.516-3.126 1.223-3.832.358-.357.76-.574 1.12-.672A1.81 1.81 0 016 6.291c.85 0 1.344.232 1.63.613.163.228.217.49.217.737v.03h1.4v-.03c0-.434-.135-.98-.531-1.507C8.163 5.358 7.25 4.852 6 4.852c-.28 0-.554.03-.82.084z"/></svg>
+              Export as CSV
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-chips" id="monitorFilters">
+        <button class="chip active" data-filter="all">All</button>
+        <button class="chip" data-filter="critical">🚨 Critical</button>
+        <button class="chip" data-filter="warning">⚠️ Warning</button>
+        <button class="chip" data-filter="soon">📅 Soon</button>
+        <button class="chip" data-filter="safe">✅ Safe</button>
+        <button class="chip" data-filter="session">🔄 Session</button>
+        <button class="chip" data-filter="protected">🛡️ Protected</button>
+        <button class="chip" data-filter="tracker">🕵️ Trackers</button>
+      </div>
+
+      <div class="cookie-list" id="cookieList">
+        <div class="empty-state" id="loadingState">
+          <div class="spinner"></div>
+          <span>Loading cookies…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: CLEANER -->
+    <div class="panel" id="panel-cleaner">
+      <div class="cleaner-hero">
+        <div class="cleaner-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="22" fill="url(#broom)"/>
+            <text y="32" x="10" font-size="22" fill="white">🧹</text>
+            <defs><linearGradient id="broom" x1="0" y1="0" x2="48" y2="48"><stop offset="0%" stop-color="var(--accent)"/><stop offset="100%" stop-color="var(--accent-dark)"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div class="cleaner-info">
+          <p class="cleaner-tagline">Non-essential cookies will be removed. Whitelisted sites keep their cookies.</p>
+          <div class="cleaner-preview" id="cleanerPreview">
+            <span id="cleanableCount">—</span> cookies can be cleaned
+          </div>
+        </div>
+      </div>
+
+      <div class="cleaner-summary">
+        <div class="cleaner-summary-chip">
+          <span class="cleaner-summary-value" id="cleanerTrackerCount">—</span>
+          <span class="cleaner-summary-label">Trackers</span>
+        </div>
+        <div class="cleaner-summary-chip">
+          <span class="cleaner-summary-value" id="cleanerExpiredCount">—</span>
+          <span class="cleaner-summary-label">Expired</span>
+        </div>
+        <div class="cleaner-summary-chip">
+          <span class="cleaner-summary-value" id="cleanerProtectedCount">—</span>
+          <span class="cleaner-summary-label">Protected</span>
+        </div>
+      </div>
+
+      <div class="action-grid">
+        <button class="action-card primary" id="cleanNowBtn">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3a1 1 0 012 0v5.5a.5.5 0 001 0V4a1 1 0 112 0v4.5a.5.5 0 001 0V6a1 1 0 112 0v5a7 7 0 11-14 0V9a1 1 0 012 0v2.5a.5.5 0 001 0V4a1 1 0 012 0v4.5a.5.5 0 001 0V3z" clip-rule="evenodd"/></svg>
+          <span>Clean Now</span>
+          <small>Remove non-whitelisted cookies</small>
+        </button>
+        <button class="action-card secondary" id="protectCurrentBtn">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          <span>Protect Current</span>
+          <small id="currentDomainLabel">Add active site to whitelist</small>
+        </button>
+      </div>
+
+      <div class="section-label">Last Clean</div>
+      <div class="last-clean-info" id="lastCleanInfo">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 3.5a.5.5 0 00-1 0V9a.5.5 0 00.252.434l3.5 2a.5.5 0 00.496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 108 0a8 8 0 000 16zm7-8A7 7 0 111 8a7 7 0 0114 0z"/></svg>
+        <span>Never cleaned yet</span>
+      </div>
+
+      <div class="section-label">Bulk Actions</div>
+      <div class="bulk-actions">
+        <button class="bulk-btn" id="bulkByDomainBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1116 0A8 8 0 010 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855-.143.268-.276.56-.395.872.705.157 1.472.257 2.282.287V1.077zM4.249 3.539c.142-.384.304-.744.481-1.078a6.7 6.7 0 01.597-.933A7.01 7.01 0 002.255 4.11c.46.376.963.695 1.994 1.43zm2.7-2.231c1.207-.06 2.366.153 3.37.526-.097.254-.21.499-.34.743-.408.756-1.027 1.468-1.69 2.12L8.5 3.5V1.308zM11.34 2.5c.228.186.432.388.609.6A6.956 6.956 0 0113.8 5.5H11c-.048-.648-.12-1.263-.215-1.832l.555-1.168zM8 1.5v1.768c.69-.03 1.347-.14 1.956-.31a9.31 9.31 0 00-.296-.614A7.17 7.17 0 009.08 1.7L8 1.5zM4.5 8.5a7.466 7.466 0 01.09-1H2.255a6.02 6.02 0 00-.105 1H4.5zM4.59 9.5H2.15a6.02 6.02 0 00.105 1H4.5a7.483 7.483 0 01-.09-1.5z"/></svg>
+          By Domain
+        </button>
+        <button class="bulk-btn" id="bulkExpiredBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 16A8 8 0 108 0a8 8 0 000 16zm.93-9.412l-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 110-2 1 1 0 010 2z"/></svg>
+          Expired Only
+        </button>
+        <button class="bulk-btn" id="bulkTrackersBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zM0 8a8 8 0 1116 0A8 8 0 010 8zm5.854-3.854a.5.5 0 010 .708L3.707 7H12.5a.5.5 0 010 1H3.707l2.147 2.146a.5.5 0 01-.708.708l-3-3a.5.5 0 010-.708l3-3a.5.5 0 01.708 0z"/></svg>
+          Trackers Only
+        </button>
+      </div>
+
+      <div class="status-toast hidden" id="cleanStatus"></div>
+    </div>
+
+    <!-- PANEL: WHITELIST -->
+    <div class="panel" id="panel-whitelist">
+      <div class="whitelist-quick-actions">
+        <button class="wl-quick-btn" id="protectCurrentWlBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Protect Current Site
+        </button>
+      </div>
+
+      <div class="whitelist-add">
+        <input type="text" id="domainInput" class="domain-input" placeholder="example.com">
+        <button class="add-domain-btn" id="addDomainBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 01.5.5v3h3a.5.5 0 010 1h-3v3a.5.5 0 01-1 0v-3h-3a.5.5 0 010-1h3v-3A.5.5 0 018 4z"/></svg>
+          Add
+        </button>
+      </div>
+
+      <div class="whitelist-search-wrap">
+        <input type="text" id="whitelistSearch" class="whitelist-search-input" placeholder="Search protected sites...">
+        <button class="whitelist-search-clear hidden" id="whitelistSearchClear">✕</button>
+      </div>
+
+      <div class="whitelist-toolbar">
+        <span class="wl-count" id="wlCount">0 sites</span>
+        <div class="wl-actions">
+          <button class="wl-action-btn" id="exportWlBtn" title="Export whitelist">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 01.5.5v2.5a1 1 0 001 1h12a1 1 0 001-1v-2.5a.5.5 0 011 0v2.5a2 2 0 01-2 2H2a2 2 0 01-2-2v-2.5a.5.5 0 01.5-.5z"/><path d="M7.646 11.854a.5.5 0 00.708 0l3-3a.5.5 0 00-.708-.708L8.5 10.293V1.5a.5.5 0 00-1 0v8.793L5.354 8.146a.5.5 0 10-.708.708l3 3z"/></svg>
+            Export
+          </button>
+          <label class="wl-action-btn" title="Import whitelist">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 01.5.5v2.5a1 1 0 001 1h12a1 1 0 001-1v-2.5a.5.5 0 011 0v2.5a2 2 0 01-2 2H2a2 2 0 01-2-2v-2.5a.5.5 0 01.5-.5z"/><path d="M7.646 1.146a.5.5 0 01.708 0l3 3a.5.5 0 01-.708.708L8.5 2.707V11.5a.5.5 0 01-1 0V2.707L5.354 4.854a.5.5 0 11-.708-.708l3-3z"/></svg>
+            Import
+            <input type="file" id="importFile" accept=".json,.txt" style="display:none">
+          </label>
+        </div>
+      </div>
+
+      <div class="whitelist-list" id="whitelistItems">
+        <div class="empty-state">No protected sites yet.</div>
+      </div>
+    </div>
+
+    <!-- PANEL: ANALYTICS -->
+    <div class="panel" id="panel-analytics">
+
+      <div class="analytics-card">
+        <div class="analytics-card-title">Privacy Score</div>
+        <div class="score-display">
+          <div class="score-ring-wrap">
+            <canvas id="scoreCanvas" width="96" height="96"></canvas>
+            <div class="score-inner">
+              <span class="score-num" id="scoreNum">—</span>
+              <span class="score-grade" id="scoreGrade">—</span>
+            </div>
+          </div>
+          <div class="score-factors" id="scoreFactors"></div>
+        </div>
+      </div>
+
+      <div class="analytics-card">
+        <div class="analytics-card-title">Cookie Breakdown</div>
+        <div class="chart-row">
+          <canvas id="statusChart" width="110" height="110"></canvas>
+          <div class="chart-legend" id="statusLegend"></div>
+        </div>
+      </div>
+
+      <div class="analytics-stats-row">
+        <div class="a-stat tracker"><span id="aStatTrackers">—</span><small>Trackers</small></div>
+        <div class="a-stat session"><span id="aStatSession">—</span><small>Session</small></div>
+        <div class="a-stat secure"><span id="aStatSecure">—</span><small>Secure</small></div>
+        <div class="a-stat httponly"><span id="aStatHttpOnly">—</span><small>HttpOnly</small></div>
+      </div>
+
+      <div class="analytics-card">
+        <div class="analytics-card-title">Top Domains <span class="card-title-sub">by cookie count</span></div>
+        <div class="domains-chart" id="domainsChart"></div>
+      </div>
+
+      <div class="analytics-export">
+        <span class="analytics-export-label">Export all cookies:</span>
+        <button class="analytics-export-btn" id="aExportJsonBtn">JSON</button>
+        <button class="analytics-export-btn" id="aExportCsvBtn">CSV</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COOKIE DETAIL MODAL -->
+  <div class="modal-overlay hidden" id="cookieModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-cookie-name" id="modalName">cookie_name</div>
+          <div class="modal-cookie-domain" id="modalDomain">domain.com</div>
+        </div>
+        <div class="modal-header-right">
+          <span class="cookie-badge-status modal-status-badge" id="modalStatus">Safe</span>
+          <button class="modal-close" id="modalClose">✕</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row"><span class="modal-label">Path</span><span class="modal-value" id="modalPath">—</span></div>
+        <div class="modal-row"><span class="modal-label">Expires</span><span class="modal-value" id="modalExpiry">—</span></div>
+        <div class="modal-row"><span class="modal-label">Time Left</span><span class="modal-value" id="modalTimeLeft">—</span></div>
+        <div class="modal-row"><span class="modal-label">SameSite</span><span class="modal-value" id="modalSameSite">—</span></div>
+        <div class="modal-flags-row">
+          <span class="modal-flag-chip" id="modalFlagSecure">🔒 Secure</span>
+          <span class="modal-flag-chip" id="modalFlagHttpOnly">HTTP Only</span>
+          <span class="modal-flag-chip" id="modalFlagProtected">🛡️ Protected</span>
+          <span class="modal-flag-chip tracker" id="modalFlagTracker">🕵️ Tracker</span>
+        </div>
+        <div class="modal-row tracker-row hidden" id="modalTrackerRow">
+          <span class="modal-label">Tracker</span>
+          <span class="modal-value tracker-name" id="modalTrackerName">—</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn protect" id="modalProtectBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
+          Protect
+        </button>
+        <button class="modal-btn delete" id="modalDeleteBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 01-1-1V2a1 1 0 011-1H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1v1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" clip-rule="evenodd"/></svg>
+          Delete Cookie
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUGGESTION TOAST -->
+  <div class="suggestion-toast hidden" id="suggestionToast">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 118 1a7 7 0 010 14zm0 1A8 8 0 108 0a8 8 0 000 16z"/><path d="M5.255 5.786a.237.237 0 00.241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 00.25.246h.811a.25.25 0 00.25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/></svg>
+    <span id="suggestionText"></span>
+    <button class="suggestion-action" id="suggestionAction">Protect</button>
+    <button class="suggestion-dismiss" id="suggestionDismiss">✕</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
