@@ -1,6 +1,3 @@
-// Smart Cookie Manager — popup.js v2.1
-// New: detail modal, single-delete, analytics tab, domain grouping,
-//      CSV/JSON export, advanced sort, tracker flagging
 
 // ─── TRACKER DATABASE ────────────────────────────────────────────────────────
 
@@ -81,9 +78,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupWhitelistPanel();
   setupAnalyticsPanel();
   setupModal();
+  setupSuggestions();
   applyTheme();
   startCountdownTimer();
-  checkSuggestions();
 });
 
 window.addEventListener('beforeunload', () => {
@@ -115,6 +112,7 @@ async function loadAll() {
     updateCleanerInfo();
     updateLastCleanInfo();
     if (currentTab === 'analytics') renderAnalytics();
+    checkSuggestions();
   } catch (err) {
     console.error('[SCM Popup] Load error:', err);
   }
@@ -312,7 +310,7 @@ function renderCookieListGrouped(list, cookies) {
     const collapsed = collapsedGroups.has(domain) ? 'collapsed' : '';
     const trackerCount = domainCookies.filter(c => c.isTracker).length;
     const trackerBadge = trackerCount > 0
-      ? `<span class="cookie-tracker-badge" style="font-size:9px">${trackerCount} tracker${trackerCount > 1 ? 's' : ''}</span>`
+      ? `<span class="cookie-tracker-badge cookie-tracker-badge-compact">${trackerCount} tracker${trackerCount > 1 ? 's' : ''}</span>`
       : '';
     return `
       <div class="domain-group ${collapsed}" data-domain="${esc(domain)}">
@@ -417,7 +415,7 @@ function cookieCardHTML(c) {
   const flags = [
     c.secure ? `<span class="cookie-flag">Secure</span>` : '',
     c.httpOnly ? `<span class="cookie-flag">HttpOnly</span>` : '',
-    c.isProtected ? `<span class="cookie-protected"><svg viewBox="0 0 16 16" fill="currentColor" style="width:10px;height:10px"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>Protected</span>` : '',
+    c.isProtected ? `<span class="cookie-protected"><svg class="cookie-protected-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>Protected</span>` : '',
     c.isTracker ? `<span class="cookie-tracker-badge">🕵️ ${esc(c.trackerName)}</span>` : ''
   ].filter(Boolean).join('');
 
@@ -489,7 +487,8 @@ function setupModal() {
   document.getElementById('modalProtectBtn').addEventListener('click', async () => {
     if (!activeCookie) return;
     const domain = activeCookie.cleanDomain || activeCookie.domain;
-    await chrome.runtime.sendMessage({ action: 'addToWhitelist', domain });
+    const action = activeCookie.isProtected ? 'removeFromWhitelist' : 'addToWhitelist';
+    await chrome.runtime.sendMessage({ action, domain });
     await loadAll();
     // Update modal state
     const updated = allCookies.find(c => c.name === activeCookie.name && c.domain === activeCookie.domain);
@@ -500,6 +499,22 @@ function setupModal() {
     if (!activeCookie) return;
     closeCookieDetail();
     await deleteSingleCookie(activeCookie);
+  });
+}
+
+function setupSuggestions() {
+  const toast = document.getElementById('suggestionToast');
+  document.getElementById('suggestionAction').addEventListener('click', async () => {
+    const domain = toast.dataset.domain;
+    if (!domain) return;
+    await chrome.runtime.sendMessage({ action: 'addToWhitelist', domain });
+    toast.classList.add('hidden');
+    toast.dataset.domain = '';
+    await loadAll();
+  });
+  document.getElementById('suggestionDismiss').addEventListener('click', () => {
+    toast.classList.add('hidden');
+    toast.dataset.domain = '';
   });
 }
 
@@ -551,9 +566,11 @@ function showCookieDetail(cookie) {
 
   // Protect button label
   const protectBtn = document.getElementById('modalProtectBtn');
-  protectBtn.innerHTML = cookie.isProtected
-    ? `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg> Unprotect`
-    : `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg> Protect`;
+  const protectLabel = protectBtn.querySelector('.modal-btn-label');
+  protectBtn.classList.toggle('is-active', cookie.isProtected);
+  if (protectLabel) {
+    protectLabel.textContent = cookie.isProtected ? 'Unprotect' : 'Protect';
+  }
 
   document.getElementById('cookieModal').classList.remove('hidden');
 }
@@ -758,8 +775,8 @@ async function addDomainFromInput() {
 }
 
 function flashInput(input) {
-  input.style.borderColor = 'var(--danger)';
-  setTimeout(() => input.style.borderColor = '', 800);
+  input.classList.add('input-error');
+  setTimeout(() => input.classList.remove('input-error'), 800);
 }
 
 function renderWhitelistItems() {
@@ -879,6 +896,7 @@ function renderPrivacyScore(score, trackerCount, counts) {
 
   const cx = W / 2, cy = H / 2, r = W / 2 - 7;
   const scoreColor = score >= 80 ? '#4af497' : score >= 60 ? '#f4c44a' : score >= 40 ? '#f4a44a' : '#f45b5b';
+  const scoreTone = score >= 80 ? 'tone-safe' : score >= 60 ? 'tone-warning' : score >= 40 ? 'tone-caution' : 'tone-danger';
 
   // Background ring
   ctx.beginPath();
@@ -899,30 +917,30 @@ function renderPrivacyScore(score, trackerCount, counts) {
   const scoreEl = document.getElementById('scoreNum');
   const gradeEl = document.getElementById('scoreGrade');
   scoreEl.textContent = score;
-  scoreEl.style.color = scoreColor;
+  scoreEl.className = `score-num ${scoreTone}`;
 
   const grade = score >= 90 ? 'A' : score >= 75 ? 'B' : score >= 60 ? 'C' : score >= 40 ? 'D' : 'F';
   const gradeLabels = { A: 'Excellent', B: 'Good', C: 'Fair', D: 'Poor', F: 'At Risk' };
   gradeEl.textContent = grade;
-  gradeEl.style.color = scoreColor;
+  gradeEl.className = `score-grade ${scoreTone}`;
 
   // Score factors
   const factors = document.getElementById('scoreFactors');
   const wlLen = settings?.whitelist?.length || 0;
   factors.innerHTML = [
     trackerCount > 0
-      ? `<div class="score-factor"><div class="score-factor-dot" style="background:#f45b5b"></div>${trackerCount} tracker cookie${trackerCount !== 1 ? 's' : ''} detected</div>`
-      : `<div class="score-factor"><div class="score-factor-dot" style="background:#4af497"></div>No tracker cookies found</div>`,
+      ? `<div class="score-factor"><div class="score-factor-dot tone-danger-bg"></div>${trackerCount} tracker cookie${trackerCount !== 1 ? 's' : ''} detected</div>`
+      : `<div class="score-factor"><div class="score-factor-dot tone-safe-bg"></div>No tracker cookies found</div>`,
     counts.critical > 0
-      ? `<div class="score-factor"><div class="score-factor-dot" style="background:#f45b5b"></div>${counts.critical} critical expiry soon</div>`
+      ? `<div class="score-factor"><div class="score-factor-dot tone-danger-bg"></div>${counts.critical} critical expiry soon</div>`
       : '',
     counts.warning > 0
-      ? `<div class="score-factor"><div class="score-factor-dot" style="background:#f4c44a"></div>${counts.warning} cookies expiring in 1h</div>`
+      ? `<div class="score-factor"><div class="score-factor-dot tone-warning-bg"></div>${counts.warning} cookies expiring in 1h</div>`
       : '',
     wlLen > 0
-      ? `<div class="score-factor"><div class="score-factor-dot" style="background:#4af497"></div>${wlLen} site${wlLen !== 1 ? 's' : ''} in whitelist</div>`
-      : `<div class="score-factor"><div class="score-factor-dot" style="background:#f4a44a"></div>No sites whitelisted</div>`,
-    `<div class="score-factor"><div class="score-factor-dot" style="background:#9b8af4"></div>${gradeLabels[grade]} privacy posture</div>`
+      ? `<div class="score-factor"><div class="score-factor-dot tone-safe-bg"></div>${wlLen} site${wlLen !== 1 ? 's' : ''} in whitelist</div>`
+      : `<div class="score-factor"><div class="score-factor-dot tone-caution-bg"></div>No sites whitelisted</div>`,
+    `<div class="score-factor"><div class="score-factor-dot tone-session-bg"></div>${gradeLabels[grade]} privacy posture</div>`
   ].filter(Boolean).join('');
 }
 
@@ -981,8 +999,8 @@ function renderStatusChart(counts) {
 
   document.getElementById('statusLegend').innerHTML = allSegments
     .map(s => `
-      <div class="legend-item" style="opacity:${(counts[s.key] || 0) > 0 ? 1 : 0.35}">
-        <div class="legend-dot" style="background:${s.color}"></div>
+      <div class="legend-item${(counts[s.key] || 0) > 0 ? '' : ' is-muted'}">
+        <div class="legend-dot status-${s.key}"></div>
         <span class="legend-label">${s.label}</span>
         <span class="legend-val">${counts[s.key] || 0}</span>
       </div>`)
@@ -1006,16 +1024,12 @@ function renderDomainsChart() {
   const maxVal = sorted[0]?.[1] || 1;
 
   document.getElementById('domainsChart').innerHTML = sorted.map(([domain, count]) => {
-    const pct = Math.max(8, Math.round((count / maxVal) * 100));
     const isTracker = trackerDomains.has(domain);
     return `
       <div class="bar-row">
         <span class="bar-label" title="${esc(domain)}">${esc(domain)}</span>
-        <div class="bar-track">
-          <div class="bar-fill ${isTracker ? 'tracker-bar' : ''}" style="width:${pct}%">
-            <span class="bar-val">${count}</span>
-          </div>
-        </div>
+        <meter class="bar-meter ${isTracker ? 'tracker-bar' : ''}" min="0" max="${maxVal}" value="${count}"></meter>
+        <span class="bar-val">${count}</span>
       </div>`;
   }).join('');
 }
@@ -1089,25 +1103,23 @@ function applyTheme() {
 // ─── SUGGESTIONS ─────────────────────────────────────────────────────────────
 
 async function checkSuggestions() {
+  const toast = document.getElementById('suggestionToast');
   const expiringSoon = allCookies.filter(c =>
     !c.isProtected && (c.expiryStatus === 'critical' || c.expiryStatus === 'warning')
   );
-  if (expiringSoon.length === 0) return;
+  if (expiringSoon.length === 0) {
+    toast.classList.add('hidden');
+    toast.dataset.domain = '';
+    return;
+  }
 
   const domains = [...new Set(expiringSoon.map(c => c.cleanDomain))];
   const domain = domains[0];
 
-  const toast = document.getElementById('suggestionToast');
+  toast.dataset.domain = domain;
   document.getElementById('suggestionText').textContent =
     `"${domain}" has cookies expiring soon. Protect it?`;
   toast.classList.remove('hidden');
-
-  document.getElementById('suggestionAction').onclick = async () => {
-    await chrome.runtime.sendMessage({ action: 'addToWhitelist', domain });
-    toast.classList.add('hidden');
-    await loadAll();
-  };
-  document.getElementById('suggestionDismiss').onclick = () => toast.classList.add('hidden');
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -1162,11 +1174,6 @@ function formatCountdown(ms) {
 function setText(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
-}
-
-function setChecked(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.checked = !!val;
 }
 
 function esc(str) {
