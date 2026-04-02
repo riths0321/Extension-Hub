@@ -1,7 +1,3 @@
-// Smart Cookie Manager - Unified Background Service Worker
-// Combines: Cookie Cleaning + Expiry Monitoring + Smart Automation
-
-// ─── CONSTANTS & DEFAULTS ───────────────────────────────────────────────────
 
 const DEFAULT_SETTINGS = {
   // Whitelist
