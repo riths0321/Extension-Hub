@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Text to Voice",
-  "short_name": "TextVoice",
-  "version": "1.0",
-  "description": "Convert text into natural-sounding speech instantly.",
+  "name": "Smart Text to Voice Pro",
+  "short_name": "SmartVoice",
+  "version": "2.0.0",
+  "description": "Convert text into natural-sounding speech with smart reading, multi-language support, and AI features.",
 
   "action": {
     "default_popup": "popup.html",
@@ -13,6 +13,46 @@
       "128": "icons/icon128.png"
     }
   },
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "commands": {
+    "read-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+R",
+        "mac": "Command+Shift+R"
+      },
+      "description": "Read current page"
+    },
+    "read-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Read selected text"
+    }
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
 
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
