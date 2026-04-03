@@ -9,8 +9,7 @@ const KEYS = {
   showContrast: 'showContrast',
   highlightText:'highlightText',
   panelPosition:'panelPosition',
-  bookmarks:    'bookmarkedFonts',
-  darkMode:     'darkMode'
+  bookmarks:    'bookmarkedFonts'
 };
 
 // ─── App State ──────────────────────────────────────────────────────────────
@@ -68,9 +67,6 @@ const el = {
   contrastValue:  () => document.getElementById('contrastValue'),
   contrastBadge:  () => document.getElementById('contrastBadge'),
   message:        () => document.getElementById('message'),
-  darkModeBtn:    () => document.getElementById('darkModeBtn'),
-  darkIcon:       () => document.getElementById('darkIcon'),
-  lightIcon:      () => document.getElementById('lightIcon'),
   livePanel:      () => document.getElementById('livePanel'),
   liveContent:    () => document.getElementById('liveContent'),
   liveBadge:      () => document.getElementById('liveBadge'),
@@ -162,7 +158,6 @@ async function initialize() {
   await loadStorage();
   await ensureContentReady();
   await loadTabDetectedFonts();
-  applyDarkMode(state.darkMode);
   renderAll();
   await sendSettingsToTab();
 }
@@ -230,9 +225,6 @@ function setupEventListeners() {
     onSettingsChange();
   });
 
-  // Dark mode toggle
-  el.darkModeBtn().addEventListener('click', toggleDarkMode);
-
   // Export button
   el.exportBtn().addEventListener('click', e => {
     e.stopPropagation();
@@ -279,20 +271,6 @@ function switchTab(tabId) {
   document.getElementById('tab-details').classList.add('hidden');
 }
 
-// ─── Dark Mode ───────────────────────────────────────────────────────────────
-
-function toggleDarkMode() {
-  state.darkMode = !state.darkMode;
-  applyDarkMode(state.darkMode);
-  chrome.storage.local.set({ [KEYS.darkMode]: state.darkMode });
-}
-
-function applyDarkMode(isDark) {
-  document.body.dataset.theme = isDark ? 'dark' : 'light';
-  el.darkIcon().classList.toggle('hidden', isDark);
-  el.lightIcon().classList.toggle('hidden', !isDark);
-}
-
 // ─── Load / Save ─────────────────────────────────────────────────────────────
 
 async function loadTab() {
@@ -319,7 +297,6 @@ async function loadStorage() {
   state.active        = Boolean(data[KEYS.active]);
   state.mode          = data[KEYS.mode] || 'hover';
   state.bookmarks     = Array.isArray(data[KEYS.bookmarks]) ? data[KEYS.bookmarks] : [];
-  state.darkMode      = Boolean(data[KEYS.darkMode]);
   state.fonts         = [];
   state.settings = {
     showDownload:  data[KEYS.showDownload]  !== false,
@@ -482,8 +459,8 @@ function makeFontItem(font, isSaved) {
   // Color swatch
   const swatch = document.createElement('span');
   swatch.className = 'font-item-swatch';
-  swatch.style.background = font.color || '#333';
-  swatch.style.borderColor = font.backgroundColor || '#eee';
+  swatch.style.setProperty('--swatch-bg', font.color || '#333');
+  swatch.style.setProperty('--swatch-border-color', font.backgroundColor || '#eee');
 
   const body = document.createElement('div');
   body.className = 'font-item-body';
@@ -534,8 +511,8 @@ function renderLiveFont(font) {
   const family = document.createElement('div');
   family.className = 'live-family';
   family.textContent = font.family;
-  family.style.fontFamily = font.family;
-  family.style.fontWeight = font.weight;
+  family.style.setProperty('--preview-family', font.family);
+  family.style.setProperty('--preview-weight', font.weight);
 
   const meta = document.createElement('div');
   meta.className = 'live-meta';
@@ -615,9 +592,9 @@ function showFontDetails(font, switchToDetails = true) {
   const fgHex = font.colorHex || rgbToHex(font.color) || font.color || '';
   const bgHex = font.backgroundColorHex || rgbToHex(font.backgroundColor) || font.backgroundColor || '';
 
-  el.fgChip().style.background = font.color || '#333';
+  el.fgChip().style.setProperty('--chip-bg', font.color || '#333');
   el.fgLabel().textContent = fgHex.toUpperCase();
-  el.bgChip().style.background = font.backgroundColor || '#fff';
+  el.bgChip().style.setProperty('--chip-bg', font.backgroundColor || '#fff');
   el.bgLabel().textContent = bgHex.toUpperCase();
 
   if (state.settings.showContrast && font.contrastRatio !== null && font.contrastRatio !== undefined) {
@@ -776,8 +753,8 @@ async function copyCSSToClipboard() {
   const copied = await copyText(css);
   if (copied) {
     setMessage('✓ CSS copied to clipboard');
-    el.copyCSS().style.color = 'var(--accent)';
-    setTimeout(() => { el.copyCSS().style.color = ''; }, 1500);
+    el.copyCSS().classList.add('copy-feedback');
+    setTimeout(() => { el.copyCSS().classList.remove('copy-feedback'); }, 1500);
   } else {
     setMessage('Copy failed — try manually');
   }
