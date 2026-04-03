@@ -12,6 +12,7 @@
   ],
 
   "host_permissions": [
+    "http://*/*",
     "https://*/*"
   ],
 
@@ -39,6 +40,6 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; connect-src https://*/*; object-src 'none'"
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://* http://* https: http:; object-src 'none'; base-uri 'self'"
   }
 }
