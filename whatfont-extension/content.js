@@ -184,20 +184,13 @@ function setPanelPosition(anchorRect, mouseEvent) {
       top = 24; left = vw - panelWidth - 16;
   }
 
-  panel.style.top = `${top}px`;
-  panel.style.left = `${left}px`;
+  panel.style.setProperty('--panel-top', `${top}px`);
+  panel.style.setProperty('--panel-left', `${left}px`);
 }
 
 function contrastBadgeHtml(wcagLevel, ratio) {
   if (!wcagLevel || !settings.showContrast) return '';
-  const colorMap = {
-    'AAA': '#0a8f5f',
-    'AA': '#0d7f44',
-    'AA+': '#b07a00',
-    'Fail': '#c0354a'
-  };
-  const color = colorMap[wcagLevel] || '#666';
-  return `<span class="wf-contrast" style="color:${color};border-color:${color}">${wcagLevel} ${ratio}:1</span>`;
+  return `<span class="wf-contrast wf-contrast-${wcagLevel.toLowerCase()}">${wcagLevel} ${ratio}:1</span>`;
 }
 
 function renderPanel(fontInfo, modeHint) {
@@ -208,8 +201,8 @@ function renderPanel(fontInfo, modeHint) {
 
   const swatch = document.createElement('span');
   swatch.className = 'wf-swatch';
-  swatch.style.background = fontInfo.color;
-  swatch.style.border = '2px solid ' + fontInfo.backgroundColorHex;
+  swatch.style.setProperty('--swatch-bg', fontInfo.color);
+  swatch.style.setProperty('--swatch-border', fontInfo.backgroundColorHex);
 
   const titleEl = document.createElement('span');
   titleEl.className = 'wf-title';
@@ -283,9 +276,7 @@ async function copyPanelText(text) {
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '-9999px';
-    ta.style.left = '-9999px';
+    ta.className = 'wf-offscreen';
     document.documentElement.appendChild(ta);
     ta.focus();
     ta.select();
@@ -327,7 +318,7 @@ function showPanelForElement(element, mouseEvent) {
   renderPanel(info, modeHint);
   const rect = element.getBoundingClientRect();
   setPanelPosition(rect, mouseEvent);
-  panel.style.display = 'block';
+  panel.classList.add('wf-visible');
 
   applyHighlight(element);
   addDetectedFont(info);
@@ -336,7 +327,7 @@ function showPanelForElement(element, mouseEvent) {
 }
 
 function hidePanel() {
-  if (panel) panel.style.display = 'none';
+  if (panel) panel.classList.remove('wf-visible');
   clearHighlight();
 }
 
@@ -420,7 +411,7 @@ function scanAllFonts() {
 
   panel.append(title, msg);
   setPanelPosition({ top: 16, right: 16 }, null);
-  panel.style.display = 'block';
+  panel.classList.add('wf-visible');
 
   setTimeout(() => hidePanel(), 3500);
 }

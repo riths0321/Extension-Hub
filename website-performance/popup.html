@@ -1,29 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Website Performance</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="popup.css" />
-</head>
-<body>
-  <main class="container">
-    <header class="header">
-      <h3 class="title">🚀 Performance Estimator</h3>
-      <p class="subtitle">Analyze speed & weight of current website</p>
-    </header>
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PerfPro Analyzer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="scanline"></div>
+    <div class="grid-bg"></div>
 
-    <section class="card">
-      <button id="analyzeBtn" class="primary">Analyze This Page</button>
-      <div id="status" class="status">Idle</div>
-      <div id="result" class="result" aria-live="polite"></div>
-    </section>
+    <main class="container">
+      <header class="header">
+        <div class="logo-row">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="title">Perf<em>Pro</em></h3>
+            <p class="subtitle">Performance Analyzer</p>
+          </div>
+          <div class="header-right">
+            <button id="themeToggle" class="theme-toggle" title="Toggle light/dark mode">
+              <span class="theme-icon-dark">
+                <!-- Moon -->
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="theme-icon-light">
+                <!-- Sun -->
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
+                  <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span>
+            </button>
+            <div class="version-badge">v2.0</div>
+          </div>
+        </div>
+      </header>
 
-    <footer class="footer">
-      <small>Private • Offline • No tracking</small>
-    </footer>
-  </main>
+      <section class="card">
+        <button id="analyzeBtn" class="primary">
+          <span class="btn-icon">⚡</span>
+          <span class="btn-text">Deep Analyze Page</span>
+          <span class="btn-arrow">→</span>
+        </button>
 
-  <script src="popup.js"></script>
-</body>
+        <div id="status" class="status">
+          <span class="status-dot"></span>
+          <span id="statusText">Ready to analyze</span>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="overview">
+            <span class="tab-icon">◈</span> Overview
+          </button>
+          <button class="tab-btn" data-tab="resources">
+            <span class="tab-icon">◫</span> Resources
+          </button>
+          <button class="tab-btn" data-tab="issues">
+            <span class="tab-icon">◉</span> Issues
+          </button>
+          <button class="tab-btn" data-tab="seo">
+            <span class="tab-icon">◎</span> SEO
+          </button>
+        </div>
+
+        <div id="result" class="result" aria-live="polite">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+                <path d="M12 8V12L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p class="empty-text">Run an analysis to see<br/>performance metrics</p>
+          </div>
+        </div>
+
+        <div class="export-buttons">
+          <button id="exportJsonBtn" class="secondary">↓ Export JSON</button>
+          <button id="copyReportBtn" class="secondary">⊕ Copy Report</button>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span class="footer-dot"></span> Private · Offline · No tracking
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
 </html>
