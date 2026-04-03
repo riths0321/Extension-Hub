@@ -40,6 +40,6 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://* http://* https: http:; object-src 'none'; base-uri 'self'"
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https: http:; object-src 'none'; base-uri 'self'"
   }
 }
