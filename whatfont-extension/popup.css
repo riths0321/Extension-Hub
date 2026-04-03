@@ -2,50 +2,79 @@
    WhatFont Popup v1.2.0 — Enhanced Stylesheet
    ================================================================ */
 
+/* ── Manrope Font Family ─────────────────────────────────────── */
+@font-face {
+  font-family: 'Manrope';
+  src: url('../fonts/Manrope-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  src: url('../fonts/Manrope-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  src: url('../fonts/Manrope-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  src: url('../fonts/Manrope-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
 /* ── CSS Variables (Light) ───────────────────────────────────── */
 :root {
-  --bg:          #eff5ff;
+  --bg:          #fafbfc;
   --panel:       #ffffff;
-  --text:        #1f2a44;
-  --text-2:      #3a4a6a;
-  --muted:       #63708f;
-  --line:        #d8e2f5;
-  --primary:     #1565d8;
-  --primary-2:   #3d8bff;
-  --primary-dim: #e6f1ff;
-  --accent:      #11a675;
-  --accent-dim:  #def7ee;
-  --danger:      #dc4f78;
-  --danger-dim:  #fbe4eb;
-  --warn:        #b07a00;
-  --warn-dim:    #fff3cd;
-  --surface:     #f4f7ff;
-  --surface-2:   #eaeefc;
-  --shadow:      rgba(60, 80, 160, 0.08);
+  --text:        #2d3748;
+  --text-2:      #4a5568;
+  --muted:       #718096;
+  --line:        #e2e8f0;
+  --primary:     #0052cc;
+  --primary-2:   #1a66e8;
+  --primary-dim: #e8f1ff;
+  --accent:      #10b981;
+  --accent-dim:  #d1fae5;
+  --danger:      #e63946;
+  --danger-dim:  #ffe0e6;
+  --warn:        #f59e0b;
+  --warn-dim:    #fef3c7;
+  --surface:     #f7fafc;
+  --surface-2:   #edf2f7;
+  --shadow:      rgba(0, 82, 204, 0.06);
   --radius:      12px;
   --radius-sm:   8px;
 }
 
 /* ── Dark Mode Variables ─────────────────────────────────────── */
 body[data-theme="dark"] {
-  --bg:          #0c1220;
-  --panel:       #1f2840;
-  --text:        #ffffff;
-  --text-2:      #eef4ff;
-  --muted:       #d8e6ff;
-  --line:        #44567d;
-  --primary:     #5aa2ff;
-  --primary-2:   #87beff;
-  --primary-dim: #1d3458;
-  --accent:      #15cc8f;
-  --accent-dim:  #133f35;
-  --danger:      #f0698a;
-  --danger-dim:  #4a1830;
-  --warn:        #e8a800;
-  --warn-dim:    #4a390c;
-  --surface:     #27324d;
-  --surface-2:   #22304a;
-  --shadow:      rgba(0, 0, 0, 0.42);
+  --bg:          #0f172a;
+  --panel:       #1a2540;
+  --text:        #f8fafc;
+  --text-2:      #e2e8f0;
+  --muted:       #cbd5e1;
+  --line:        #334155;
+  --primary:     #60a5fa;
+  --primary-2:   #93c5fd;
+  --primary-dim: #1e3a8a;
+  --accent:      #34d399;
+  --accent-dim:  #0d4a3a;
+  --danger:      #f87171;
+  --danger-dim:  #5a1a1a;
+  --warn:        #fbbf24;
+  --warn-dim:    #583d00;
+  --surface:     #1f2937;
+  --surface-2:   #111827;
+  --shadow:      rgba(0, 0, 0, 0.5);
 }
 
 /* ── Reset & Base ────────────────────────────────────────────── */
@@ -56,7 +85,7 @@ body {
   width: 390px;
   min-height: 200px;
   color: var(--text);
-  font: 13.5px/1.45 "Segoe UI", "Inter", -apple-system, Arial, sans-serif;
+  font: 13.5px/1.45 'Manrope', -apple-system, 'Segoe UI', Arial, sans-serif;
   background: var(--bg);
   transition: background 0.2s, color 0.2s;
 }
@@ -264,6 +293,8 @@ body[data-theme="dark"] {
 
 /* ── Detection Controls ──────────────────────────────────────── */
 .section-label {
+  display: block;
+  margin-bottom: 8px;
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
@@ -422,7 +453,8 @@ body[data-theme="dark"] {
 
 .live-family {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: var(--preview-weight, 700);
+  font-family: var(--preview-family, inherit);
   line-height: 1.2;
   margin-bottom: 6px;
 }
@@ -515,7 +547,8 @@ body[data-theme="dark"] {
   height: 18px;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 2px solid var(--line);
+  border: 2px solid var(--swatch-border-color, var(--line));
+  background: var(--swatch-bg, transparent);
 }
 
 .font-item-body { flex: 1; min-width: 0; }
@@ -929,4 +962,10 @@ a.detail-value:hover { text-decoration: underline; }
 ::-webkit-scrollbar-thumb {
   background: var(--line);
   border-radius: 999px;
+}
+
+/* ── Feedback States ──────────────────────────────────────────── */
+.copy-feedback {
+  color: var(--accent) !important;
+  transition: color 0.2s ease;
 }

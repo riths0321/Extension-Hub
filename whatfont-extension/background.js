@@ -9,8 +9,7 @@ const DEFAULTS = {
   showContrast:    true,
   highlightText:   false,
   panelPosition:   'top-right',
-  bookmarkedFonts: [],
-  darkMode:        false
+  bookmarkedFonts: []
 };
 
 const tabDetectedFonts = new Map();
