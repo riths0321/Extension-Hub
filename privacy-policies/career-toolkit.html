@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Career Toolkit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0F172A;
+            --accent-color: #3b82f6;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-dark);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 48px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            color: var(--accent-color);
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .last-updated {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 8px;
+        }
+
+        p {
+            margin-bottom: 16px;
+        }
+
+        ul {
+            margin-bottom: 16px;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .highlight-box {
+            background: rgba(59, 130, 246, 0.05);
+            border-left: 4px solid var(--accent-color);
+            padding: 16px;
+            border-radius: 4px;
+            margin: 24px 0;
+        }
+
+        footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 24px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            </div>
+            <h1>Career Toolkit</h1>
+            <div class="last-updated">Last Updated: April 3, 2026</div>
+        </header>
+
+        <section>
+            <h2>Introduction</h2>
+            <p>Your privacy is of paramount importance to us. The <strong>Career Toolkit</strong> extension is designed to be a transparent and secure tool for job seekers. This policy outlines how we handle your data when you use the extension.</p>
+        </section>
+
+        <section>
+            <h2>Data Collection & Processing</h2>
+            <div class="highlight-box">
+                <strong>Core Principle:</strong> We do not store your personal data on our servers.
+            </div>
+            <p>The extension operates as follows:</p>
+            <ul>
+                <li><strong>Local Storage:</strong> Your resume text and job descriptions are stored locally on your device using Chrome's <code>storage.local</code> API. This is solely for your convenience so you don't have to re-paste them every time you open the extension.</li>
+                <li><strong>AI Processing:</strong> To provide ATS analysis and cover letter generation, the extension sends the text you provide (Resume and Job Description) to the <strong>Google Gemini API</strong>. This data is processed by Google to generate the requested analysis or text.</li>
+                <li><strong>No Tracking:</strong> We do not use cookies, analytics, or any other tracking mechanisms to monitor your browsing behavior.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Permissions Usage</h2>
+            <p>The extension requests the following permissions to function:</p>
+            <ul>
+                <li><strong>activeTab:</strong> Used to temporarily access the current page when you click "Auto-Extract" to find job descriptions or profiles.</li>
+                <li><strong>storage:</strong> Used to save your drafted content locally on your machine.</li>
+                <li><strong>scripting:</strong> Used to run the extraction logic on job boards to save you manual effort.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Third-Party Services</h2>
+            <p>As mentioned, this extension utilizes the <strong>Google Gemini API</strong> for its core AI features. By using these features, you agree to Google's privacy terms regarding Generative AI usage. No other third-party services are integrated.</p>
+        </section>
+
+        <section>
+            <h2>Contact Us</h2>
+            <p>If you have any questions regarding this privacy policy or the practices of this extension, please feel free to reach out to us through the official GitHub repository.</p>
+        </section>
+
+        <footer>
+            &copy; 2026 Saurabh Tiwari & ANSLATION COMPANY. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>
