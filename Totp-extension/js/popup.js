@@ -194,7 +194,7 @@
     // Avatar / initial
     const avatar = document.createElement('div');
     avatar.className = 'card-avatar';
-    avatar.style.background = avatarColor(account.name);
+    avatar.className = 'card-avatar ' + avatarColorClass(account.name);
     avatar.textContent = account.name.charAt(0).toUpperCase();
 
     // Info column
@@ -275,7 +275,7 @@
   function buildRing() {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 36 36');
-    svg.className = 'timer-ring';
+    svg.setAttribute('class', 'timer-ring');
     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     bg.setAttribute('cx', '18'); bg.setAttribute('cy', '18'); bg.setAttribute('r', '15');
     bg.setAttribute('fill', 'none'); bg.setAttribute('stroke', '#E5E7EB');
@@ -314,8 +314,13 @@
 
     // Warn color when < 6s
     const isWarning = remaining <= 6;
-    ringFg.setAttribute('stroke', isWarning ? '#EF4444' : '#2563EB');
-    codeEl.style.color = isWarning ? '#EF4444' : '#2563EB';
+    if (isWarning) {
+      ringFg.setAttribute('stroke', '#EF4444');
+      codeEl.classList.add('warning');
+    } else {
+      ringFg.setAttribute('stroke', '#2563EB');
+      codeEl.classList.remove('warning');
+    }
   }
 
   function buildEmptyState(filter) {
@@ -425,10 +430,17 @@
     if (!name)   { toast('Account name is required', 'error'); return; }
     if (!secret) { toast('Secret key is required', 'error'); return; }
 
+    // Validate secret before attempting to generate code
+    const validation = totp.validateSecret(secret);
+    if (!validation.valid) {
+      toast(`Invalid secret: ${validation.error}`, 'error');
+      return;
+    }
+
     setLoading(btn, true);
     try {
       const testCode = await totp.generateTOTP(secret);
-      if (!testCode) throw new Error('Invalid secret');
+      if (!testCode) throw new Error('Failed to generate TOTP code');
 
       if (editingId) {
         const idx = accounts.findIndex(a => a.id === editingId);
@@ -451,31 +463,13 @@
       renderAccounts();
       tick();
     } catch (err) {
-      toast('Invalid secret key', 'error');
+      console.error('Failed to add/update account:', err);
+      const errorMsg = err.message || 'Unknown error';
+      toast(`Invalid secret key: ${errorMsg}`, 'error');
     } finally {
       setLoading(btn, false);
     }
     resetInactivityTimer();
-  }
-
-  // ── QR Import ─────────────────────────────────────────────────
-  async function handleQRFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const decoded = await QRScanner.scanFromFile(file);
-      if (!decoded) { toast('No QR code found in image', 'error'); return; }
-      if (!decoded.startsWith('otpauth://')) { toast('Not a valid authenticator QR code', 'error'); return; }
-      const parsed = totp.parseOtpAuth(decoded);
-      $('acc-name').value   = parsed.name;
-      $('acc-secret').value = parsed.secret;
-      $('acc-issuer').value = parsed.issuer || '';
-      showModal('account-modal');
-      toast('QR code scanned!', 'success');
-    } catch (err) {
-      toast(`QR scan failed: ${err.message}`, 'error');
-    }
-    e.target.value = '';
   }
 
   // ── Delete ────────────────────────────────────────────────────
@@ -483,11 +477,38 @@
     accountToDelete = id;
     const account = accounts.find(a => a.id === id);
     $('delete-name').textContent = account?.name || 'this account';
+    document.querySelector('#delete-modal .modal-title').textContent = 'Delete Account';
+    showModal('delete-modal');
+  }
+
+  function handleForgotReset() {
+    accountToDelete = 'vault';
+    $('delete-name').textContent = 'your entire vault';
+    document.querySelector('#delete-modal .modal-title').textContent = 'Reset Vault';
+  const msgEl = document.querySelector('#delete-modal .delete-msg');
+  msgEl.textContent = 'Delete your entire vault? PERMANENT - ALL DATA LOST FOREVER. No recovery possible.';
+  const strong1 = document.createElement('strong');
+  strong1.textContent = 'PERMANENT';
+  const strong2 = document.createElement('strong');
+  strong2.textContent = 'NO RECOVERY';
+  msgEl.appendChild(strong1);
+  msgEl.appendChild(document.createTextNode(' possible.'));
     showModal('delete-modal');
   }
 
   async function handleDeleteConfirm() {
     if (!accountToDelete) return;
+
+    if (accountToDelete === 'vault') {
+      await SecureStorage.wipeVault();
+      chrome.storage.local.remove('sessionLocked');
+      showView('setup');
+      toast('Vault reset. All data permanently deleted.', 'warning');
+      accountToDelete = null;
+      closeAllModals();
+      return;
+    }
+
     accounts = accounts.filter(a => a.id !== accountToDelete);
     await SecureStorage.saveAccounts(accounts, masterPassword);
     accountToDelete = null;
@@ -543,6 +564,7 @@
     $('setting-autocopy').checked = settings.autoCopy !== false;
     showModal('settings-modal');
     if (window.CADropdowns) window.CADropdowns.sync('setting-autolock');
+    $('change-pw-btn').addEventListener('click', openChangePwModal);
   }
 
   async function handleSettingsSave() {
@@ -563,6 +585,66 @@
   function closeAllModals() {
     document.querySelectorAll('.modal-overlay').forEach(m => m.hidden = true);
     resetAccountForm();
+    resetChangePwForm();
+  }
+
+  function resetChangePwForm() {
+    $('old-pw').value = '';
+    $('new-pw').value = '';
+    $('confirm-pw').value = '';
+  }
+
+  function openChangePwModal() {
+    resetChangePwForm();
+    showModal('change-pw-modal');
+    $('old-pw').focus();
+    resetInactivityTimer();
+  }
+
+  async function handleChangePwSubmit(e) {
+    e.preventDefault();
+    const oldPw = $('old-pw').value;
+    const newPw = $('new-pw').value;
+    const confirmPw = $('confirm-pw').value;
+    const btn = $('change-submit');
+
+    if (!masterPassword) {
+      toast('Must be unlocked to change password', 'error');
+      return;
+    }
+    if (newPw.length < 8) {
+      toast('New password must be at least 8 characters', 'error');
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast('New passwords do not match', 'error');
+      shakeElement($('change-pw-modal'));
+      return;
+    }
+    if (oldPw === newPw) {
+      toast('New password is the same as current', 'warning');
+      return;
+    }
+
+    setLoading(btn, true);
+    try {
+      // Verify old pw (already unlocked but double-check)
+      const ok = await SecureStorage.unlock(oldPw);
+      if (!ok) {
+        toast('Current password incorrect', 'error');
+        return;
+      }
+
+      await SecureStorage.changeMasterPassword(oldPw, newPw);
+      masterPassword = newPw;
+      toast('Master password changed successfully!', 'success');
+      closeAllModals();
+    } catch (err) {
+      toast('Failed to change password', 'error');
+    } finally {
+      setLoading(btn, false);
+    }
+    resetInactivityTimer();
   }
   function resetAccountForm() {
     $('acc-name').value   = '';
@@ -593,11 +675,11 @@
     setTimeout(() => el.classList.remove('shake'), 500);
   }
 
-  function avatarColor(name) {
-    const colors = ['#2563EB','#7C3AED','#DB2777','#D97706','#059669','#DC2626','#0891B2'];
+  function avatarColorClass(name) {
+    const classes = ['blue', 'purple', 'pink', 'orange', 'green', 'red', 'cyan'];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
+    return classes[Math.abs(hash) % classes.length];
   }
 
   // ── SVG icons (inline, CSP-safe) ─────────────────────────────
@@ -622,6 +704,7 @@
     // Lock screen
     $('lock-form').addEventListener('submit', handleUnlock);
     $('lock-toggle-pw').addEventListener('click', () => togglePasswordVisibility('lock-password', 'lock-toggle-pw'));
+    $('reset-btn').addEventListener('click', handleForgotReset);
 
     // Setup screen
     $('setup-form').addEventListener('submit', handleSetup);
@@ -630,8 +713,6 @@
     $('add-account-btn').addEventListener('click', openAddModal);
     $('lock-btn').addEventListener('click', lock);
     $('settings-btn').addEventListener('click', openSettings);
-    $('scan-qr-btn').addEventListener('click', () => $('qr-file-input').click());
-    $('qr-file-input').addEventListener('change', handleQRFile);
 
     // Search
     searchInput.addEventListener('input', e => {
@@ -651,6 +732,14 @@
     // Settings modal
     $('settings-save').addEventListener('click', handleSettingsSave);
     $('settings-cancel').addEventListener('click', closeAllModals);
+
+    // Change PW modal
+    $('change-pw-form').addEventListener('submit', handleChangePwSubmit);
+    // Change PW toggles
+    $('old-toggle').addEventListener('click', () => togglePasswordVisibility('old-pw', 'old-toggle'));
+    $('new-toggle').addEventListener('click', () => togglePasswordVisibility('new-pw', 'new-toggle'));
+    $('confirm-toggle').addEventListener('click', () => togglePasswordVisibility('confirm-pw', 'confirm-toggle'));
+    $('change-cancel').addEventListener('click', closeAllModals);
 
     // Export/Import
     $('export-btn').addEventListener('click', handleExport);
@@ -696,6 +785,7 @@
   function togglePasswordVisibility(inputId, btnId) {
     const input = $(inputId);
     const btn   = $(btnId);
+    if (!input || !btn) return;
     const isHidden = input.type === 'password';
     input.type   = isHidden ? 'text' : 'password';
     btn.textContent = isHidden ? 'Hide' : 'Show';

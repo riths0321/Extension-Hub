@@ -10,7 +10,4 @@ chrome.alarms.onAlarm.addListener(alarm => {
   }
 });
 
-// Clear lock flag when extension starts fresh
-chrome.runtime.onStartup.addListener(() => {
-  chrome.storage.local.set({ sessionLocked: true });
-});
+// Minimal service worker - auto-lock handled

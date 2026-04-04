@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TOTP Authenticator Pro</title>
+  <link rel="preload" href="fonts/Manrope-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Manrope-Medium.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Manrope-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Manrope-Bold.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -26,11 +30,15 @@
       </div>
       <button id="lock-submit" type="submit" class="btn btn-primary btn-full" data-text="Unlock Vault">Unlock Vault</button>
     </form>
+    <div class="auth-links">
+      <button type="button" id="reset-btn" class="btn btn-ghost btn-full forgot-btn" title="Reset vault (WARNING: All data permanently lost)">Forgot Password?</button>
+    </div>
     <div class="auth-tips">
+
       <div class="auth-tips-title">Why TOTP Authenticator?</div>
       <div class="auth-tips-item">Zero cloud sync. Everything stays on your device.</div>
       <div class="auth-tips-item">AES-256-GCM encryption protects every secret.</div>
-      <div class="auth-tips-item">Fast search, QR import, and one-tap code copy.</div>
+      <div class="auth-tips-item">Fast search and one-tap code copy.</div>
     </div>
   </div>
 </div>
@@ -69,13 +77,6 @@
       </div>
     </div>
     <div class="toolbar-right">
-      <button id="scan-qr-btn" class="icon-btn" title="Scan QR code" aria-label="Scan QR code">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-          <rect x="3" y="14" width="7" height="7"/>
-          <path d="M14 14h3v3M17 20h3M20 17v3"/>
-        </svg>
-      </button>
       <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/>
@@ -95,7 +96,7 @@
     <div class="overview-copy">
       <span class="overview-kicker">Fresh codes, always local</span>
       <h2 class="overview-title">Your rotating 2FA hub</h2>
-      <p class="overview-subtitle">Scan QR setups, organize by service, and copy the latest code in one tap.</p>
+      <p class="overview-subtitle">Organize by service, and copy the latest code in one tap.</p>
     </div>
     <div class="overview-metrics">
       <div class="metric-card">
@@ -121,7 +122,6 @@
   </div>
 
   <div id="accounts-list" class="accounts-list" role="list"></div>
-  <input id="qr-file-input" type="file" accept="image/*" hidden aria-hidden="true">
 </div>
 
 <div id="account-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -200,7 +200,9 @@
             <span class="toggle-track"></span>
           </label>
         </div>
+        <button id="change-pw-btn" class="btn btn-outline btn-full" style="margin-top: 12px;">Change Master Password</button>
       </div>
+
       <div class="settings-section">
         <h3 class="settings-section-title">Backup and Restore</h3>
         <div class="field-wrap">
@@ -224,13 +226,48 @@
   </div>
 </div>
 
+<div id="change-pw-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="change-title">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="change-title" class="modal-title">Change Master Password</h2>
+      <button class="modal-close" data-close="change-pw-modal" aria-label="Close">&times;</button>
+    </div>
+    <form id="change-pw-form" class="modal-body" autocomplete="off">
+      <div class="field-wrap">
+        <label class="field-label" for="old-pw">Current Password</label>
+        <div class="field-row">
+          <input id="old-pw" type="password" class="field-input" placeholder="Current master password" autocomplete="current-password" required>
+          <button type="button" id="old-toggle" class="toggle-btn">Show</button>
+        </div>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="new-pw">New Password</label>
+        <div class="field-row">
+          <input id="new-pw" type="password" class="field-input" placeholder="New master password (min 8 chars)" autocomplete="new-password" required minlength="8">
+          <button type="button" id="new-toggle" class="toggle-btn">Show</button>
+        </div>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="confirm-pw">Confirm New Password</label>
+        <div class="field-row">
+          <input id="confirm-pw" type="password" class="field-input" placeholder="Repeat new password" autocomplete="new-password" required>
+          <button type="button" id="confirm-toggle" class="toggle-btn">Show</button>
+        </div>
+      </div>
+      <p class="security-note">Your accounts will be re-encrypted with the new password.</p>
+      <div class="modal-actions">
+        <button type="button" id="change-cancel" class="btn btn-ghost">Cancel</button>
+        <button id="change-submit" type="submit" class="btn btn-primary" data-text="Change Password">Change Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="js/crypto.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/totp.js"></script>
-<script src="js/qr.js"></script>
 <script src="js/popup.js"></script>
-<script src="dropdowns.js"></script>
-</body>
+  </body>
 </html>

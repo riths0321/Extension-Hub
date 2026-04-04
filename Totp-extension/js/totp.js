@@ -10,17 +10,45 @@ class TOTP {
 
   base32ToBytes(base32) {
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    base32 = base32.replace(/=+$/, '').toUpperCase().replace(/\s/g, '');
+    
+    // Clean up the input
+    base32 = base32.trim().toUpperCase();
+    
+    // Remove common formatting characters: spaces, hyphens, dots, underscores, padding
+    base32 = base32.replace(/[\s\-\.=_]/g, '');
+    
+    // Remove padding characters (=)
+    base32 = base32.replace(/=+$/, '');
+    
+    // Validate length (base32 should be multiple of 8 after removing padding)
+    if (base32.length === 0) {
+      throw new Error('Empty secret key');
+    }
+    
+    // Validate each character
+    for (let i = 0; i < base32.length; i++) {
+      if (CHARS.indexOf(base32[i]) === -1) {
+        throw new Error(`Invalid character '${base32[i]}' at position ${i + 1}. Only A-Z and 2-7 are allowed.`);
+      }
+    }
+    
+    // Convert base32 to bits
     let bits = '';
     for (let i = 0; i < base32.length; i++) {
       const val = CHARS.indexOf(base32[i]);
-      if (val === -1) throw new Error(`Invalid base32 char: ${base32[i]}`);
       bits += val.toString(2).padStart(5, '0');
     }
+    
+    // Convert bits to bytes
     const bytes = [];
     for (let i = 0; i + 8 <= bits.length; i += 8) {
       bytes.push(parseInt(bits.substring(i, i + 8), 2));
     }
+    
+    if (bytes.length === 0) {
+      throw new Error('Secret key too short');
+    }
+    
     return new Uint8Array(bytes);
   }
 
@@ -33,22 +61,37 @@ class TOTP {
 
   async generateTOTP(secret, { timeStep = 30, digits = 6, algorithm = 'SHA-1' } = {}) {
     try {
+      // Validate and decode secret
       const keyBytes = this.base32ToBytes(secret);
+      
+      // Check minimum key length (at least 10 bytes for security)
+      if (keyBytes.length < 10) {
+        console.error('Secret key too short:', keyBytes.length, 'bytes');
+        return null;
+      }
+      
       const counter  = Math.floor(Date.now() / 1000 / timeStep);
+      
+      // Import the key for HMAC
       const cryptoKey = await crypto.subtle.importKey(
         'raw', keyBytes, { name: 'HMAC', hash: algorithm }, false, ['sign']
       );
+      
+      // Generate HMAC
       const hmacBuf = await crypto.subtle.sign('HMAC', cryptoKey, this.counterToBuffer(counter));
       const hmac = new Uint8Array(hmacBuf);
+      
+      // Dynamic truncation (RFC 4226)
       const offset = hmac[hmac.length - 1] & 0x0f;
       const binary = ((hmac[offset] & 0x7f) << 24) |
                      (hmac[offset + 1] << 16) |
                      (hmac[offset + 2] << 8) |
                       hmac[offset + 3];
+      
       const otp = binary % this.DIGITS_POWER[digits];
       return otp.toString().padStart(digits, '0');
     } catch (err) {
-      console.error('TOTP generation failed:', err);
+      console.error('TOTP generation failed:', err.message, err);
       return null;
     }
   }
@@ -59,6 +102,19 @@ class TOTP {
 
   getProgress(timeStep = 30) {
     return (this.getTimeRemaining(timeStep) / timeStep) * 100;
+  }
+
+  /** Validate base32 secret without generating code */
+  validateSecret(secret) {
+    try {
+      const bytes = this.base32ToBytes(secret);
+      if (bytes.length < 10) {
+        return { valid: false, error: 'Secret key is too short (minimum 16 characters)' };
+      }
+      return { valid: true, length: bytes.length };
+    } catch (err) {
+      return { valid: false, error: err.message };
+    }
   }
 
   /** Parse otpauth:// URI — returns { name, secret, issuer, digits, timeStep, algorithm } */
