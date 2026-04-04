@@ -95,7 +95,7 @@ body {
 .auth-card {
   position: relative;
   width: 100%;
-  max-width: 336px;
+  max-width: 360px;
   padding: 28px 22px 20px;
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.7);
@@ -430,6 +430,14 @@ body {
   color: #fff;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
 }
+
+.card-avatar.blue { background: #2563EB; }
+.card-avatar.purple { background: #7C3AED; }
+.card-avatar.pink { background: #DB2777; }
+.card-avatar.orange { background: #D97706; }
+.card-avatar.green { background: #059669; }
+.card-avatar.red { background: #DC2626; }
+.card-avatar.cyan { background: #0891B2; }
 .card-info { grid-area: info; min-width: 0; padding-top: 1px; }
 .card-name {
   font-size: 14px;
@@ -482,6 +490,11 @@ body {
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.08);
   border: 1px solid rgba(37, 99, 235, 0.14);
+  transition: color var(--ease);
+}
+
+.card-code.warning {
+  color: var(--danger);
 }
 .card-timer {
   font-size: 10px;
@@ -581,6 +594,10 @@ body {
   border-color: rgba(37, 99, 235, 0.16);
 }
 .btn-outline:hover { background: rgba(37, 99, 235, 0.08); }
+
+.change-pw-section-btn {
+  margin-top: 12px;
+}
 .btn-full { width: 100%; }
 .btn-sm { min-width: 94px; }
 
@@ -615,7 +632,37 @@ body {
 .field-hint { font-size: 11px; color: var(--subtext); }
 .field-hint-inline { font-size: 11px; color: var(--muted); font-weight: 500; }
 .required { color: var(--danger); }
+
+.auth-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(254, 242, 242, 0.72);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: var(--radius);
+}
+
+.forgot-btn {
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 8px 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.forgot-btn:hover {
+  color: #B91C1C;
+}
+
 .toggle-btn {
+
   flex-shrink: 0;
   padding: 0 12px;
   border: 1px solid rgba(17, 24, 39, 0.08);

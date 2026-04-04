@@ -83,15 +83,15 @@
     var vp   = window.innerHeight || document.documentElement.clientHeight;
     var mH   = 242;
 
-    menu.style.width = rect.width + 'px';
-    menu.style.left  = rect.left  + 'px';
+    menu.style.setProperty('--menu-width', rect.width + 'px');
+    menu.style.setProperty('--menu-left', rect.left + 'px');
 
     if (rect.bottom + mH + 8 <= vp) {
-      menu.style.top    = (rect.bottom + 6) + 'px';
-      menu.style.bottom = 'auto';
+      menu.style.setProperty('--menu-top', (rect.bottom + 6) + 'px');
+      menu.style.setProperty('--menu-bottom', 'auto');
     } else {
-      menu.style.bottom = (vp - rect.top + 6) + 'px';
-      menu.style.top    = 'auto';
+      menu.style.setProperty('--menu-bottom', (vp - rect.top + 6) + 'px');
+      menu.style.setProperty('--menu-top', 'auto');
     }
   }
 
@@ -285,7 +285,7 @@
 
     /* insert wrapper in DOM */
     wrap.appendChild(trigger);
-    select.style.display = 'none';
+    select.classList.add('hidden');
     select.parentNode.insertBefore(wrap, select.nextSibling);
 
     return wrap;

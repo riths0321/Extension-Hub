@@ -78,13 +78,13 @@ function handleSearchInput() {
     const query = val.slice(cmdMatch[0].length).trim();
     showCommandSuggestions(prefix, query);
     hideBadge();
-    cmdHintBadge.style.display = "flex";
+    cmdHintBadge.classList.add("visible");
     return;
   }
 
   // Hide suggestions
   hideCmdSuggestions();
-  cmdHintBadge.style.display = "none";
+  cmdHintBadge.classList.remove("visible");
 
   if (!val.trim()) {
     hideBadge();
@@ -387,10 +387,10 @@ function buildPinnedSection(pinned) {
   row.replaceChildren();
 
   if (!pinned.length) {
-    section.style.display = "none";
+    section.classList.add("hidden");
     return;
   }
-  section.style.display = "flex";
+  section.classList.remove("hidden");
 
   pinned.forEach(engineId => {
     const engine = ENGINES.find(e => e.id === engineId);

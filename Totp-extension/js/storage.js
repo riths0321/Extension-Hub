@@ -109,12 +109,21 @@ const SecureStorage = (() => {
     return remove([VAULT_KEY, HASH_KEY, SETTINGS_KEY]);
   }
 
+  /** Change master password (requires valid old pw) */
+  async function changeMasterPassword(oldPw, newPw) {
+    if (newPw.length < 8) throw new Error('New password too short');
+    const accounts = await loadAccounts(oldPw);
+    const newHash = await CryptoLayer.hashPassword(newPw);
+    await saveAccounts(accounts, newPw);
+    await set({ [HASH_KEY]: newHash });
+  }
+
   return {
     isInitialized, initVault, unlock,
     loadAccounts, saveAccounts,
     exportBackup, importBackup,
     saveSettings, loadSettings,
-    wipeVault
+    wipeVault, changeMasterPassword
   };
 })();
 
