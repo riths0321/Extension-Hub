@@ -329,7 +329,7 @@ function showPopup(text, x, y) {
     selectedEl.textContent = display ? `"${display}"` : "";
   }
 
-  popup.style.display = "block";
+  popup.classList.add("visible");
 
   const vw = window.innerWidth;
   const pw = 340;
@@ -342,22 +342,22 @@ function showPopup(text, x, y) {
   if (left < window.scrollX + 4) left = window.scrollX + 4;
   if (top + ph > window.innerHeight + window.scrollY) top = (y !== undefined ? y - ph - 14 : top) + window.scrollY;
 
-  popup.style.left = left + "px";
-  popup.style.top  = top + "px";
+  popup.style.setProperty('--popup-left', left + 'px');
+  popup.style.setProperty('--popup-top', top + 'px');
 
   clearTimeout(dismissTimer);
   dismissTimer = setTimeout(hidePopup, 14000);
 }
 
 function hidePopup() {
-  if (popup) popup.style.display = "none";
+  if (popup) popup.classList.remove("visible");
   clearTimeout(dismissTimer);
   selectedContentEngines.clear();
 }
 
 // ── Keyboard shortcuts inside popup ───────────────────────────────────────────
 document.addEventListener("keydown", (e) => {
-  if (!popup || popup.style.display === "none") return;
+  if (!popup || !popup.classList.contains("visible")) return;
 
   if (e.key === "Escape") { hidePopup(); return; }
 

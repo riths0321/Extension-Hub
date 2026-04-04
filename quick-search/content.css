@@ -3,6 +3,8 @@
 #qs-popup {
   display: none;
   position: absolute;
+  left: var(--popup-left, 0);
+  top: var(--popup-top, 0);
   z-index: 2147483647;
   width: 340px;
   background: #FFFFFF;
@@ -21,6 +23,7 @@
   -moz-osx-font-smoothing: grayscale;
   animation: qs-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+#qs-popup.visible { display: block; }
 
 @keyframes qs-in {
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
