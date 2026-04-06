@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Link Manager Pro</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+
+<body>
+
+  <div id="app">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z"/>
+        </svg>
+        <span class="logo-text">Quick Links</span>
+      </div>
+      <div class="header-right">
+        <button id="btnHelp" class="icon-action" title="Keyboard shortcuts (?)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </button>
+        <button id="btnArchive" class="icon-action" title="Archive">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><line x1="10" y1="12" x2="14" y2="12"/>
+          </svg>
+        </button>
+        <button id="btnExport" class="icon-action" title="Export links">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button id="btnImport" class="icon-action" title="Import links">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" />
+      </div>
+    </header>
+
+    <!-- SEARCH BAR -->
+    <div class="search-bar">
+      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input id="searchInput" type="search" placeholder="Search links, tags, notes… (press '/')" autocomplete="off" spellcheck="false" />
+      <button id="btnClearSearch" class="clear-btn" title="Clear search" hidden>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- TAG FILTER ROW -->
+    <div class="tag-filter-row" id="tagFilterRow"></div>
+
+    <!-- FAVORITES SECTION -->
+    <section class="section" id="favoritesSection" hidden>
+      <div class="section-header">
+        <span class="section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          Favorites
+        </span>
+      </div>
+      <div class="links-list" id="favoritesList"></div>
+    </section>
+
+    <!-- ALL LINKS SECTION -->
+    <section class="section" id="allLinksSection">
+      <div class="section-header">
+        <span class="section-title" id="sectionLabel">All Links</span>
+        <span class="section-count" id="sectionCount">0</span>
+        <div class="sort-options">
+          <button id="sortByDate" class="sort-btn active" data-sort="date">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></svg>
+            Newest
+          </button>
+          <button id="sortByLastOpened" class="sort-btn" data-sort="lastOpened">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Recent
+          </button>
+        </div>
+      </div>
+      <div class="links-list" id="linksList"></div>
+    </section>
+
+    <!-- EMPTY STATE -->
+    <div id="emptyState" class="empty-state" hidden>
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="1.5">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+      <p class="empty-title">No links yet</p>
+      <p class="empty-sub">Save your first link with the button below</p>
+    </div>
+
+    <!-- NO RESULTS STATE -->
+    <div id="noResults" class="empty-state" hidden>
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="1.5">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <p class="empty-title">No results found</p>
+      <p class="empty-sub">Try a different search or tag filter</p>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <footer class="bottom-bar">
+      <button id="btnOpenAll" class="btn-ghost-sm" title="Open all visible links">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Open All
+      </button>
+      <button id="btnReadLater" class="btn-ghost-sm" title="Read Later Queue">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Queue
+      </button>
+      <button id="btnSaveCurrent" class="btn-primary-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Save Current
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- SAVE MODAL -->
+  <div id="saveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Save Link">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Save Link</span>
+        <button id="modalClose" class="icon-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label" for="modalTitle">Title</label>
+          <input id="modalTitle" type="text" class="field-input" placeholder="Link title" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="modalUrl">URL</label>
+          <input id="modalUrl" type="url" class="field-input" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label class="field-label">Tags</label>
+          <div id="modalTagsContainer" class="tags-edit-container"></div>
+          <div class="tag-input-row">
+            <input id="modalTagInput" type="text" class="field-input tag-add-input" placeholder="Add tag…" maxlength="20" list="tagSuggestions" />
+            <datalist id="tagSuggestions"></datalist>
+            <button id="modalAddTag" class="btn-add-tag">Add</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="modalNote">Note</label>
+          <textarea id="modalNote" class="field-input field-textarea" placeholder="Add a personal note…" rows="2" maxlength="300"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modalCancel" class="btn-ghost">Cancel</button>
+        <button id="modalSave" class="btn-primary">Save Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div id="editModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit Link">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Edit Link</span>
+        <button id="editModalClose" class="icon-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label" for="editTitle">Title</label>
+          <input id="editTitle" type="text" class="field-input" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editUrl">URL</label>
+          <input id="editUrl" type="url" class="field-input" />
+        </div>
+        <div class="field">
+          <label class="field-label">Tags</label>
+          <div id="editTagsContainer" class="tags-edit-container"></div>
+          <div class="tag-input-row">
+            <input id="editTagInput" type="text" class="field-input tag-add-input" placeholder="Add tag…" maxlength="20" />
+            <button id="editAddTag" class="btn-add-tag">Add</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="editNote">Note</label>
+          <textarea id="editNote" class="field-input field-textarea" rows="2" maxlength="300"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="editModalCancel" class="btn-ghost">Cancel</button>
+        <button id="editModalSave" class="btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- READ LATER MODAL -->
+  <div id="readLaterModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Read Later Queue">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Read Later Queue</span>
+        <button id="readLaterModalClose" class="icon-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="readLaterList" class="read-later-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div id="helpModal" class="modal-overlay modal-overlay--help" role="dialog" aria-modal="true" aria-label="Keyboard Shortcuts">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Keyboard Shortcuts</span>
+        <button id="helpModalClose" class="icon-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcut-group">
+          <div class="shortcut-row"><kbd>Ctrl/Cmd + Shift + S</kbd><span>Save current page</span></div>
+          <div class="shortcut-row"><kbd>Ctrl/Cmd + Shift + L</kbd><span>Open popup</span></div>
+          <div class="shortcut-row"><kbd>/</kbd><span>Focus search</span></div>
+          <div class="shortcut-row"><kbd>Esc</kbd><span>Close modal</span></div>
+          <div class="shortcut-row"><kbd>↑/↓</kbd><span>Navigate links</span></div>
+          <div class="shortcut-row"><kbd>Enter</kbd><span>Open selected link</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT MODAL -->
+  <div id="exportModal" class="modal-overlay modal-overlay--export" role="dialog" aria-modal="true" aria-label="Export Links">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Export Links</span>
+        <button id="exportModalClose" class="icon-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <button id="exportJSON" class="export-option">
+          <span class="export-option-icon">{ }</span>
+          <span><strong>JSON</strong><small>Full data backup</small></span>
+        </button>
+        <button id="exportMarkdown" class="export-option">
+          <span class="export-option-icon">MD</span>
+          <span><strong>Markdown</strong><small>Readable format</small></span>
+        </button>
+        <button id="exportHTML" class="export-option">
+          <span class="export-option-icon">🌐</span>
+          <span><strong>HTML Bookmarks</strong><small>Browser compatible</small></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARCHIVE MODAL -->
+  <div id="archiveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Archive">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Archived Links</span>
+        <button id="archiveModalClose" class="icon-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-tabs">
+        <button id="tabArchived" class="modal-tab active" data-tab="archived">Archived</button>
+        <button id="tabActive" class="modal-tab" data-tab="active">Active</button>
+      </div>
+      <div class="modal-body">
+        <div id="archiveList" class="archive-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
