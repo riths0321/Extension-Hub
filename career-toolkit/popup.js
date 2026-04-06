@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ---- Constants ----
-    const GEMINI_API_KEY = "REPLACED_BY_USER_WITH_SECRET_KEY"; // Placeholder to prevent leakage
+    const GEMINI_API_KEY = "AIzaSyDt025SAmCpDWXj1e943GIzQFD0omn1OiQ"; // Provided by user
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     // ---- DOM Elements ----
@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const jobDescriptionEl = document.getElementById('jobDescription');
     const resumeTextEl = document.getElementById('resumeText');
     const statusMessage = document.getElementById('statusMessage');
-    const statusText = document.getElementById('statusText');
 
     // Tabs
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -51,15 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
     resumeTextEl.addEventListener('input', saveData);
 
     // ---- UI Utilities ----
-    let statusTimeout;
     const showStatus = (msg, isError = false) => {
-        if (statusTimeout) clearTimeout(statusTimeout);
-        
-        statusText.textContent = msg;
-        statusMessage.classList.toggle('error', isError);
+        statusMessage.textContent = msg;
+        statusMessage.className = `status-message ${isError ? 'error' : 'success'}`;
         statusMessage.classList.remove('hidden');
-
-        statusTimeout = setTimeout(() => {
+        setTimeout(() => {
             statusMessage.classList.add('hidden');
         }, 4000);
     };
@@ -229,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Populate lists
             foundKeywordsEl.innerHTML = found.map(w => `<li>✓ ${w}</li>`).join('');
-            missingKeywordsEl.innerHTML = missing.map(w => `<li><span class="keyword-icon-red">✗</span> ${w}</li>`).join('') || "<li>No major missing keywords!</li>";
+            missingKeywordsEl.innerHTML = missing.map(w => `<li>✗ ${w}</li>`).join('') || "<li>No major missing keywords!</li>";
 
             // Suggestions
             if (aiData.suggested_bullets && aiData.suggested_bullets.length > 0) {
