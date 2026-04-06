@@ -11,7 +11,7 @@
 
 ### 🛠️ Tech Stack
 - **HTML5**: Interface.
-- **CSS3**: Styles.
+- **CSS3**: Styles with Manrope fonts (local) & custom light/dark theme (buttons #2563EB, headings #111111, sub #6B7280, bg #FFFFFF).
 - **JavaScript**: Web Speech API (`SpeechSynthesis`).
 - **Chrome Extension (Manifest V3)**: Popup.
 

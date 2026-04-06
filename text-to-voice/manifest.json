@@ -2,9 +2,8 @@
   "manifest_version": 3,
   "name": "Smart Text to Voice Pro",
   "short_name": "SmartVoice",
-  "version": "2.0.0",
-  "description": "Convert text into natural-sounding speech with smart reading, multi-language support, and AI features.",
-
+  "version": "2.0.1",
+  "description": "Convert text into natural-sounding speech with smart reading and multi-language support.",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -13,18 +12,21 @@
       "128": "icons/icon128.png"
     }
   },
-
   "permissions": [
     "activeTab",
     "storage",
     "contextMenus",
-    "scripting"
+    "scripting",
+    "notifications"
   ],
-
   "host_permissions": [
-    "<all_urls>"
+    "https://*/*",
+    "http://*/*"
   ],
-
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "commands": {
     "read-page": {
       "suggested_key": {
@@ -41,28 +43,28 @@
       "description": "Read selected text"
     }
   },
-
-  "background": {
-    "service_worker": "background.js"
-  },
-
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["content.css"]
+      "matches": [
+        "https://*/*",
+        "http://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
     }
   ],
-
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
-
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
-  "minimum_chrome_version": "114"
+  "minimum_chrome_version": "114",
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; style-src 'self'; img-src 'self' data:; base-uri 'none'; frame-src 'none'; form-action 'none'; connect-src 'none'"
+  }
 }
