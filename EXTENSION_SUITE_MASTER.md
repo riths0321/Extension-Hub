@@ -29,7 +29,7 @@ Both tools operate on the same input type (images), share in-browser Canvas proc
 
 ---
 
-### Merge 2: Career Toolkit
+### Merge 2: Career Toolkit (DONE)
 
 **Merges:** Resume Keyword Checker + Cover Letter Generator
 
@@ -55,34 +55,7 @@ Both tools consume the same two inputs — a resume and a job description. Users
 
 ---
 
-### Merge 3: Dev Toolkit
 
-**Merges:** Code Snippet Manager + Code Previewer + CSS Specificity Calculator
-
-**Why Merge:**
-All three are developer-facing tools operating on code. A developer's workflow often follows: write → preview → debug CSS specificity. Combining them into a single dev panel eliminates switching between extensions and enables the Previewer to pull snippets directly from the Snippet Manager library.
-
-**Combined Feature Set:**
-* Split-panel editor: HTML / CSS / JS with live preview iframe
-* AI error explainer for runtime JS and CSS failures
-* Device frame preview (Desktop / Tablet / Mobile)
-* Code formatter on `Ctrl+S`
-* CDN library picker with auto-inject
-* Shareable preview link (base64 URL encoding)
-* Snippet library with AI auto-tagging and smart semantic search
-* Duplicate detection before snippet save
-* One-click inject from snippet library into live editor panels
-* Usage tracker per snippet
-* CSS specificity calculator inline in the CSS panel
-* Live conflict detector on selected DOM element
-* AI selector simplifier for overly specific selectors
-* Bulk stylesheet specificity audit with threshold warnings
-* Cascade order tracker for any selected page element
-
-**Module Name:** `Dev Toolkit`
-**Activation:** Three-tab sidebar: "Live Editor", "Snippet Library", "CSS Auditor".
-
----
 
 ### Merge 4: Content Intelligence Suite
 
