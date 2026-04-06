@@ -29,7 +29,7 @@ Both tools operate on the same input type (images), share in-browser Canvas proc
 
 ---
 
-### Merge 2: Career Toolkit
+### Merge 2: Career Toolkit (DONE)
 
 **Merges:** Resume Keyword Checker + Cover Letter Generator
 
