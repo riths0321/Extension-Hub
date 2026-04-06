@@ -79,8 +79,7 @@ function highlightText(text) {
     if (node.textContent.includes(text)) {
       const span = document.createElement("mark");
       span.className = "tts-highlight";
-      span.style.backgroundColor = "#ffeb3b";
-      span.style.transition = "background-color 0.3s";
+      // Removed inline styles - now only using CSS class
       node.parentNode.replaceChild(span, node);
       span.appendChild(node);
       currentHighlightElement = span;
