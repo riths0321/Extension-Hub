@@ -306,6 +306,20 @@
     </div>
   </div>
 
+
+  <!-- CONFIRM DIALOG (replaces blocked confirm()) -->
+  <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm">
+    <div class="modal modal-sm">
+      <div class="modal-body" style="text-align:center;padding:24px 20px 20px;">
+        <p id="confirmMessage" class="confirm-msg"></p>
+        <div class="confirm-actions">
+          <button id="confirmCancel" class="btn-ghost">Cancel</button>
+          <button id="confirmOk" class="btn-danger">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div id="toast" class="toast" hidden></div>
 
