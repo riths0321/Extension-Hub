@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Clipboard History Manager",
+  "name": "Clipboard Pro",
   "version": "2.0.0",
   "description": "Smart clipboard workspace — pin, tag, search, and reuse everything you copy.",
   "permissions": [
