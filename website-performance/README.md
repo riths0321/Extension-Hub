@@ -1,6 +1,5 @@
 # 🚀 Website Performance Estimator
 
-
 ### 🧩 Description
 **Website Performance Estimator** is a lightweight utility that gives you a quick snapshot of a webpage's performance. It analyzes the page load time and resource weight to give you immediate feedback on "speed" and "bloat".
 
