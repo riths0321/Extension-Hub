@@ -1,7 +1,5 @@
 /* ──────────────────────────────────────────────────────
    Quick Link Manager Pro — Design System
-   Primary: #2563EB | BG: #FFFFFF | Heading: #111111
-   Subtext: #6B7280 | Border: #E5E7EB | Font: Manrope/System
 ────────────────────────────────────────────────────── */
 
 /* ── LOCAL FONTS (from fonts folder) ── */
@@ -267,9 +265,6 @@ body {
 }
 
 /* ── SECTIONS ────────────────────────────── */
-.section {
-  flex-shrink: 0;
-}
 
 #allLinksSection {
   flex: 1;
@@ -1374,3 +1369,85 @@ body {
   margin-bottom: 12px;
 }
 
+/* ── CONFIRM DIALOG ──────────────────────── */
+.confirm-msg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--heading);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #DC2626;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-danger:hover { background: #B91C1C; }
+
+/* ── FIXED SECTIONS ── */
+.section {
+  flex-shrink: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Specific fix for favorites section */
+#favoritesSection {
+  flex-shrink: 0;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Fix for favorites list - ensure it doesn't overflow */
+#favoritesList {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+/* All links section - takes remaining space */
+#allLinksSection {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure links list inside all links scrolls properly */
+#allLinksSection .links-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Make sure app container handles overflow correctly */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  max-height: 600px;
+  overflow: hidden;
+  position: relative;
+}

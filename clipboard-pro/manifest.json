@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Clipboard History Manager",
-  "version": "1.0.0",
-  "description": "Save, search, pin, and reuse recent clipboard items with a premium clipboard workspace.",
+  "version": "2.0.0",
+  "description": "Smart clipboard workspace — pin, tag, search, and reuse everything you copy.",
   "permissions": [
     "clipboardWrite",
     "storage",
@@ -12,14 +12,13 @@
     "notifications",
     "alarms"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "ui/popup.html",
     "default_title": "Clipboard History",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -47,7 +46,7 @@
         "default": "Ctrl+Shift+C",
         "mac": "Command+Shift+C"
       },
-      "description": "Manually save selected text to history"
+      "description": "Manually save selected text"
     }
   },
   "icons": {
@@ -55,7 +54,8 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"
   }
 }

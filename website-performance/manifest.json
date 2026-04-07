@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Website Performance Estimator",
-  "short_name": "Perf Estimator",
-  "version": "2.0.0",
-  "description": "Quickly estimate website performance metrics for the current page.",
+  "name": "PerfPro – Website Performance Analyzer",
+  "short_name": "PerfPro",
+  "version": "3.1.0",
+  "description": "Instant, accurate website performance analysis. Score, metrics, issues & actionable recommendations.",
 
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
 
   "action": {
@@ -23,6 +24,10 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; script-src 'self'"
   },
 
   "minimum_chrome_version": "114"
