@@ -4,6 +4,18 @@ function notify(message, type = "success") {
   }
 }
 
+function isRestrictedBrowserUrl(url) {
+  if (typeof window.isRestrictedBrowserUrl === "function") {
+    return window.isRestrictedBrowserUrl(url);
+  }
+
+  if (!url) {
+    return true;
+  }
+
+  return /^(about|brave|chrome|chrome-extension|devtools|edge|extension|file|moz-extension|opera|vivaldi|view-source):/i.test(url);
+}
+
 function getActiveTab(callback) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs && tabs.length) {
@@ -16,7 +28,7 @@ document.getElementById("confirmAddBookmark").addEventListener("click", () => {
   const category = document.getElementById("category").value.trim() || "Unsorted";
 
   getActiveTab((tab) => {
-    if (!tab?.url || tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://")) {
+    if (isRestrictedBrowserUrl(tab?.url)) {
       notify("Cannot bookmark this page", "error");
       return;
     }
