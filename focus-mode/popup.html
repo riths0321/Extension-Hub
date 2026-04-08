@@ -1,209 +1,144 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Focus Mode</title>
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
-      :root {
-        --bg: #020617;
-        --card: #0f172a;
-        --border: #1e293b;
-        --accent: #3b82f6;
-        --text: #f1f5f9;
-        --text-dim: #94a3b8;
-        --danger: #ef4444;
-      }
-
-      body {
-        margin: 0;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        padding: 16px;
-        width: 280px;
-        max-height: 520px;
-        overflow-y: auto;
-      }
-
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-      }
-
-      h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 700;
-      }
-
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 34px;
-        height: 20px;
-      }
-
-      .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        inset: 0;
-        background-color: #334155;
-        transition: .4s;
-        border-radius: 34px;
-      }
-
-      .slider:before {
-        position: absolute;
-        content: "";
-        height: 14px;
-        width: 14px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-      }
-
-      input:checked + .slider {
-        background-color: var(--accent);
-      }
-
-      input:checked + .slider:before {
-        transform: translateX(14px);
-      }
-
-      .card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 12px;
-        margin-bottom: 16px;
-      }
-
-      label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-dim);
-        margin-bottom: 8px;
-        text-transform: uppercase;
-      }
-
-      .row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      input[type="time"],
-      input[type="text"] {
-        background: var(--bg);
-        border: 1px solid var(--border);
-        color: var(--text);
-        border-radius: 8px;
-        padding: 8px;
-        font-size: 0.85rem;
-        width: 100%;
-        min-width: 0;
-        outline: none;
-      }
-
-      input:focus {
-        border-color: var(--accent);
-      }
-
-      button#add {
-        background: var(--accent);
-        border: none;
-        border-radius: 8px;
-        padding: 8px 12px;
-        color: white;
-        font-weight: 600;
-        cursor: pointer;
-        margin-top: 8px;
-        width: 100%;
-      }
-
-      ul {
-        list-style: none;
-        padding: 0;
-        margin: 12px 0 0;
-        max-height: 140px;
-        overflow-y: auto;
-      }
-
-      li {
-        font-size: 0.85rem;
-        padding: 8px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 6px;
-        margin-bottom: 4px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .delete-btn {
-        color: var(--text-dim);
-        cursor: pointer;
-        font-size: 1rem;
-      }
-
-      .delete-btn:hover {
-        color: var(--danger);
-      }
-
-      #stats {
-        margin-top: 20px;
-        font-size: 0.7rem;
-        color: var(--text-dim);
-        text-align: center;
-        border-top: 1px solid var(--border);
-        padding-top: 12px;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
-
   <body>
-    <header>
-      <h3>Focus Mode</h3>
-      <label class="switch">
-        <input type="checkbox" id="focusToggle" />
-        <span class="slider"></span>
-      </label>
-    </header>
+    <div class="shell">
+      <header class="header">
+        <div class="logo-mark" aria-hidden="true">FM</div>
+        <div class="header-text">
+          <p class="eyebrow">Focused browsing</p>
+          <h1 class="header-title">Focus Mode</h1>
+          <p class="header-sub">Protect deep work with clean rules, clear progress, and fewer distractions.</p>
+        </div>
+        <label class="power-toggle" aria-label="Toggle focus mode">
+          <input type="checkbox" id="focusToggle" />
+          <span class="power-track"></span>
+        </label>
+      </header>
 
-    <div class="card">
-      <label>Active Hours</label>
-      <div class="row">
-        <input type="time" id="startTime" value="09:00" />
-        <span style="color: var(--text-dim)">-</span>
-        <input type="time" id="endTime" value="17:00" />
+      <div class="status-banner" id="statusBanner">
+        <div class="status-dot" aria-hidden="true"></div>
+        <div class="status-copy">
+          <span class="status-label" id="statusLabel">Focus is off</span>
+          <span class="status-sub">Current time <span class="status-time" id="statusTime"></span></span>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-      <label>Blocklist</label>
-      <input id="site" type="text" placeholder="e.g. twitter.com" />
-      <button id="add">Add Website</button>
-      <ul id="list"></ul>
-    </div>
+      <div class="tabs" role="tablist" aria-label="Popup sections">
+        <button class="tab active" data-tab="main" type="button">Main</button>
+        <button class="tab" data-tab="stats" type="button">Stats</button>
+        <button class="tab" data-tab="goals" type="button">Goals</button>
+      </div>
 
-    <p id="stats">0 hours focused today</p>
+      <div class="tab-content active" id="main-tab">
+        <section class="section">
+          <div class="section-label">Blocking mode</div>
+          <div class="mode-selector">
+            <button class="mode-btn active" data-mode="blocklist" type="button">Blocklist</button>
+            <button class="mode-btn" data-mode="whitelist" type="button">Whitelist</button>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-label">Active hours</div>
+          <div class="time-row">
+            <input type="time" id="startTime" value="09:00" />
+            <span class="time-sep">to</span>
+            <input type="time" id="endTime" value="17:00" />
+          </div>
+        </section>
+
+        <section class="section" id="blocklist-card">
+          <div class="section-label">Blocked sites</div>
+          <div class="input-row">
+            <input id="site" type="text" placeholder="twitter.com" />
+            <button class="btn btn-primary btn-inline" id="add" type="button">Add</button>
+          </div>
+          <ul class="site-list" id="list"></ul>
+        </section>
+
+        <section class="section" id="whitelist-card" hidden>
+          <div class="section-label">Allowed sites</div>
+          <div class="input-row">
+            <input id="whitelist-site" type="text" placeholder="github.com" />
+            <button class="btn btn-primary btn-inline" id="add-whitelist" type="button">Add</button>
+          </div>
+          <ul class="site-list" id="whitelist-list"></ul>
+        </section>
+
+        <section class="section">
+          <div class="section-label">Daily focus goal</div>
+          <div class="input-row">
+            <input type="number" id="dailyGoal" placeholder="Minutes (e.g. 120)" min="1" max="480" />
+            <button class="btn btn-ghost btn-inline" id="setGoal" type="button">Set</button>
+          </div>
+          <div class="progress-wrap" id="goalProgress">
+            <div class="progress-meta">
+              <span id="goalProgressValue">0 / 60 min</span>
+              <span id="goalProgressPercent">0%</span>
+            </div>
+            <progress class="progress-track" id="goalProgressBar" max="100" value="0"></progress>
+          </div>
+        </section>
+      </div>
+
+      <div class="tab-content" id="stats-tab">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-val" id="blockCount">0</div>
+            <div class="stat-lbl">Blocks today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val blue" id="focusTime">0</div>
+            <div class="stat-lbl">Focus minutes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val green" id="streak">0</div>
+            <div class="stat-lbl">Day streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" id="totalBlocks">0</div>
+            <div class="stat-lbl">Total blocks</div>
+          </div>
+        </div>
+
+        <section class="section">
+          <div class="section-label">Top sites today</div>
+          <ul class="metric-list" id="topSites"></ul>
+        </section>
+
+        <section class="section">
+          <div class="section-label">Achievements</div>
+          <ul class="metric-list achievements-list" id="achievements"></ul>
+        </section>
+
+        <button class="btn btn-danger" id="resetStats" type="button">Reset statistics</button>
+      </div>
+
+      <div class="tab-content" id="goals-tab">
+        <section class="section">
+          <div class="section-label">Daily goals</div>
+          <div class="input-row">
+            <input type="text" id="newGoal" placeholder="Complete project section" />
+            <button class="btn btn-primary btn-inline" id="addGoal" type="button">Add</button>
+          </div>
+          <ul class="goals-list" id="goalsList"></ul>
+        </section>
+
+        <section class="section">
+          <div class="section-label">Weekly challenge</div>
+          <div class="challenge-box" id="weeklyChallenge">Click below to get your challenge.</div>
+          <button class="btn btn-ghost" id="newChallenge" type="button">New challenge</button>
+        </section>
+      </div>
+
+      <div class="footer">private · offline · no tracking</div>
+    </div>
 
     <script src="popup.js"></script>
   </body>
