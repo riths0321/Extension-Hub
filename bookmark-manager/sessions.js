@@ -4,6 +4,18 @@ function sessionNotify(message, type = "success") {
   }
 }
 
+function isRestrictedBrowserUrl(url) {
+  if (typeof window.isRestrictedBrowserUrl === "function") {
+    return window.isRestrictedBrowserUrl(url);
+  }
+
+  if (!url) {
+    return true;
+  }
+
+  return /^(about|brave|chrome|chrome-extension|devtools|edge|extension|file|moz-extension|opera|vivaldi|view-source):/i.test(url);
+}
+
 document.getElementById("saveSession").addEventListener("click", () => {
   chrome.tabs.query({ currentWindow: true }, (tabs) => {
     if (chrome.runtime.lastError) {
@@ -15,8 +27,7 @@ document.getElementById("saveSession").addEventListener("click", () => {
       .filter(
         (tab) =>
           tab.url &&
-          !tab.url.startsWith("chrome://") &&
-          !tab.url.startsWith("chrome-extension://")
+          !isRestrictedBrowserUrl(tab.url)
       )
       .map((tab) => ({
         title: tab.title || tab.url,

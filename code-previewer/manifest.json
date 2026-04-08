@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Code Previewer",
-  "version": "1.8",
-  "description": "Professional HTML, CSS & JS Previewer with live output, tabs, export and offline support.",
+  "name": "Code Previewer Pro",
+  "version": "2.0",
+  "description": "Advanced HTML and CSS previewer with live preview, templates, dark mode, format, export and auto-run.",
   "action": {
     "default_popup": "popup.html"
   },

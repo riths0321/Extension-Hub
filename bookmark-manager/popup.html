@@ -1,102 +1,154 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bookmark Manager</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <main class="shell">
-      <header class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">Reading Shelf</p>
-          <h1>Bookmark Manager</h1>
-          <p class="subtitle">Search saved links, archive current tabs, and keep your browser shelf clean and easy to restore.</p>
-        </div>
-        <div class="hero-mark">Shelf</div>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bookmark Manager</title>
+  
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Reading Shelf</span>
+        <h1>Bookmark Manager</h1>
+        <p class="subtitle">Search saved links, archive current tabs, and keep your browser shelf clean and easy to restore.</p>
+      </div>
+      <div class="hero-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle dark mode">🌙</button>
+      </div>
+    </header>
 
-      <div id="status" class="status-bar hidden" role="alert" aria-live="polite"></div>
+    <div id="status" class="status-bar hidden" role="alert" aria-live="polite"></div>
 
-      <section class="overview-card">
-        <div class="overview-block">
-          <span class="overview-label">Bookmarks</span>
-          <strong id="bookmarkCount">0</strong>
-        </div>
-        <div class="overview-block">
-          <span class="overview-label">Last session</span>
-          <strong id="sessionCount">0</strong>
-        </div>
-        <div class="overview-block">
-          <span class="overview-label">Saved at</span>
-          <strong id="sessionSavedAt">Not saved</strong>
-        </div>
-      </section>
+    <section class="overview-card">
+      <div class="overview-block">
+        <span class="overview-label">Bookmarks</span>
+        <strong id="bookmarkCount">0</strong>
+      </div>
+      <div class="overview-block">
+        <span class="overview-label">Folders</span>
+        <strong id="folderCount">0</strong>
+      </div>
+      <div class="overview-block">
+        <span class="overview-label">Last session</span>
+        <strong id="sessionCount">0</strong>
+      </div>
+    </section>
 
-      <section class="search-card">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">Find bookmarks</p>
-            <h2 class="section-title">Search your library</h2>
-          </div>
+    <section class="recent-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Quick access</span>
+          <h2 class="section-title">Recent bookmarks</h2>
         </div>
-        <input id="search" class="text-input" type="search" placeholder="Search title or URL" autocomplete="off" spellcheck="false" />
-        <ul id="results" class="results-list" role="list" aria-label="Search results"></ul>
-      </section>
+        <button id="clearRecent" class="text-btn" type="button">Clear all</button>
+      </div>
+      <ul id="recentList" class="results-list" role="list" aria-label="Recent bookmarks"></ul>
+    </section>
 
-      <section class="grid-card">
-        <article class="tool-card">
-          <p class="section-kicker">Sessions</p>
-          <h2 class="section-title">Tab shelf snapshot</h2>
-          <div class="button-stack">
-            <button id="saveSession" class="primary-btn" type="button">Save current tabs</button>
-            <button id="restoreSession" class="secondary-btn" type="button">Restore saved tabs</button>
-          </div>
-        </article>
-
-        <article class="tool-card">
-          <p class="section-kicker">Current page</p>
-          <h2 class="section-title">Add bookmark</h2>
-          <div class="button-stack">
-            <button id="openBookmarkOverlay" class="primary-btn" type="button">Bookmark active page</button>
-          </div>
-        </article>
-      </section>
-
-      <section class="cleanup-card">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">Cleanup</p>
-            <h2 class="section-title">Library maintenance</h2>
-          </div>
-        </div>
-        <div class="button-stack two-col">
-          <button id="removeDuplicates" class="secondary-btn" type="button">Remove duplicates</button>
-          <button id="cleanFolders" class="secondary-btn" type="button">Delete empty folders</button>
-        </div>
-      </section>
-    </main>
-
-    <div id="bookmarkOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Save bookmark">
-      <div class="overlay-card">
-        <div class="section-head">
-          <div>
-            <p class="section-kicker">Save bookmark</p>
-            <h2 class="section-title">Choose a folder name</h2>
-          </div>
-        </div>
-        <p class="overlay-note">Leave blank to save inside <strong>Unsorted</strong>.</p>
-        <input id="category" class="text-input" type="text" placeholder="Work, Research, Reading List..." autocomplete="off" spellcheck="false" />
-        <div class="overlay-actions">
-          <button id="confirmAddBookmark" class="primary-btn" type="button">Save bookmark</button>
-          <button id="cancelOverlay" class="secondary-btn" type="button">Cancel</button>
+    <section class="search-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Find bookmarks</span>
+          <h2 class="section-title">Search your library</h2>
         </div>
       </div>
-    </div>
+      <div class="search-wrapper">
+        <input id="search" class="text-input" type="search" placeholder="Search title, URL, or #tag..." autocomplete="off" spellcheck="false" />
+        <div class="search-filters">
+          <button id="filterAll" class="filter-chip active">All</button>
+          <button id="filterFolders" class="filter-chip">Folders</button>
+          <button id="filterRecent" class="filter-chip">Recent</button>
+        </div>
+      </div>
+      <ul id="results" class="results-list" role="list" aria-label="Search results"></ul>
+    </section>
 
-    <script src="popup.js"></script>
-    <script src="sessions.js"></script>
-    <script src="bookmarks.js"></script>
-  </body>
+    <section class="folder-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Browse</span>
+          <h2 class="section-title">Folder tree</h2>
+        </div>
+      </div>
+      <div id="folderTree" class="folder-tree"></div>
+    </section>
+
+    <section class="grid-card">
+      <article class="tool-card">
+        <span class="section-kicker">Sessions</span>
+        <h2 class="section-title">Tab shelf snapshot</h2>
+        <div class="button-stack">
+          <button id="saveSession" class="primary-btn" type="button"> Save current tabs</button>
+          <button id="restoreSession" class="secondary-btn" type="button"> Restore saved tabs</button>
+        </div>
+      </article>
+
+      <article class="tool-card">
+        <span class="section-kicker">Current page</span>
+        <h2 class="section-title">Add bookmark</h2>
+        <div class="button-stack">
+          <button id="openBookmarkOverlay" class="primary-btn" type="button"> Bookmark active page</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="cleanup-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Cleanup</span>
+          <h2 class="section-title">Library maintenance</h2>
+        </div>
+      </div>
+      <div class="button-stack two-col">
+        <button id="removeDuplicates" class="secondary-btn" type="button"> Remove duplicates</button>
+        <button id="cleanFolders" class="secondary-btn" type="button"> Delete empty folders</button>
+        <button id="exportBookmarks" class="secondary-btn" type="button"> Export</button>
+        <button id="importBookmarks" class="secondary-btn" type="button"> Import</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="bookmarkOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Save bookmark">
+    <div class="overlay-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Save bookmark</span>
+          <h2 class="section-title">Choose a folder</h2>
+        </div>
+      </div>
+      <p class="overlay-note">Leave blank to save in <strong>Unsorted</strong></p>
+      <input id="category" class="text-input" type="text" placeholder="Work, Research, Reading List..." autocomplete="off" spellcheck="false" />
+      
+      <p class="overlay-note overlay-note-spaced">Add tags (comma separated)</p>
+      <input id="bookmarkTags" class="text-input" type="text" placeholder="important, to-read, reference..." autocomplete="off" spellcheck="false" />
+      
+      <div class="overlay-actions">
+        <button id="confirmAddBookmark" class="primary-btn" type="button">Save bookmark</button>
+        <button id="cancelOverlay" class="secondary-btn" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bookmarkDetailsOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Bookmark details">
+    <div class="overlay-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Details</span>
+          <h2 id="detailsTitle" class="section-title">Bookmark</h2>
+        </div>
+      </div>
+      <div id="detailsContent" class="details-content"></div>
+      <div class="overlay-actions">
+        <button id="editBookmark" class="primary-btn" type="button"> Edit</button>
+        <button id="deleteBookmark" class="danger-btn" type="button"> Delete</button>
+        <button id="closeDetails" class="secondary-btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
 </html>
