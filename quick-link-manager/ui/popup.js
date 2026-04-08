@@ -1,6 +1,12 @@
 /**
  * popup.js — Quick Link Manager Pro
-
+ * Bugs fixed:
+ * 1. render() called unconditionally (not just inside sendMessage callback)
+ *    → Fixes: links saved but "No links yet" showing (race condition)
+ * 2. confirm() replaced with custom modal (confirm() blocked in extensions)
+ * 3. Favorites section correctly hidden when no favorites exist
+ * 4. emptyState / noResults / allLinksSection visibility logic made bulletproof
+ * 5. All CSP violations removed
  */
 
 import { StorageService } from '../services/storage.js';
@@ -208,39 +214,32 @@ function render() {
     SearchService.filter(state.links, state.query, state.activeTags, state.currentDomain)
   );
 
-
   // ── FAVORITES SECTION ──
   // Show only when: has favorites AND not filtering by search/tag
-  const showFavorites = favorites.length > 0;
-
+  const showFavorites = favorites.length > 0 && !isFiltering;
   if (DOM.favoritesSection) {
     DOM.favoritesSection.hidden = !showFavorites;
     if (showFavorites && DOM.favoritesList) {
       clearList(DOM.favoritesList);
-      // Show up to 5 favorites to keep layout clean
-      getSortedLinks(favorites).slice(0, 5).forEach(l => DOM.favoritesList.appendChild(createCard(l)));
-      
-      // If more than 5 favorites, show a "see all" indicator? (optional)
-      if (favorites.length > 5 && DOM.favoritesSection.querySelector('.favorites-more')) {
-        // optional: add a "see more" link
-      }
+      getSortedLinks(favorites).forEach(l => DOM.favoritesList.appendChild(createCard(l)));
     }
   }
 
+  // ── TAG ROW ──
   renderTagRow();
 
   // ── VISIBILITY STATES (mutually exclusive) ──
   const hasLinks   = state.links.length > 0;
   const hasResults = filtered.length > 0;
 
-   // Empty state: no links at all, not filtering
+  // Empty state: no links at all, not filtering
   if (DOM.emptyState)      DOM.emptyState.hidden      = hasLinks || isFiltering;
 
   // No results: has links but filter/search gave nothing
   if (DOM.noResults)       DOM.noResults.hidden        = !(hasLinks && isFiltering && !hasResults);
 
-  // All links section: always show if there are links (but may be empty results)
-  if (DOM.allLinksSection) DOM.allLinksSection.hidden  = !hasLinks;
+  // All links section: only when there are results
+  if (DOM.allLinksSection) DOM.allLinksSection.hidden  = !hasResults;
 
   // ── RENDER CARDS ──
   if (hasResults && DOM.linksList) {
@@ -252,15 +251,6 @@ function render() {
     if (DOM.sectionCount) DOM.sectionCount.textContent = filtered.length;
     clearList(DOM.linksList);
     filtered.forEach(l => DOM.linksList.appendChild(createCard(l)));
-  } else if (DOM.linksList && !hasResults && hasLinks) {
-    // Show empty message in the links list instead of hiding the whole section
-    clearList(DOM.linksList);
-    const emptyMsg = el('div', 'empty-state');
-    emptyMsg.style.padding = '40px 20px';
-    const p = el('p', 'empty-title');
-    p.textContent = 'No matching links';
-    emptyMsg.appendChild(p);
-    DOM.linksList.appendChild(emptyMsg);
   }
 
   if (DOM.btnClearSearch) DOM.btnClearSearch.hidden = !state.query;
@@ -433,7 +423,7 @@ function createCard(link) {
   });
   card.addEventListener('mouseleave', () => {
     clearTimeout(previewTimer);
-    const tip = card.querySelector('.link-preview-tooltip');
+    const tip = document.getElementById('qlm-tooltip');
     if (tip) tip.remove();
   });
 
@@ -447,23 +437,41 @@ function createCard(link) {
 }
 
 function showPreview(card, link) {
-  if (card.querySelector('.link-preview-tooltip')) return;
+  // Remove any existing tooltip
+  const existing = document.getElementById('qlm-tooltip');
+  if (existing) existing.remove();
+
   const tip = el('div', 'link-preview-tooltip');
+  tip.id = 'qlm-tooltip';
+
   const strong = el('strong');
   strong.textContent = link.title || link.url;
   tip.appendChild(strong);
-  tip.appendChild(document.createElement('br'));
+
   const small = el('small');
   small.textContent = getDomain(link.url);
   tip.appendChild(small);
+
   if (link.note) {
-    tip.appendChild(document.createElement('br'));
     const em = el('em');
     em.textContent = link.note.substring(0, 100);
     tip.appendChild(em);
   }
-  card.appendChild(tip);
-  setTimeout(() => { if (tip.parentNode) tip.remove(); }, 3000);
+
+  // Append to body so position:fixed works outside any overflow:hidden parent
+  document.body.appendChild(tip);
+
+  // Position above the card using fixed coordinates
+  const rect = card.getBoundingClientRect();
+  // Place above card, or below if no room above
+  const tipHeight = 72; // estimated max height
+  const topAbove = rect.top - tipHeight - 8;
+  const top = topAbove > 0 ? topAbove : rect.bottom + 8;
+  tip.style.top  = top + 'px';
+  tip.style.left = Math.max(8, rect.left) + 'px';
+  tip.style.right = 'auto';
+
+  setTimeout(() => { if (tip.parentNode) tip.remove(); }, 2800);
 }
 
 // ─────────────────────────────────────────
