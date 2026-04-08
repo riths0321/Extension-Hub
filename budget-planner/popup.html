@@ -3,108 +3,239 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Budget Planner</title>
+    <title>Budget Planner Pro</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main class="app">
-      <header class="title-wrap">
-        <div class="hero-illustration" aria-hidden="true"></div>
-        <h1 class="title">Budget Planner</h1>
-        <p class="subtitle">Track income, expenses, and monthly limit</p>
-      </header>
 
-      <section class="balance-card">
-        <span class="balance-label">Current Balance</span>
-        <div class="balance-amount" id="balance">₹0.00</div>
-        <div class="stats-grid">
-          <div class="stat income">
-            <span class="stat-label">Income</span>
-            <span id="totalIncome" class="stat-value">₹0.00</span>
-          </div>
-          <div class="stat expense">
-            <span class="stat-label">Expense</span>
-            <span id="totalExpense" class="stat-value">₹0.00</span>
+      <!-- ── HEADER ── -->
+      <header class="title-wrap">
+        <div class="header-row">
+          <div class="header-text">
+            <h1 class="title">Budget <em>Planner</em></h1>
+            <p class="subtitle">Track · Split · Visualize · Grow</p>
           </div>
         </div>
-      </section>
+      </header>
 
-      <section class="section">
-        <h2>Add Entry</h2>
+      <!-- ── TABS ── -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="overview"> Overview</button>
+        <button class="tab-btn" data-tab="transactions"> History</button>
+        <button class="tab-btn" data-tab="budgets"> Budgets</button>
+        <button class="tab-btn" data-tab="tools"> Tools</button>
+      </div>
 
-        <label for="title">Title</label>
-        <input id="title" placeholder="e.g. Salary, Grocery" maxlength="50" />
+      <!-- ════════════ OVERVIEW TAB ════════════ -->
+      <div id="overviewTab" class="tab-content active">
 
-        <label for="amount">Amount</label>
-        <input id="amount" type="number" min="0.01" step="0.01" placeholder="Enter amount" />
+        <section class="balance-card">
+          <span class="balance-label">Current Balance</span>
+          <div class="balance-amount" id="balance">₹0.00</div>
+          <div class="stats-grid">
+            <div class="stat income">
+              <span class="stat-label">↑ Income</span>
+              <span id="totalIncome" class="stat-value">₹0.00</span>
+            </div>
+            <div class="stat expense">
+              <span class="stat-label">↓ Expense</span>
+              <span id="totalExpense" class="stat-value">₹0.00</span>
+            </div>
+          </div>
+        </section>
 
-        <label for="entryDate">Date</label>
-        <input id="entryDate" type="date" />
+        <section class="section">
+          <h2>Add Entry</h2>
 
-        <div class="row">
-          <div class="col">
-            <label for="type">Type</label>
-            <select id="type">
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
+          <label for="title">Title</label>
+          <input id="title" placeholder="e.g. Salary, Grocery" maxlength="50" />
+
+          <label for="amount">Amount (₹)</label>
+          <input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00" />
+
+          <label for="entryDate">Date</label>
+          <input id="entryDate" type="date" />
+
+          <div class="row">
+            <div>
+              <label for="type">Type</label>
+              <select id="type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+            </div>
+            <div>
+              <label for="category">Category</label>
+              <select id="category">
+                <option>Food</option>
+                <option>Rent</option>
+                <option>Travel</option>
+                <option>Shopping</option>
+                <option>Bills</option>
+                <option>Salary</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="add">+ Add Entry</button>
+        </section>
+
+        <section class="section">
+          <h2>Spending Overview</h2>
+          <canvas id="chart" width="320" height="200"></canvas>
+        </section>
+
+      </div>
+
+      <!-- ════════════ TRANSACTIONS TAB ════════════ -->
+      <div id="transactionsTab" class="tab-content">
+        <section class="section">
+          <div class="section-head">
+            <h2>Transaction History</h2>
+            <button id="clearHistory" class="danger btn-sm">Clear All</button>
+          </div>
+
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search transactions…" />
+          </div>
+
+          <div class="filter-row">
+            <select id="filterType">
+              <option value="all">All Types</option>
+              <option value="income">Income Only</option>
+              <option value="expense">Expense Only</option>
+            </select>
+            <select id="filterCategory">
+              <option value="all">All Categories</option>
+              <option value="Food">Food</option>
+              <option value="Rent">Rent</option>
+              <option value="Travel">Travel</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Bills">Bills</option>
+              <option value="Salary">Salary</option>
+              <option value="Other">Other</option>
             </select>
           </div>
-          <div class="col">
-            <label for="category">Category</label>
-            <select id="category">
+
+          <ul id="history"></ul>
+        </section>
+      </div>
+
+      <!-- ════════════ BUDGETS TAB ════════════ -->
+      <div id="budgetsTab" class="tab-content">
+        <section class="section">
+          <h2>Monthly Limit</h2>
+          <label for="limit">Overall Monthly Spending Limit</label>
+          <input id="limit" type="number" min="0" step="0.01" placeholder="e.g. 20000" />
+          <button id="saveLimit">Save Limit</button>
+          <div class="limit-progress limit-progress--spaced">
+            <progress id="limitBar" class="limit-progress-bar" max="100" value="0"></progress>
+          </div>
+          <p id="limitInfo" class="hint">No monthly limit set.</p>
+        </section>
+
+        <section class="section">
+          <h2>Category Budgets</h2>
+          <div id="categoryBudgets"></div>
+          <div class="category-budget-input">
+            <select id="budgetCategory">
               <option>Food</option>
               <option>Rent</option>
               <option>Travel</option>
               <option>Shopping</option>
               <option>Bills</option>
-              <option>Salary</option>
               <option>Other</option>
             </select>
+            <input type="number" id="budgetAmount" placeholder="Budget amount (₹)" step="0.01" />
+            <button id="setCategoryBudget">Set Category Budget</button>
           </div>
-        </div>
+        </section>
+      </div>
 
-        <button id="add" class="primary">Add Entry</button>
-      </section>
+      <!-- ════════════ TOOLS TAB ════════════ -->
+      <div id="toolsTab" class="tab-content">
 
-      <section class="section">
-        <h2>Monthly Budget Limit</h2>
-        <label for="limit">Set Limit</label>
-        <input id="limit" type="number" min="0" step="0.01" placeholder="e.g. 20000" />
-        <button id="saveLimit">Save Limit</button>
-        <div class="limit-progress">
-          <div id="limitBar" class="limit-progress-bar"></div>
-        </div>
-        <p id="limitInfo" class="hint">No monthly limit set.</p>
-      </section>
+        <section class="section">
+          <h2>Split Bill</h2>
 
-      <section class="section">
-        <h2>Reports</h2>
-        <label for="monthFilter">Select Month</label>
-        <input type="month" id="monthFilter" />
-        <div class="button-row">
-          <button id="viewReport">View Monthly Report</button>
-          <button id="resetReport" class="muted">Show All</button>
-        </div>
-        <button id="export" class="muted">Export CSV</button>
-      </section>
+          <label for="splitTitle">Bill Title</label>
+          <input id="splitTitle" placeholder="e.g. Dinner with friends" />
 
-      <section class="section">
-        <h2>Spending Overview</h2>
-        <canvas id="chart" width="320" height="210"></canvas>
-      </section>
+          <label for="splitAmount">Total Amount (₹)</label>
+          <input id="splitAmount" type="number" step="0.01" placeholder="0.00" />
 
-      <section class="section">
-        <div class="section-head">
-          <h2>Transaction History</h2>
-          <button id="clearHistory" class="danger">Clear All</button>
-        </div>
-        <ul id="history"></ul>
-      </section>
+          <label for="splitPeople">Number of People</label>
+          <input id="splitPeople" type="number" min="2" step="1" placeholder="2" />
+
+          <label for="splitPaidBy">Main Payer Name</label>
+          <input id="splitPaidBy" placeholder="Optional — highlights main payer" />
+
+          <div class="split-people-head">
+            <label for="splitParticipants">Participants</label>
+            <p class="hint split-hint">Enter name + how much each already paid.</p>
+          </div>
+          <div id="splitParticipants" class="split-participants"></div>
+
+          <button id="calculateSplit">Calculate Split</button>
+
+          <div id="splitResult" class="split-result" hidden></div>
+          <button id="addSplitExpense" class="spaced-top" hidden>Add as Expense</button>
+        </section>
+
+        <section class="section">
+          <h2>Recurring Transactions</h2>
+          <div class="recurring-input">
+            <input type="text" id="recurringTitle" placeholder="Title (e.g. Netflix, Rent)" />
+            <input type="number" id="recurringAmount" placeholder="Amount (₹)" step="0.01" />
+            <select id="recurringType">
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+            <select id="recurringCategory">
+              <option>Food</option><option>Rent</option><option>Travel</option>
+              <option>Shopping</option><option>Bills</option><option>Salary</option><option>Other</option>
+            </select>
+            <select id="recurringFrequency">
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+            <button id="addRecurring">+ Add Recurring</button>
+          </div>
+          <div id="recurringList"></div>
+        </section>
+
+        <section class="section">
+          <h2>Data Management</h2>
+          <div class="button-row">
+            <button id="exportAllData" class="muted">↓ Export JSON</button>
+            <button id="importData" class="muted">↑ Import Data</button>
+          </div>
+          <input type="file" id="importFile" accept=".json" hidden />
+          <div class="button-row spaced-top">
+            <button id="backupData" class="muted">💾 Backup</button>
+            <button id="restoreBackup" class="muted">♻ Restore</button>
+          </div>
+          <p class="hint hint-spaced">Export data for safekeeping or restore from backup.</p>
+        </section>
+
+        <section class="section">
+          <h2>Spending Insights</h2>
+          <div id="insights" class="insights-box">
+            <div class="insight-item">Click "Refresh Insights" to see your spending analysis.</div>
+          </div>
+          <button id="refreshInsights" class="muted">↻ Refresh Insights</button>
+        </section>
+
+      </div>
 
       <p id="status" class="status" aria-live="polite"></p>
     </main>
 
     <script src="chart.js"></script>
+    <script src="dropdowns.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
