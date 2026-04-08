@@ -46,7 +46,7 @@
   ],
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
+    "extension_pages": "script-src 'self'; object-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'self';"
   },
 
   "icons": {
