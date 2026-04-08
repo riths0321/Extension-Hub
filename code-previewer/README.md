@@ -1,21 +1,19 @@
 🌐 Code Previewer – Chrome Extension
 
-A powerful, modern, offline HTML/CSS/JS previewer built directly inside a Chrome Extension.
+A powerful, modern, offline HTML/CSS previewer built directly inside a Chrome Extension.
 
 Write code → Preview instantly → Export as a complete HTML file.
 
 Fast. Clean. Professional.
 
 ✨ Features
-🧩 Multi-Language Code Tabs
+🧩 Two Code Tabs
 
-Switch between three languages:
+Switch between:
 
 HTML
 
 CSS
-
-JavaScript
 
 Each tab includes active indicators and smooth UI transitions.
 
@@ -31,8 +29,6 @@ HTML
 
 CSS
 
-JS
-
 Reloading the extension instantly restores your last session.
 
 📤 Export as HTML File
@@ -47,8 +43,6 @@ This export contains:
 Your HTML content
 
 Embedded <style> section for CSS
-
-Embedded <script> section for JS
 
 🧹 Clear Editor
 
@@ -72,7 +66,7 @@ Code-Previewer/
 🧠 How It Works
 
 Choose a Tab
-Switch between HTML, CSS, and JS.
+Switch between HTML and CSS.
 
 Write Your Code
 The editor auto-saves in real-time.
@@ -91,7 +85,7 @@ Remove code only from the active tab.
   "manifest_version": 3,
   "name": "Code Previewer",
   "version": "1.8",
-  "description": "Professional HTML, CSS & JS previewer with live output, tabs, export, and full offline support.",
+  "description": "Professional HTML and CSS previewer with live output, tabs, export, and full offline support.",
   "action": {
     "default_popup": "popup.html"
   }
@@ -102,8 +96,6 @@ Remove code only from the active tab.
 HTML5
 
 CSS3
-
-JavaScript
 
 LocalStorage
 
@@ -133,7 +125,7 @@ Syntax highlighting
 
 Download as ZIP project
 
-HTML/CSS/JS templates
+HTML/CSS templates
 
 Multi-file editing
 
