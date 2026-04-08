@@ -1,119 +1,88 @@
-# 📘 README.md Generator — Chrome Extension
+# README.md Generator
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
-![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)
-![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
-![Privacy](https://img.shields.io/badge/tracking-none-success.svg)
+A Chrome Extension that generates clean, professional `README.md` drafts from a project description. The extension runs locally in the popup, supports multiple templates, and lets users copy or download the generated Markdown immediately.
 
-> A fast, modern, privacy-focused Chrome Extension that generates professional `README.md` files instantly from project descriptions. Runs **100% locally** — no servers, no data collection, no API keys.
+## Highlights
 
----
+- Manifest V3 extension
+- Local-only generation with no external API calls
+- Standard, Minimal, and Detailed templates
+- License selector for common open-source licenses
+- Copy and download actions for generated Markdown
+- Strict CSP for extension pages
+- Minimal permission surface using only `storage`
 
-## ✨ Features
+## Project Structure
 
-- **⚡ Instant README Generation** — Paste your description, hit Generate, get a fully formatted README in seconds
-- **🧩 3 Templates** — Standard, Minimal, and Full Pro (with ToC, badges, Contributing section, code blocks)
-- **🏷️ License Picker** — MIT, Apache 2.0, GPL 3.0, ISC, or None — reflected in every generated README
-- **📋 Smart Extraction** — Automatically pulls title and feature bullet points from your description
-- **📥 Copy & Download** — Copy to clipboard or download as `README.md` in one click
-- **💾 Persistent Prefs** — Template and license choices saved via `chrome.storage.sync`
-- **🔒 Zero Tracking** — Everything runs in-browser; nothing is ever transmitted
-
----
-
-## 📂 Project Structure
-
-```
-README-Generator/
-├── manifest.json       # MV3 manifest with CSP
-├── popup.html          # Extension popup UI
-├── popup.css           # Dark navy theme, Sora + JetBrains Mono fonts
-├── popup.js            # Core logic (CSP-compliant, no eval/inline handlers)
-├── privacy.html        # Privacy policy page
-├── options.html        # Options page (theme/template/reset)
-├── options.css
-├── options.js
+```text
+readme-generator/
+├── manifest.json
+├── popup.html
+├── popup.css
+├── popup.js
+├── privacy.html
+├── privacy.css
 └── icons/
     ├── icon16.png
     ├── icon48.png
     └── icon128.png
 ```
 
----
+## How It Works
 
-## 🧠 How It Works
+1. Enter a project description with at least 30 characters.
+2. Choose a template and a license.
+3. Generate a README draft in the preview panel.
+4. Copy the Markdown or download it as `README.md`.
 
-**1. Enter Project Description**
-Paste your project details into the textarea (minimum 30 characters). A live counter shows your progress.
+## Templates
 
-**2. Choose Template & License**
-Pick from Standard, Minimal, or Full Pro templates. Select your preferred license from the dropdown.
+| Template | Purpose |
+| --- | --- |
+| Standard | Balanced README with the most common sections |
+| Minimal | Short output for smaller or simpler projects |
+| Detailed | More structured output with installation, usage, and contributing sections |
 
-**3. Generate**
-Click **GENERATE README →** to instantly produce a formatted Markdown README in the preview panel.
+## Security
 
-**4. Export**
-- **Copy** — copies the Markdown text to your clipboard
-- **Download** — saves `README.md` directly to your machine
-
----
-
-## 📜 Templates
-
-| Template | Description |
-|----------|-------------|
-| **Standard** | Title, description, features, installation, usage, license |
-| **Minimal** | Title, description, features, license — clean and lean |
-| **Full Pro** | All of Standard + ToC, badges, overview callout, contributing guide, code blocks |
-
----
-
-## 🚀 Installation (Developer Mode)
-
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable **Developer Mode** (top-right toggle)
-3. Click **Load unpacked**
-4. Select the project folder
-
----
-
-## 🔐 Content Security Policy
-
-This extension is fully MV3 CSP-compliant:
+This extension is packaged for Chrome Manifest V3 and uses a strict extension-page Content Security Policy:
 
 ```json
 "content_security_policy": {
-  "extension_pages": "script-src 'self'; object-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+  "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'none';"
 }
 ```
 
-- No `eval()` or `new Function()`
-- No inline event handlers (`onclick`, etc.)
-- No external scripts
-- Google Fonts whitelisted for UI typography only
+Security notes:
 
----
+- No remote scripts
+- No inline scripts or inline event handlers
+- No remote fonts
+- No network requests from extension pages
+- No external data processing
 
-## 🛠 Technologies
+## Permissions
 
-- **HTML5** — Semantic, accessible markup
-- **CSS3** — Custom properties, transitions, scrollbar styling
-- **JavaScript (ES6+)** — DOM API, Blob, clipboard, chrome.storage
-- **Chrome Storage API** — Sync preferences across devices
-- **Manifest V3** — Modern extension architecture
+The extension requests:
 
----
+- `storage`: saves the last input, selected template, and selected license
 
-## 🌟 Future Enhancements
+## Local Development
 
-- [ ] AI-powered description improvement suggestions
-- [ ] More README templates (library, CLI tool, API, mobile app)
-- [ ] GitHub badge auto-generator
-- [ ] Local template library (save your own templates)
-- [ ] Dark/Light theme toggle
+1. Open `chrome://extensions/`
+2. Enable Developer Mode
+3. Click `Load unpacked`
+4. Select this project folder
 
----
+## Chrome Web Store Readiness
 
-## 📄 License
+Before publishing, make sure to:
 
-MIT — open-source and free to modify. See `LICENSE` for details.
+1. Review the extension name, summary, and screenshots in the store listing.
+2. Host the privacy policy from [privacy.html](/Users/aplle/Desktop/readme-generator/privacy.html) or copy its contents to your public policy page.
+3. Confirm the final icons and screenshots match the shipped UI.
+4. Load the unpacked extension once and check for console warnings in the popup.
+
+## License
+
+MIT
