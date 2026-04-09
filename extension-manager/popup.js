@@ -95,7 +95,6 @@ class ExtensionManagerPro {
     riskCount: document.getElementById("risk-count"),
     
     // Batch toolbar elements
-    selectionCount: document.getElementById("selection-count"),
     batchToolbar: document.getElementById("batch-toolbar"),
     
     // Import/Export
@@ -346,14 +345,9 @@ class ExtensionManagerPro {
   }
 
   updateBatchToolbar() {
-  const count = this.state.selected.size;
-  
-  if (this.elements.selectionCount) {
-    this.elements.selectionCount.textContent = `${count} selected`;
-  }
-  
+  // "Enable All / Disable All" actions should stay visible at all times.
   if (this.elements.batchToolbar) {
-    this.elements.batchToolbar.hidden = count === 0;
+    this.elements.batchToolbar.hidden = false;
   }
 }
 
@@ -847,12 +841,6 @@ async applyProfile(profileName) {
     return node;
   }
 
-  createOption(value, text) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = text;
-    return option;
-  }
 }
 
 const manager = new ExtensionManagerPro();
