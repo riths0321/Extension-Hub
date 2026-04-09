@@ -46,6 +46,7 @@ def generate_index():
             
             # Prefer longer filenames as they are usually more specific (e.g. accessibility-score-calculator over accessibility)
             if title not in seen_titles or len(filename) > len(seen_titles[title]['filename']):
+                seen_titles[title] = {
                     'title': title,
                     'filename': filename,
                     'url': f'https://SAURABHTIWARI-ANSLATION.github.io/Extension-Hub/privacy-policies/{filename}',
