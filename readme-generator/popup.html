@@ -9,87 +9,138 @@
 <body>
 <div class="container">
 
+  <!-- ── HEADER ── -->
   <div class="header">
     <div class="logo-ring">
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <rect x="3" y="6" width="24" height="3" rx="1.5" fill="white"/>
-        <rect x="3" y="12" width="18" height="3" rx="1.5" fill="white" opacity="0.8"/>
-        <rect x="3" y="18" width="22" height="3" rx="1.5" fill="white" opacity="0.6"/>
-        <rect x="3" y="24" width="14" height="3" rx="1.5" fill="white" opacity="0.4"/>
-        <circle cx="28" cy="26" r="7" fill="#00e5ff" opacity="0.9"/>
-        <path d="M25 26l2 2 4-4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <!-- document lines -->
+        <rect x="3" y="5"  width="20" height="2.5" rx="1.25" fill="white"/>
+        <rect x="3" y="10" width="16" height="2.5" rx="1.25" fill="white" opacity="0.85"/>
+        <rect x="3" y="15" width="18" height="2.5" rx="1.25" fill="white" opacity="0.65"/>
+        <rect x="3" y="20" width="12" height="2.5" rx="1.25" fill="white" opacity="0.45"/>
+        <!-- checkmark badge -->
+        <circle cx="25" cy="24" r="6.5" fill="white" opacity="0.95"/>
+        <path d="M22.2 24.1l2 2 3.6-3.6" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
     <div class="header-text">
       <h1 class="title">README Generator</h1>
-      <p class="subtitle">Professional Markdown, Instantly</p>
+      <p class="subtitle">Professional Markdown · Instant</p>
     </div>
   </div>
 
+  <!-- ── PROJECT DESCRIPTION ── -->
   <div class="field-group">
-    <label class="label">
-      <span class="label-icon">📋</span>
+    <label class="label" for="projectInput">
+      <span class="label-icon" aria-hidden="true"></span>
       Project Description
     </label>
-    <textarea id="projectInput" placeholder="Describe your project... (min 30 characters)&#10;&#10;Include features, purpose, tech stack — the more detail, the better your README!"></textarea>
+    <textarea
+      id="projectInput"
+      placeholder="Describe your project (minimum 30 characters).&#10;&#10;Include the purpose, key features, and tech stack for the best result."
+    ></textarea>
     <div class="char-counter"><span id="charCount">0</span> / 30 min</div>
   </div>
 
+  <!-- ── SELECTS ROW ── -->
   <div class="field-row">
     <div class="field-group half">
-      <label class="label">
-        <span class="label-icon">🧩</span>
+      <label class="label" for="templateSelect">
+        <span class="label-icon" aria-hidden="true"></span>
         Template
       </label>
-      <select id="templateSelect">
-        <option value="standard">⭐ Standard</option>
-        <option value="minimal">✦ Minimal</option>
-        <option value="full">🚀 Full Pro</option>
-      </select>
-    </div>
-    <div class="field-group half">
-      <label class="label">
-        <span class="label-icon">🏷️</span>
-        License
-      </label>
-      <select id="licenseSelect">
-        <option value="MIT">MIT</option>
-        <option value="Apache-2.0">Apache 2.0</option>
-        <option value="GPL-3.0">GPL 3.0</option>
-        <option value="ISC">ISC</option>
-        <option value="none">None</option>
-      </select>
-    </div>
-  </div>
-
-  <button id="generateBtn" disabled>
-    <span class="btn-icon">⚡</span>
-    <span class="btn-text">GENERATE README</span>
-    <span class="btn-arrow">→</span>
-  </button>
-
-  <div class="result-section" id="resultSection">
-    <div class="result-header">
-      <span class="result-label">📄 Preview</span>
-      <div class="result-actions">
-        <button id="copyBtn" class="action-btn" disabled title="Copy to clipboard">
-          <span>Copy</span>
+      <div class="custom-select" data-select-wrapper>
+        <select id="templateSelect" class="native-select">
+          <option value="standard">Standard</option>
+          <option value="minimal">Minimal</option>
+          <option value="full">Detailed</option>
+        </select>
+        <button
+          type="button"
+          class="select-trigger"
+          data-select-trigger
+          data-target="templateSelect"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+        >
+          <span class="select-trigger-text">Standard</span>
+          <span class="select-trigger-icon" aria-hidden="true"></span>
         </button>
-        <button id="downloadBtn" class="action-btn" disabled title="Download README.md">
-          <span>Download</span>
-        </button>
+        <div class="select-menu" data-select-menu role="listbox" aria-label="Template">
+          <button type="button" class="select-option is-selected" data-value="standard" role="option" aria-selected="true">Standard</button>
+          <button type="button" class="select-option" data-value="minimal" role="option" aria-selected="false">Minimal</button>
+          <button type="button" class="select-option" data-value="full" role="option" aria-selected="false">Detailed</button>
+        </div>
       </div>
     </div>
-    <div class="result-box">
-      <pre id="previewArea">Your README will appear here…
-
-Start by describing your project above, then hit Generate!</pre>
+    <div class="field-group half">
+      <label class="label" for="licenseSelect">
+        <span class="label-icon" aria-hidden="true"></span>
+        License
+      </label>
+      <div class="custom-select" data-select-wrapper>
+        <select id="licenseSelect" class="native-select">
+          <option value="MIT">MIT</option>
+          <option value="Apache-2.0">Apache 2.0</option>
+          <option value="GPL-3.0">GPL 3.0</option>
+          <option value="ISC">ISC</option>
+          <option value="none">None</option>
+        </select>
+        <button
+          type="button"
+          class="select-trigger"
+          data-select-trigger
+          data-target="licenseSelect"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+        >
+          <span class="select-trigger-text">MIT</span>
+          <span class="select-trigger-icon" aria-hidden="true"></span>
+        </button>
+        <div class="select-menu" data-select-menu role="listbox" aria-label="License">
+          <button type="button" class="select-option is-selected" data-value="MIT" role="option" aria-selected="true">MIT</button>
+          <button type="button" class="select-option" data-value="Apache-2.0" role="option" aria-selected="false">Apache 2.0</button>
+          <button type="button" class="select-option" data-value="GPL-3.0" role="option" aria-selected="false">GPL 3.0</button>
+          <button type="button" class="select-option" data-value="ISC" role="option" aria-selected="false">ISC</button>
+          <button type="button" class="select-option" data-value="none" role="option" aria-selected="false">None</button>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- ── GENERATE BUTTON ── -->
+  <button id="generateBtn" disabled>
+    <span class="btn-text">GENERATE README</span>
+    <span class="btn-arrow" aria-hidden="true">></span>
+  </button>
+
+  <!-- ── RESULT SECTION ── -->
+  <div class="result-section" id="resultSection">
+    <div class="result-header">
+      <span class="result-label">Preview</span>
+      <span class="word-chip" id="wordChip">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="2" width="8" height="6" rx="1" stroke="#2563EB" stroke-width="1.2"/><rect x="2.5" y="4" width="5" height="0.8" rx="0.4" fill="#2563EB"/><rect x="2.5" y="5.5" width="3.5" height="0.8" rx="0.4" fill="#2563EB" opacity="0.6"/></svg>
+        <span id="wordCount">0</span> words
+      </span>
+      <div class="result-actions">
+        <button id="copyBtn" class="action-btn" disabled title="Copy to clipboard">Copy</button>
+        <button id="downloadBtn" class="action-btn" disabled title="Download README.md">Download</button>
+      </div>
+    </div>
+    <div class="result-box" id="resultBox">
+      <pre id="previewArea">Your README will appear here.
+
+Describe your project above and select a template to generate a polished draft.</pre>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ── -->
   <div class="footer-row">
-    <button id="clearBtn" class="ghost-btn">✖ Clear All</button>
-    <span class="footer-text">🔒 100% Local — No Data Sent</span>
+    <button id="clearBtn" class="ghost-btn">Clear All</button>
+    <span class="footer-text">
+      <span class="footer-dot"></span>
+      100% Local · No Data Sent
+    </span>
   </div>
 
 </div>

@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Text to PDF Generator",
-  "short_name": "Text to PDF",
-  "version": "1.0",
-  "description": "Convert text into a clean, downloadable PDF instantly.",
+  "name": "Text to PDF",
+  "short_name": "PDFForge",
+  "version": "2.0.0",
+  "description": "Convert text into clean, downloadable PDFs instantly. Offline, private, powerful.",
+
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -12,13 +13,27 @@
       "128": "icons/icon128.png"
     }
   },
+
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+
+  "permissions": [
+    "storage"
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["fonts/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none';"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none';"
   },
+
   "minimum_chrome_version": "114"
 }

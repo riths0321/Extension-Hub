@@ -3,6 +3,7 @@ function drawChart(wallet) {
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
+  const theme = getChartTheme();
   const width = canvas.width;
   const height = canvas.height;
   const cx = Math.floor(width * 0.34);
@@ -23,8 +24,8 @@ function drawChart(wallet) {
   ctx.clearRect(0, 0, width, height);
 
   if (!sum) {
-    ctx.fillStyle = "#5c6682";
-    ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = theme.textMuted;
+    ctx.font = theme.labelFont;
     ctx.textAlign = "center";
     ctx.fillText("No expense data to visualize yet.", width / 2, height / 2);
     return;
@@ -32,7 +33,7 @@ function drawChart(wallet) {
 
   const sorted = [...entries].sort((a, b) => b[1] - a[1]);
 
-  drawChartBase(ctx, cx, cy, radius);
+  drawChartBase(ctx, cx, cy, radius, theme);
 
   let start = -Math.PI / 2;
   sorted.forEach(([category, value], index) => {
@@ -46,7 +47,7 @@ function drawChart(wallet) {
     ctx.fillStyle = sliceGradient;
     ctx.fill();
 
-    ctx.strokeStyle = "rgba(255, 252, 245, 0.95)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -55,28 +56,28 @@ function drawChart(wallet) {
 
   ctx.beginPath();
   ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#fffaf1";
+  ctx.fillStyle = theme.surface;
   ctx.fill();
-  ctx.strokeStyle = "rgba(191, 162, 125, 0.35)";
+  ctx.strokeStyle = theme.strokeStrong;
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  ctx.fillStyle = "#6d6657";
-  ctx.font = '11px "Trebuchet MS", "Segoe UI", sans-serif';
+  ctx.fillStyle = theme.textMuted;
+  ctx.font = theme.captionFont;
   ctx.textAlign = "center";
   ctx.fillText("Expenses", cx, cy - 2);
-  ctx.fillStyle = "#2f2a1f";
-  ctx.font = 'bold 14px "Trebuchet MS", "Segoe UI", sans-serif';
+  ctx.fillStyle = theme.text;
+  ctx.font = theme.valueFont;
   ctx.fillText(`₹${Math.round(sum)}`, cx, cy + 14);
 
-  drawLegend(ctx, sorted, sum, width, height);
+  drawLegend(ctx, sorted, sum, width, theme);
 }
 
-function drawLegend(ctx, entries, sum, width, height) {
+function drawLegend(ctx, entries, sum, width, theme) {
   const legendX = Math.floor(width * 0.6);
   let legendY = 28;
 
-  ctx.font = '12px "Trebuchet MS", "Segoe UI", sans-serif';
+  ctx.font = theme.labelFont;
   ctx.textAlign = "left";
   entries.slice(0, 7).forEach(([category, value]) => {
     const color = colorFromCategory(category);
@@ -86,16 +87,16 @@ function drawLegend(ctx, entries, sum, width, height) {
     roundRect(ctx, legendX, legendY - 11, 12, 12, 3);
     ctx.fill();
 
-    ctx.fillStyle = "#2f2a1f";
+    ctx.fillStyle = theme.text;
     ctx.fillText(`${category} (${pct}%)`, legendX + 16, legendY);
     legendY += 22;
   });
 }
 
-function drawChartBase(ctx, cx, cy, radius) {
+function drawChartBase(ctx, cx, cy, radius, theme) {
   const base = ctx.createRadialGradient(cx - 8, cy - 10, radius * 0.2, cx, cy, radius);
-  base.addColorStop(0, "rgba(255, 248, 234, 1)");
-  base.addColorStop(1, "rgba(234, 220, 194, 0.9)");
+  base.addColorStop(0, theme.primarySoft);
+  base.addColorStop(1, theme.primarySofter);
 
   ctx.beginPath();
   ctx.arc(cx, cy, radius + 2, 0, Math.PI * 2);
@@ -117,13 +118,13 @@ function colorFromCategory(text) {
 
 function getPremiumPair(index, text) {
   const pairs = [
-    ["#1f6f78", "#45b29d"],
-    ["#b4792e", "#e3b46a"],
-    ["#2d4f8b", "#5d82c4"],
-    ["#7a3e65", "#b26795"],
-    ["#2d6a4f", "#52b788"],
-    ["#8a5a44", "#c38e70"],
-    ["#6b705c", "#a5a58d"]
+    ["#2563eb", "#60a5fa"],
+    ["#1d4ed8", "#3b82f6"],
+    ["#0ea5e9", "#38bdf8"],
+    ["#0284c7", "#7dd3fc"],
+    ["#1e40af", "#2563eb"],
+    ["#0369a1", "#0ea5e9"],
+    ["#60a5fa", "#bfdbfe"]
   ];
   let hash = 0;
   for (let i = 0; i < text.length; i += 1) {
@@ -142,4 +143,21 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.arcTo(x, y + height, x, y, r);
   ctx.arcTo(x, y, x + width, y, r);
   ctx.closePath();
+}
+
+function getChartTheme() {
+  const styles = getComputedStyle(document.documentElement);
+  const read = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+
+  return {
+    text: read("--ink", "#111111"),
+    textMuted: read("--ink2", "#6b7280"),
+    surface: read("--surface", "#ffffff"),
+    strokeStrong: "rgba(37, 99, 235, 0.18)",
+    primarySoft: "rgba(219, 234, 254, 1)",
+    primarySofter: "rgba(191, 219, 254, 0.95)",
+    captionFont: '600 11px "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    labelFont: '600 12px "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    valueFont: '700 14px "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  };
 }

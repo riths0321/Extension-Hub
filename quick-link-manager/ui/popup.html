@@ -9,6 +9,11 @@
 
 <body>
 
+  <!-- ═══════════════════════════════════════════
+       #app  — the visible popup shell.
+       NO overflow:hidden here so modals can escape.
+       Only .links-list inside scrolls.
+  ════════════════════════════════════════════ -->
   <div id="app">
 
     <!-- HEADER -->
@@ -40,7 +45,7 @@
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
         </button>
-        <input type="file" id="importFileInput" accept=".json" style="display:none" />
+        <input type="file" id="importFileInput" class="visually-hidden" accept=".json" />
       </div>
     </header>
 
@@ -59,6 +64,9 @@
 
     <!-- TAG FILTER ROW -->
     <div class="tag-filter-row" id="tagFilterRow"></div>
+
+    <!-- MAIN CONTENT AREA (scrollable, between header and footer) -->
+    <div id="mainContent">
 
     <!-- FAVORITES SECTION -->
     <section class="section" id="favoritesSection" hidden>
@@ -111,6 +119,8 @@
       <p class="empty-sub">Try a different search or tag filter</p>
     </div>
 
+    </div><!-- end #mainContent -->
+
     <!-- BOTTOM BAR -->
     <footer class="bottom-bar">
       <button id="btnOpenAll" class="btn-ghost-sm" title="Open all visible links">
@@ -133,14 +143,28 @@
       </button>
     </footer>
 
-  </div>
+  </div><!-- /#app -->
 
-  <!-- SAVE MODAL -->
+
+  <!-- ═══════════════════════════════════════════
+       MODALS — all direct children of <body>,
+       OUTSIDE #app. position:fixed works correctly
+       because body has no overflow:hidden.
+
+       Z-index tiers:
+         Save / Edit / Read Later / Archive  → 200
+         Export                              → 300
+         Help                                → 310
+         Confirm                             → 400
+         Toast                               → 600
+  ════════════════════════════════════════════ -->
+
+  <!-- SAVE MODAL  z:200 -->
   <div id="saveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Save Link">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Save Link</span>
-        <button id="modalClose" class="icon-action">
+        <button id="modalClose" class="icon-action" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -176,12 +200,12 @@
     </div>
   </div>
 
-  <!-- EDIT MODAL -->
+  <!-- EDIT MODAL  z:200 -->
   <div id="editModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Edit Link">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Edit Link</span>
-        <button id="editModalClose" class="icon-action">
+        <button id="editModalClose" class="icon-action" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -216,12 +240,12 @@
     </div>
   </div>
 
-  <!-- READ LATER MODAL -->
+  <!-- READ LATER MODAL  z:200 -->
   <div id="readLaterModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Read Later Queue">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Read Later Queue</span>
-        <button id="readLaterModalClose" class="icon-action">
+        <button id="readLaterModalClose" class="icon-action" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -233,12 +257,33 @@
     </div>
   </div>
 
-  <!-- HELP MODAL -->
+  <!-- ARCHIVE MODAL  z:200 -->
+  <div id="archiveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Archive">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Archived Links</span>
+        <button id="archiveModalClose" class="icon-action" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-tabs">
+        <button id="tabArchived" class="modal-tab active" data-tab="archived">Archived</button>
+        <button id="tabActive"   class="modal-tab"        data-tab="active">Active</button>
+      </div>
+      <div class="modal-body">
+        <div id="archiveList" class="archive-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP MODAL  z:310 -->
   <div id="helpModal" class="modal-overlay modal-overlay--help" role="dialog" aria-modal="true" aria-label="Keyboard Shortcuts">
     <div class="modal modal-sm">
       <div class="modal-header">
         <span class="modal-title">Keyboard Shortcuts</span>
-        <button id="helpModalClose" class="icon-action">
+        <button id="helpModalClose" class="icon-action" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -250,19 +295,19 @@
           <div class="shortcut-row"><kbd>Ctrl/Cmd + Shift + L</kbd><span>Open popup</span></div>
           <div class="shortcut-row"><kbd>/</kbd><span>Focus search</span></div>
           <div class="shortcut-row"><kbd>Esc</kbd><span>Close modal</span></div>
-          <div class="shortcut-row"><kbd>↑/↓</kbd><span>Navigate links</span></div>
+          <div class="shortcut-row"><kbd>↑ / ↓</kbd><span>Navigate links</span></div>
           <div class="shortcut-row"><kbd>Enter</kbd><span>Open selected link</span></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- EXPORT MODAL -->
+  <!-- EXPORT MODAL  z:300 -->
   <div id="exportModal" class="modal-overlay modal-overlay--export" role="dialog" aria-modal="true" aria-label="Export Links">
     <div class="modal modal-sm">
       <div class="modal-header">
         <span class="modal-title">Export Links</span>
-        <button id="exportModalClose" class="icon-action">
+        <button id="exportModalClose" class="icon-action" aria-label="Close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -285,42 +330,20 @@
     </div>
   </div>
 
-  <!-- ARCHIVE MODAL -->
-  <div id="archiveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Archive">
-    <div class="modal">
-      <div class="modal-header">
-        <span class="modal-title">Archived Links</span>
-        <button id="archiveModalClose" class="icon-action">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-tabs">
-        <button id="tabArchived" class="modal-tab active" data-tab="archived">Archived</button>
-        <button id="tabActive" class="modal-tab" data-tab="active">Active</button>
-      </div>
-      <div class="modal-body">
-        <div id="archiveList" class="archive-list"></div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- CONFIRM DIALOG (replaces blocked confirm()) -->
-  <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm">
+  <!-- CONFIRM DIALOG  z:400  (always on top) -->
+  <div id="confirmModal" class="modal-overlay modal-overlay--confirm" role="dialog" aria-modal="true" aria-label="Confirm">
     <div class="modal modal-sm">
-      <div class="modal-body" style="text-align:center;padding:24px 20px 20px;">
+      <div class="modal-body modal-body--confirm">
         <p id="confirmMessage" class="confirm-msg"></p>
         <div class="confirm-actions">
           <button id="confirmCancel" class="btn-ghost">Cancel</button>
-          <button id="confirmOk" class="btn-danger">Delete</button>
+          <button id="confirmOk"     class="btn-danger">Delete</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- TOAST -->
+  <!-- TOAST  z:600 -->
   <div id="toast" class="toast" hidden></div>
 
   <script src="popup.js" type="module"></script>
