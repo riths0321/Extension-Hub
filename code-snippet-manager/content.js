@@ -1,213 +1,167 @@
 /**
- * Content Script for Code Snippet Manager
- * Handles snippet insertion into web pages
+ * SnipVault – Content Script
+ * Handles snippet insertion into active web pages.
+ * CSP-safe: NO innerHTML, NO eval.
  */
 
-// Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    try {
-        if (request.action === 'insertCode') {
-            insertCode(request.code, request.language);
-            sendResponse({ success: true });
-        }
-    } catch (error) {
-        console.error('Content script error:', error);
-        sendResponse({ success: false, error: error.message });
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  try {
+    if (request.action === 'insertCode') {
+      insertCode(request.code, request.language);
+      sendResponse({ success: true });
     }
+  } catch (err) {
+    console.error('[SnipVault] Content script error:', err);
+    sendResponse({ success: false, error: err.message });
+  }
 });
 
-/**
- * Insert code into the active element or show a floating window
- */
+/* ── Insert Code ───────────────────────────────────────────────── */
 function insertCode(code, language) {
-    // Try to find the active text input or contenteditable element
-    const activeElement = document.activeElement;
-    
-    if (activeElement && 
-        (activeElement.tagName === 'TEXTAREA' || 
-         (activeElement.tagName === 'INPUT' && activeElement.type === 'text') || 
-         activeElement.isContentEditable)) {
-        // Insert at cursor position for input/textarea
-        if (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT') {
-            const start = activeElement.selectionStart;
-            const end = activeElement.selectionEnd;
-            const text = activeElement.value;
-            activeElement.value = text.substring(0, start) + code + text.substring(end);
-            activeElement.selectionStart = activeElement.selectionEnd = start + code.length;
-            
-            // Trigger input event for frameworks that listen to it
-            activeElement.dispatchEvent(new Event('input', { bubbles: true }));
-            activeElement.dispatchEvent(new Event('change', { bubbles: true }));
-        } else if (activeElement.isContentEditable) {
-            // Insert into contenteditable element
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                const textNode = document.createTextNode(code);
-                range.insertNode(textNode);
-                range.setStartAfter(textNode);
-                selection.removeAllRanges();
-                selection.addRange(range);
-            } else {
-                document.execCommand('insertText', false, code);
-            }
-        }
-        activeElement.focus();
-    } else {
-        // Create a floating code window
-        createCodeWindow(code, language);
+  const active = document.activeElement;
+
+  if (active && (active.tagName === 'TEXTAREA' || (active.tagName === 'INPUT' && active.type === 'text'))) {
+    const start = active.selectionStart;
+    const end = active.selectionEnd;
+    const val = active.value;
+    active.value = val.slice(0, start) + code + val.slice(end);
+    active.selectionStart = active.selectionEnd = start + code.length;
+    active.dispatchEvent(new Event('input', { bubbles: true }));
+    active.dispatchEvent(new Event('change', { bubbles: true }));
+    active.focus();
+    return;
+  }
+
+  if (active?.isContentEditable) {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const textNode = document.createTextNode(code);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      active.focus();
+      return;
     }
+  }
+
+  // Fallback: show draggable floating window
+  showFloatingWindow(code, language);
 }
 
-/**
- * Create a floating window displaying the snippet
- */
-function createCodeWindow(code, language) {
-    // Remove existing code window if any
-    const existingWindow = document.getElementById('code-snippet-window');
-    if (existingWindow) {
-        existingWindow.remove();
+/* ── Floating Window ───────────────────────────────────────────── */
+function showFloatingWindow(code, language) {
+  const existing = document.getElementById('snipvault-float');
+  if (existing) existing.remove();
+
+  const win = document.createElement('div');
+  win.id = 'snipvault-float';
+  win.className = 'snipvault-float';
+  win.style.top = '48px';
+  win.style.right = '20px';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'snipvault-float-header';
+
+  const headerLeft = document.createElement('div');
+  headerLeft.className = 'snipvault-float-header-left';
+  const titleEl = document.createElement('strong');
+  titleEl.className = 'snipvault-float-title';
+  titleEl.textContent = 'SnipVault';
+  const langEl = document.createElement('span');
+  langEl.className = 'snipvault-float-lang';
+  langEl.textContent = language || 'plaintext';
+  headerLeft.append(titleEl, langEl);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'snipvault-float-close';
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.addEventListener('click', () => win.remove());
+
+  header.append(headerLeft, closeBtn);
+
+  // Code area
+  const pre = document.createElement('pre');
+  pre.className = 'snipvault-float-pre';
+
+  const codeEl = document.createElement('code');
+  codeEl.textContent = code;  // safe, textContent only
+  pre.appendChild(codeEl);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'snipvault-float-footer';
+
+  const copyBtn = makeBtn('Copy', 'primary');
+  const insertBtn = makeBtn('Insert at Cursor', 'success');
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      copyBtn.textContent = '✓ Copied!';
+      copyBtn.classList.add('is-success');
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+        copyBtn.classList.remove('is-success');
+      }, 2000);
+    } catch {
+      copyBtn.textContent = 'Copy failed';
+      copyBtn.classList.add('is-danger');
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+        copyBtn.classList.remove('is-danger');
+      }, 1600);
     }
+  });
 
-    // Create floating window container
-    const windowEl = document.createElement('div');
-    windowEl.id = 'code-snippet-window';
-    windowEl.style.cssText = `
-        position: fixed;
-        top: 40px;
-        right: 20px;
-        width: 450px;
-        max-width: 90vw;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-        z-index: 10000;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Monaco', 'Menlo', monospace;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        max-height: 70vh;
-    `;
+  insertBtn.addEventListener('click', () => {
+    win.remove();
+    insertCode(code, language);
+  });
 
-    windowEl.innerHTML = `
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                   color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
-                   flex-shrink: 0;">
-            <div>
-                <strong style="font-size: 14px;">Code Snippet</strong>
-                <div style="font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;">${escapeHtml(language || 'text')}</div>
-            </div>
-            <button id="close-code-window" style="background: rgba(255,255,255,0.2); border: none; color: white; 
-                    font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;
-                    border-radius: 4px; display: flex; align-items: center; justify-content: center;
-                    transition: background 0.2s; hover: {background: rgba(255,255,255,0.3)}">
-                ✕
-            </button>
-        </div>
-        <pre style="margin: 0; padding: 16px 20px; max-height: 300px; overflow: auto; background: #f7fafc; 
-                   color: #2d3748; line-height: 1.5; font-size: 11px; flex: 1;">
-            <code style="word-break: break-all; white-space: pre-wrap;">${escapeHtml(code)}</code>
-        </pre>
-        <div style="padding: 14px 20px; background: #f1f5f9; display: flex; gap: 10px; justify-content: flex-end;
-                   flex-shrink: 0; border-top: 1px solid #e2e8f0;">
-            <button id="copy-code" style="padding: 8px 16px; background: #48bb78; color: white; border: none; 
-                    border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
-                    transition: all 0.2s;" title="Copy code to clipboard">
-                📋 Copy
-            </button>
-            <button id="insert-code-btn" style="padding: 8px 16px; background: #667eea; color: white; border: none; 
-                    border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
-                    transition: all 0.2s;" title="Insert code at cursor">
-                📝 Insert
-            </button>
-        </div>
-    `;
-
-    document.body.appendChild(windowEl);
-
-    // Add event listeners
-    document.getElementById('close-code-window').addEventListener('click', () => {
-        windowEl.remove();
-    });
-
-    document.getElementById('copy-code').addEventListener('click', () => {
-        navigator.clipboard.writeText(code).then(() => {
-            const btn = document.getElementById('copy-code');
-            const originalText = btn.textContent;
-            btn.textContent = '✓ Copied!';
-            btn.style.background = '#38a169';
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = '#48bb78';
-            }, 2000);
-        }).catch(err => {
-            console.error('Copy failed:', err);
-            alert('Failed to copy to clipboard');
-        });
-    });
-
-    document.getElementById('insert-code-btn').addEventListener('click', () => {
-        insertCode(code, language);
-        windowEl.remove();
-    });
-
-    // Make window draggable
-    makeDraggable(windowEl);
+  footer.append(copyBtn, insertBtn);
+  win.append(header, pre, footer);
+  document.body.appendChild(win);
+  makeDraggable(win, header);
 }
 
-/**
- * Make element draggable
- */
-function makeDraggable(element) {
-    const header = element.querySelector('div');
-    let isDragging = false;
-    let offsetX, offsetY;
-
-    header.style.cursor = 'move';
-
-    header.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', stopDrag);
-
-    function startDrag(e) {
-        // Don't drag if clicking buttons
-        if (e.target.closest('button')) return;
-        isDragging = true;
-        offsetX = e.clientX - element.getBoundingClientRect().left;
-        offsetY = e.clientY - element.getBoundingClientRect().top;
-        element.style.opacity = '0.9';
-        element.style.transition = 'none';
-    }
-
-    function drag(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        const rect = element.parentElement ? element.parentElement.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
-        
-        let left = e.clientX - offsetX;
-        let top = e.clientY - offsetY;
-        
-        // Keep element within viewport
-        left = Math.max(0, Math.min(left, window.innerWidth - element.offsetWidth));
-        top = Math.max(0, Math.min(top, window.innerHeight - element.offsetHeight));
-        
-        element.style.left = `${left}px`;
-        element.style.top = `${top}px`;
-        element.style.right = 'auto';
-    }
-
-    function stopDrag() {
-        isDragging = false;
-        element.style.opacity = '1';
-        element.style.transition = 'all 0.2s';
-    }
+function makeBtn(label, bg) {
+  const btn = document.createElement('button');
+  btn.className = `snipvault-float-btn ${bg === 'success' ? 'is-success-default' : 'is-primary-default'}`;
+  btn.textContent = label;
+  return btn;
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function makeDraggable(el, handle) {
+  let dragging = false, ox = 0, oy = 0;
+
+  handle.addEventListener('mousedown', e => {
+    if (e.target.tagName === 'BUTTON') return;
+    dragging = true;
+    const r = el.getBoundingClientRect();
+    ox = e.clientX - r.left;
+    oy = e.clientY - r.top;
+    el.style.transition = 'none';
+    el.style.opacity = '0.92';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    e.preventDefault();
+    let left = Math.max(0, Math.min(e.clientX - ox, window.innerWidth - el.offsetWidth));
+    let top = Math.max(0, Math.min(e.clientY - oy, window.innerHeight - el.offsetHeight));
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.style.right = 'auto';
+  });
+
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    el.style.opacity = '1';
+  });
 }

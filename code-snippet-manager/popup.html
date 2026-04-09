@@ -1,77 +1,352 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Snippet Manager</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SnipVault</title>
+  <link rel="preload" href="fonts/Manrope-Regular.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="preload" href="fonts/Manrope-Medium.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="preload" href="fonts/Manrope-SemiBold.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="preload" href="fonts/Manrope-Bold.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">
-        <div class="notification" id="notification" role="status" aria-live="polite"></div>
 
-        <header class="header">
-            <div>
-                <p class="eyebrow">Developer Toolkit</p>
-                <h1>Code Snippet Manager</h1>
-            </div>
-            <div class="header-actions">
-                <button id="newSnippet" class="btn-primary" type="button">New</button>
-                <button id="exportSnippets" class="btn-secondary" type="button">Export</button>
-                <button id="importSnippets" class="btn-secondary" type="button">Import</button>
-                <input id="importFile" type="file" accept="application/json" class="hidden" />
-            </div>
-        </header>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-        <section class="search-box">
-            <input type="text" id="search" placeholder="Search title or code..." />
-            <select id="filterLanguage">
-                <option value="">All Languages</option>
+  <!-- App Shell -->
+  <div class="app" id="app">
+
+    <!-- ── Header ── -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="3" width="16" height="14" rx="2" stroke="white" stroke-width="1.5"/>
+            <path d="M6 7.5L8.5 10L6 12.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10.5 12.5H14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="brand-name">Code Snippet Manager</span>
+        <span class="snippet-count-badge" id="totalBadge">0</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="newSnippetBtn" title="New Snippet (Ctrl+N)" aria-label="New snippet">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle theme">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M10.8 2.2a5.8 5.8 0 11-8 8 6 6 0 008-8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Tabs ── -->
+    <nav class="tab-bar" role="tablist">
+      <button class="tab active" data-tab="snippets" role="tab" aria-selected="true">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h6M4 7.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Snippets
+      </button>
+      <button class="tab" data-tab="favorites" role="tab" aria-selected="false">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l1.5 3 3.5.5-2.5 2.5.5 3.5L7 9.5l-3 1.5.5-3.5L2 5l3.5-.5L7 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        Favorites
+      </button>
+      <button class="tab" data-tab="collections" role="tab" aria-selected="false">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M1 4h12M1 4V11a1 1 0 001 1h10a1 1 0 001-1V4M1 4l1.5-2h9L13 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Collections
+      </button>
+      <button class="tab" data-tab="settings" role="tab" aria-selected="false">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 1.5V3M7 11V12.5M1.5 7H3M11 7H12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <!-- ── Main Views ── -->
+    <div class="view-container">
+
+      <!-- ══ SNIPPETS VIEW ══ -->
+      <div class="view active" id="view-snippets">
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+          <div class="search-input-wrap">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M9 9L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search snippets…" autocomplete="off" spellcheck="false" />
+            <button class="search-clear hidden" id="searchClear" aria-label="Clear search">
+              <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Row -->
+        <div class="filter-row" id="filterRow">
+          <select class="lang-select" id="langFilter" aria-label="Filter by language">
+            <option value="">All Languages</option>
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="python">Python</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="sql">SQL</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+            <option value="php">PHP</option>
+            <option value="rust">Rust</option>
+            <option value="go">Go</option>
+            <option value="bash">Bash</option>
+            <option value="json">JSON</option>
+            <option value="plaintext">Plain Text</option>
+          </select>
+        </div>
+
+        <!-- Snippet List (virtualized) -->
+        <div class="snippet-list" id="snippetList" role="list"></div>
+
+        <!-- Empty State -->
+        <div class="empty-state hidden" id="emptyState">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="6" y="8" width="36" height="32" rx="4" stroke="#D1D5DB" stroke-width="2"/><path d="M14 18h20M14 24h14M14 30h10" stroke="#D1D5DB" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <p class="empty-title" id="emptyTitle">No snippets yet</p>
+          <p class="empty-sub" id="emptySub">Save your first code snippet to get started</p>
+          <button class="btn-primary" id="emptyCreateBtn">Create Snippet</button>
+        </div>
+      </div>
+
+      <!-- ══ FAVORITES VIEW ══ -->
+      <div class="view hidden" id="view-favorites">
+        <div class="snippet-list" id="favoritesList" role="list"></div>
+        <div class="empty-state hidden" id="favEmpty">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 6l4.5 9L40 16.5l-8 7.5 2 11L24 30l-10 5 2-11-8-7.5 11.5-1.5L24 6z" stroke="#D1D5DB" stroke-width="2" stroke-linejoin="round"/></svg>
+          </div>
+          <p class="empty-title">No favorites yet</p>
+          <p class="empty-sub">Star snippets to save them here</p>
+        </div>
+      </div>
+
+      <!-- ══ COLLECTIONS VIEW ══ -->
+      <div class="view hidden" id="view-collections">
+        <div class="collections-header">
+          <button class="btn-primary sm" id="newCollectionBtn">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 2V10M2 6H10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            New Collection
+          </button>
+        </div>
+        <div class="collections-grid" id="collectionsGrid"></div>
+        <div class="empty-state hidden" id="collectionsEmpty">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M6 16h36M6 16V36a4 4 0 004 4h28a4 4 0 004-4V16M6 16L10 8h28l4 8" stroke="#D1D5DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <p class="empty-title">No collections yet</p>
+          <p class="empty-sub">Group your snippets into collections</p>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS VIEW ══ -->
+      <div class="view hidden" id="view-settings">
+        <div class="settings-section">
+          <div class="settings-group">
+            <h3 class="settings-heading">Preferences</h3>
+            <div class="settings-row">
+              <label class="settings-label" for="themeSelect">Theme</label>
+              <select class="settings-select" id="themeSelect">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label class="settings-label" for="defaultLangSelect">Default Language</label>
+              <select class="settings-select" id="defaultLangSelect">
                 <option value="javascript">JavaScript</option>
                 <option value="python">Python</option>
                 <option value="html">HTML</option>
                 <option value="css">CSS</option>
+                <option value="plaintext">Plain Text</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label class="settings-label" for="fontSizeSelect">Code Font Size</label>
+              <select class="settings-select" id="fontSizeSelect">
+                <option value="11">11px</option>
+                <option value="12">12px</option>
+                <option value="13" selected>13px</option>
+                <option value="14">14px</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-group">
+            <h3 class="settings-heading">Data</h3>
+            <div class="settings-actions">
+              <button class="btn-secondary full" id="exportBtn">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1V9M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Export All Snippets
+              </button>
+              <button class="btn-secondary full" id="importBtn">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 9V1M4 4l3-3 3 3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Import Backup
+              </button>
+              <input type="file" id="importFile" accept="application/json" class="hidden" />
+            </div>
+          </div>
+          <div class="settings-group">
+            <h3 class="settings-heading">Keyboard Shortcuts</h3>
+            <div class="kbd-list">
+              <div class="kbd-row"><span class="kbd-desc">Open SnipVault</span><span class="kbd">Ctrl+Shift+S</span></div>
+              <div class="kbd-row"><span class="kbd-desc">New Snippet</span><span class="kbd">Ctrl+N</span></div>
+              <div class="kbd-row"><span class="kbd-desc">Save Snippet</span><span class="kbd">Ctrl+S</span></div>
+              <div class="kbd-row"><span class="kbd-desc">Copy snippet</span><span class="kbd">Enter</span></div>
+              <div class="kbd-row"><span class="kbd-desc">Close/Cancel</span><span class="kbd">Esc</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /view-container -->
+  </div><!-- /app -->
+
+  <!-- ── EDITOR MODAL ── -->
+  <div class="modal-overlay hidden" id="editorOverlay" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+    <div class="modal" id="editorModal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="editorTitle">New Snippet</h2>
+        <button class="icon-btn" id="closeEditor" aria-label="Close editor">
+          <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 3L13 13M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Title -->
+        <div class="field-group">
+          <label class="field-label" for="snippetTitle">Title *</label>
+          <input type="text" id="snippetTitle" class="field-input" placeholder="e.g. Debounce function" maxlength="120" autocomplete="off" />
+        </div>
+
+        <!-- Language + Tags row -->
+        <div class="field-row">
+          <div class="field-group flex1">
+            <label class="field-label" for="snippetLang">Language</label>
+            <div class="lang-detect-wrap">
+              <select id="snippetLang" class="field-input">
+                <option value="plaintext">Plain Text</option>
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="sql">SQL</option>
                 <option value="java">Java</option>
                 <option value="cpp">C++</option>
                 <option value="php">PHP</option>
-                <option value="sql">SQL</option>
-                <option value="plaintext">Plain Text</option>
+                <option value="rust">Rust</option>
+                <option value="go">Go</option>
+                <option value="bash">Bash</option>
+                <option value="json">JSON</option>
+              </select>
+              <button class="detect-btn" id="detectLangBtn" title="Auto-detect language">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 4v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                Detect
+              </button>
+            </div>
+          </div>
+          <div class="field-group flex1">
+            <label class="field-label" for="snippetCollection">Collection</label>
+            <select id="snippetCollection" class="field-input">
+              <option value="">No collection</option>
             </select>
-        </section>
+          </div>
+        </div>
 
-        <section id="editorView" class="hidden">
-            <div class="editor-header">
-                <input type="text" id="snippetTitle" placeholder="Snippet title" maxlength="100" />
-                <select id="snippetLanguage">
-                    <option value="plaintext">Plain Text</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="python">Python</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="java">Java</option>
-                    <option value="cpp">C++</option>
-                    <option value="php">PHP</option>
-                    <option value="sql">SQL</option>
-                </select>
-            </div>
-            <textarea id="snippetCode" placeholder="Paste your code here..."></textarea>
-            <div class="editor-actions">
-                <button id="saveSnippet" class="btn-primary" type="button">Save</button>
-                <button id="cancelEdit" class="btn-secondary" type="button">Cancel</button>
-                <button id="insertToPage" class="btn-success" type="button">Insert to Page</button>
-            </div>
-        </section>
+        <!-- Tags -->
+        <div class="field-group">
+          <label class="field-label" for="tagsInput">Tags</label>
+          <div class="tags-editor" id="tagsEditor">
+            <div class="tags-chips" id="tagsChips"></div>
+            <input type="text" id="tagsInput" class="tags-input" placeholder="Add tag, press Enter…" maxlength="30" autocomplete="off" />
+          </div>
+          <span class="field-hint">Press Enter or comma to add a tag</span>
+        </div>
 
-        <main id="snippetsList"></main>
+        <!-- Code Editor -->
+        <div class="field-group">
+          <div class="code-label-row">
+            <label class="field-label">Code *</label>
+            <span class="line-count" id="lineCount">0 lines</span>
+          </div>
+          <div class="code-editor-wrap" id="codeEditorWrap">
+            <div class="line-numbers" id="lineNumbers" aria-hidden="true"></div>
+            <textarea id="snippetCode" class="code-textarea" placeholder="Paste your code here…" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+          </div>
+        </div>
+      </div>
 
-        <section id="noSnippets" class="hidden">
-            <div class="empty-illustration">&lt;/&gt;</div>
-            <p>No snippets saved yet.</p>
-            <button id="createFirstSnippet" class="btn-primary" type="button">Create First Snippet</button>
-        </section>
+      <div class="modal-footer">
+        <div class="footer-left">
+          <label class="toggle-label">
+            <input type="checkbox" id="favoriteToggle" />
+            <span class="toggle-star">★ Favorite</span>
+          </label>
+        </div>
+        <div class="footer-right">
+          <button class="btn-secondary" id="cancelEdit">Cancel</button>
+          <button class="btn-primary" id="saveSnippet">Save Snippet</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script src="storage-manager.js"></script>
-    <script src="popup.js"></script>
+  <!-- ── NEW COLLECTION MODAL ── -->
+  <div class="modal-overlay hidden" id="collectionOverlay" role="dialog" aria-modal="true">
+    <div class="modal sm">
+      <div class="modal-header">
+        <h2 class="modal-title">New Collection</h2>
+        <button class="icon-btn" id="closeCollectionModal" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 3L13 13M13 3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label" for="collectionName">Collection Name *</label>
+          <input type="text" id="collectionName" class="field-input" placeholder="e.g. React Hooks, SQL Queries…" maxlength="60" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Color</label>
+          <div class="color-picker" id="colorPicker"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="footer-right">
+          <button class="btn-secondary" id="cancelCollection">Cancel</button>
+          <button class="btn-primary" id="saveCollection">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DELETE CONFIRM MODAL ── -->
+  <div class="modal-overlay hidden" id="deleteOverlay" role="dialog" aria-modal="true">
+    <div class="modal sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Delete Snippet?</h2>
+      </div>
+      <div class="modal-body">
+        <p class="confirm-text">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <div class="footer-right">
+          <button class="btn-secondary" id="cancelDelete">Cancel</button>
+          <button class="btn-danger" id="confirmDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="services/snippetService.js"></script>
+  <script src="utils/highlighter.js"></script>
+  <script src="utils/helpers.js"></script>
+  <script src="js/dropdowns.js"></script>
+  <script src="ui/popup.js"></script>
 </body>
 </html>
