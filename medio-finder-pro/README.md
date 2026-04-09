@@ -1,4 +1,4 @@
-# 🎨 Icon Finder Pro (Chrome Extension)
+# 🎨 Media Finder Pro (Chrome Extension)
 
 Extract **SVG and image icons** from any website with a single click.  
 Icon Finder Pro helps developers and designers quickly discover, preview, copy, and download icons used on web pages.
@@ -25,7 +25,7 @@ Icon Finder Pro helps developers and designers quickly discover, preview, copy, 
 - 📋 **One-Click Actions**
   - Copy SVG code or image URL
   - Download individual icons
-  - Download all icons as a ZIP file
+  - Download all found media in bulk
 
 - 🎯 **Filters**
   - Toggle SVG icons
@@ -38,8 +38,6 @@ Icon Finder Pro helps developers and designers quickly discover, preview, copy, 
 - **JavaScript (Vanilla)** – Core logic
 - **HTML5 / CSS3** – Popup UI
 - **Chrome Extension (Manifest V3)**
-- **JSZip** – Bulk ZIP downloads
-
 ---
 
 ## 📂 Folder Structure
@@ -84,7 +82,7 @@ The extension icon will appear in your toolbar 🎉
    - Previewed
    - Copied
    - Downloaded individually
-   - Downloaded together as a ZIP
+   - Downloaded together in bulk
 
 ---
 
@@ -93,8 +91,8 @@ The extension icon will appear in your toolbar 🎉
 | Permission | Why it’s needed |
 |----------|-----------------|
 | `activeTab` | Scan the currently open website |
-| `scripting` | Inject scanning logic |
-| `downloads` | Save icons & ZIP files |
+| `downloads` | Save icons and exported files |
+| `storage` | Remember popup preferences over time |
 | `<all_urls>` | Allow scanning on any website |
 
 All processing happens **locally** in your browser.
