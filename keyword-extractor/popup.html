@@ -9,9 +9,21 @@
 <body>
   <main class="app">
     <header class="hero">
-      <div>
-        <h1>Keyword Extractor Pro</h1>
-        <p>SEO • Density • Word Cloud • History • N-grams • Sentiment</p>
+      <div class="hero-shell">
+        <div class="hero-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" role="presentation">
+            <path d="M7 4.75h6.7L18 9.05v9.2A1.75 1.75 0 0 1 16.25 20h-9.5A1.75 1.75 0 0 1 5 18.25v-11.75A1.75 1.75 0 0 1 6.75 4.75Z" />
+            <path d="M13.5 4.75v4.3H18" />
+            <path d="M8.5 12h5.75" />
+            <path d="M8.5 15.25h3.5" />
+            <circle cx="16.9" cy="16.9" r="2.6" />
+            <path d="m18.75 18.75 1.65 1.65" />
+          </svg>
+        </div>
+        <div class="hero-content">
+          <h1>Keyword Extractor Pro</h1>
+          <p>Scan pages, find top terms, and build word clouds - All local</p>
+        </div>
       </div>
     </header>
 
@@ -110,7 +122,7 @@
       </div>
     </section>
 
-    <section class="result-card" id="cloudTab" style="display: none;">
+    <section class="result-card" id="cloudTab" hidden>
       <div class="result-head">
         <h2> Keyword Word Cloud</h2>
         <span id="cloudInfo" class="source-tag">Generate keywords first</span>
@@ -121,7 +133,7 @@
       </div>
     </section>
 
-    <section class="result-card" id="ngramsTab" style="display: none;">
+    <section class="result-card" id="ngramsTab" hidden>
       <div class="result-head">
         <h2> Phrase Analysis (N-grams)</h2>
         <span id="ngramInfo" class="source-tag">Select n-gram size</span>
@@ -129,7 +141,7 @@
       <div id="ngramsResults" class="results"></div>
     </section>
 
-    <section class="result-card" id="sentimentTab" style="display: none;">
+    <section class="result-card" id="sentimentTab" hidden>
       <div class="result-head">
         <h2> Sentiment Analysis</h2>
         <span id="sentimentInfo" class="source-tag">Text sentiment score</span>
@@ -137,7 +149,7 @@
       <div id="sentimentResults"></div>
     </section>
 
-    <section class="result-card" id="seoTab" style="display: none;">
+    <section class="result-card" id="seoTab" hidden>
       <div class="result-head">
         <h2> SEO Analysis & Recommendations</h2>
         <span id="seoInfo" class="source-tag">Content optimization</span>
@@ -148,7 +160,7 @@
       </div>
     </section>
 
-    <section class="result-card" id="historyTab" style="display: none;">
+    <section class="result-card" id="historyTab" hidden>
       <div class="result-head">
         <h2> Recent Analyses</h2>
         <button id="clearHistoryBtn" class="icon-btn clear-history-btn" type="button">Clear All</button>
@@ -156,12 +168,12 @@
       <div id="historyList" class="results history-results"></div>
     </section>
 
-    <section class="insight-card" id="insightCard" style="display: none;">
+    <section class="insight-card" id="insightCard" hidden>
       <div class="insight-title"> SEO Insight</div>
       <div class="insight-content" id="insightText"></div>
     </section>
 
-    <section class="stats-bar" id="statsBar" style="display: none;">
+    <section class="stats-bar" id="statsBar" hidden>
       <div class="stats-bar-content">
         <span>Total words: <strong id="totalWords">0</strong></span>
         <span>Unique keywords: <strong id="uniqueKeywords">0</strong></span>

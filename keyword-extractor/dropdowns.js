@@ -65,29 +65,15 @@
     return option ? option.text : '';
   }
 
-  function positionMenu(instance) {
+  function updateMenuDirection(instance) {
     var rect = instance.trigger.getBoundingClientRect();
     var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
     var availableBelow = viewportHeight - rect.bottom - MENU_GAP;
     var availableAbove = rect.top - MENU_GAP;
-    var shouldOpenUp = availableBelow < 140 && availableAbove > availableBelow;
-    var menuHeight = Math.max(120, Math.min(MENU_HEIGHT, shouldOpenUp ? availableAbove : availableBelow));
-    var width = Math.min(rect.width, viewportWidth - 16);
-    var left = Math.min(rect.left, viewportWidth - width - 8);
+    var projectedHeight = Math.min(MENU_HEIGHT, instance.menu.scrollHeight || MENU_HEIGHT);
+    var shouldOpenUp = availableBelow < projectedHeight && availableAbove > availableBelow;
 
     instance.wrap.classList.toggle(DROPUP, shouldOpenUp);
-    instance.menu.style.width = width + 'px';
-    instance.menu.style.left = Math.max(8, left) + 'px';
-    instance.menu.style.maxHeight = menuHeight + 'px';
-
-    if (shouldOpenUp) {
-      instance.menu.style.top = 'auto';
-      instance.menu.style.bottom = viewportHeight - rect.top + MENU_GAP + 'px';
-    } else {
-      instance.menu.style.top = rect.bottom + MENU_GAP + 'px';
-      instance.menu.style.bottom = 'auto';
-    }
   }
 
   function buildDropdown(select) {
@@ -120,7 +106,6 @@
     menu.setAttribute('role', 'listbox');
     menu.id = (select.id || 'ca-select-' + Date.now()) + '-menu';
     trigger.setAttribute('aria-controls', menu.id);
-    document.body.appendChild(menu);
 
     var triggerText = document.createElement('span');
     triggerText.className = TRIGGER_TEXT;
@@ -321,19 +306,23 @@
 
       isOpen = true;
       refreshTrigger();
-      positionMenu({ wrap: wrap, trigger: trigger, menu: menu });
-      menu.classList.add(VISIBLE);
-      wrap.classList.add(OPEN);
-      trigger.setAttribute('aria-expanded', 'true');
 
       if (searchInput) {
         searchInput.value = '';
         populate('');
+        updateMenuDirection({ wrap: wrap, trigger: trigger, menu: menu });
+        menu.classList.add(VISIBLE);
+        wrap.classList.add(OPEN);
+        trigger.setAttribute('aria-expanded', 'true');
         setTimeout(function () {
           searchInput.focus();
         }, 30);
       } else {
         populate('');
+        updateMenuDirection({ wrap: wrap, trigger: trigger, menu: menu });
+        menu.classList.add(VISIBLE);
+        wrap.classList.add(OPEN);
+        trigger.setAttribute('aria-expanded', 'true');
       }
 
       var activeItem = listWrap.querySelector('.' + ITEM + '.' + ACTIVE);
@@ -412,7 +401,7 @@
       searchInput.addEventListener('input', function () {
         populate(searchInput.value);
         if (isOpen) {
-          positionMenu({ wrap: wrap, trigger: trigger, menu: menu });
+          updateMenuDirection({ wrap: wrap, trigger: trigger, menu: menu });
         }
       });
 
@@ -438,13 +427,13 @@
 
     window.addEventListener('resize', function () {
       if (isOpen) {
-        positionMenu({ wrap: wrap, trigger: trigger, menu: menu });
+        updateMenuDirection({ wrap: wrap, trigger: trigger, menu: menu });
       }
     }, { passive: true });
 
     window.addEventListener('scroll', function () {
       if (isOpen) {
-        positionMenu({ wrap: wrap, trigger: trigger, menu: menu });
+        updateMenuDirection({ wrap: wrap, trigger: trigger, menu: menu });
       }
     }, { passive: true });
 
@@ -468,7 +457,7 @@
       refreshTrigger();
       populate(searchInput ? searchInput.value : '');
       if (isOpen) {
-        positionMenu({ wrap: wrap, trigger: trigger, menu: menu });
+        updateMenuDirection({ wrap: wrap, trigger: trigger, menu: menu });
       }
     };
 
@@ -480,6 +469,7 @@
       destroy: function () {
         observer.disconnect();
         menu.remove();
+        select.hidden = false;
       }
     };
 
@@ -488,7 +478,8 @@
     syncLabel();
 
     wrap.appendChild(trigger);
-    select.style.display = 'none';
+    wrap.appendChild(menu);
+    select.hidden = true;
     select.parentNode.insertBefore(wrap, select.nextSibling);
 
     return wrap;

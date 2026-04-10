@@ -41,6 +41,7 @@ const insightCard = document.getElementById('insightCard');
 const insightText = document.getElementById('insightText');
 const negativeKeywordsInput = document.getElementById('negativeKeywords');
 const wordCloudCanvas = document.getElementById('wordCloudCanvas');
+const cloudInfo = document.getElementById('cloudInfo');
 const downloadCloudBtn = document.getElementById('downloadCloudBtn');
 const historyList = document.getElementById('historyList');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
@@ -63,6 +64,7 @@ const sentimentTab = document.getElementById('sentimentTab');
 const seoTab = document.getElementById('seoTab');
 const historyTab = document.getElementById('historyTab');
 const ngramsResults = document.getElementById('ngramsResults');
+const seoResults = document.getElementById('seoResults');
 const exportSeoBtn = document.getElementById('exportSeoBtn');
 
 let cachedPageText = '';
@@ -77,9 +79,21 @@ let currentSeoScore = null;
 let currentRecommendations = [];
 
 const PAGE_TEXT_PREVIEW_LIMIT = 3000;
+const WORD_CLOUD_HEIGHT = 300;
+const WORD_CLOUD_PADDING = 18;
+const WORD_CLOUD_MAX_WORDS = 24;
+const WORD_CLOUD_MIN_SIZE = 14;
+const WORD_CLOUD_MAX_SIZE = 40;
+const WORD_CLOUD_COLORS = ['#1D4ED8', '#2563EB', '#3B82F6', '#0EA5E9', '#1E40AF', '#60A5FA'];
 
 // Load history from storage
 let history = [];
+
+function setElementVisibility(element, isVisible) {
+  if (element) {
+    element.hidden = !isVisible;
+  }
+}
 
 function loadHistory() {
   chrome.storage.local.get(['keywordHistory'], (result) => {
@@ -144,10 +158,10 @@ function renderHistory() {
         currentUniqueWords = item.uniqueWords;
         currentAvgDensity = item.avgDensity;
         updateStatsBar();
+        setElementVisibility(statsBar, currentKeywords.length > 0);
         applyFilter();
         sourceTag.textContent = '📜 History';
         statusText.innerHTML = `<span class="status-icon status-success"></span> Loaded from history (${item.keywords.length} keywords)`;
-        drawWordCloud();
         if (currentNgrams.length) renderNgrams();
         if (currentKeywords.length) renderSeoAnalysis();
         switchTab('results');
@@ -175,14 +189,14 @@ function switchTab(tab) {
   if (tabSEO) tabSEO.classList.toggle('active', tab === 'seo');
   tabHistory.classList.toggle('active', tab === 'history');
   
-  resultsTab.style.display = tab === 'results' ? 'block' : 'none';
-  cloudTab.style.display = tab === 'cloud' ? 'block' : 'none';
-  ngramsTab.style.display = tab === 'ngrams' ? 'block' : 'none';
-  sentimentTab.style.display = tab === 'sentiment' ? 'block' : 'none';
-  if (seoTab) seoTab.style.display = tab === 'seo' ? 'block' : 'none';
-  historyTab.style.display = tab === 'history' ? 'block' : 'none';
+  resultsTab.hidden = tab !== 'results';
+  cloudTab.hidden = tab !== 'cloud';
+  ngramsTab.hidden = tab !== 'ngrams';
+  sentimentTab.hidden = tab !== 'sentiment';
+  if (seoTab) seoTab.hidden = tab !== 'seo';
+  historyTab.hidden = tab !== 'history';
   
-  if (tab === 'cloud' && currentKeywords.length) drawWordCloud();
+  if (tab === 'cloud') drawWordCloud();
   if (tab === 'ngrams' && currentNgrams.length) renderNgrams();
   if (tab === 'sentiment' && currentSentiment) renderSentiment();
   if (tab === 'seo' && currentKeywords.length) renderSeoAnalysis();
@@ -207,18 +221,30 @@ filterChips.forEach(chip => {
 });
 
 function applyFilter() {
-  if (!currentKeywords.length) {
-    renderResults(currentKeywords);
-    return;
-  }
-  let filtered = [...currentKeywords];
-  if (currentFilter === 'long') {
-    filtered = filtered.filter(kw => kw.word.length >= 6);
-  } else if (currentFilter === 'short') {
-    filtered = filtered.filter(kw => kw.word.length >= 3 && kw.word.length <= 5);
-  }
+  const filtered = getFilteredKeywords();
   renderResults(filtered);
   updateInsight(filtered);
+  drawWordCloud(filtered);
+}
+
+function getFilteredKeywords() {
+  if (!currentKeywords.length) return [];
+
+  if (currentFilter === 'long') {
+    return currentKeywords.filter(kw => kw.word.length >= 6);
+  }
+
+  if (currentFilter === 'short') {
+    return currentKeywords.filter(kw => kw.word.length >= 3 && kw.word.length <= 5);
+  }
+
+  return [...currentKeywords];
+}
+
+function getFilterLabel(filter = currentFilter) {
+  if (filter === 'long') return 'Long keywords';
+  if (filter === 'short') return 'Short keywords';
+  return 'All keywords';
 }
 
 readPageBtn.addEventListener('click', readCurrentPageText);
@@ -381,6 +407,7 @@ function renderSentiment() {
   
   const sentimentResults = document.getElementById('sentimentResults');
   const sentimentClass = currentSentiment.sentiment;
+  const sentimentRatio = Math.max(0, Math.min(100, Number(currentSentiment.ratio) || 0));
   
   if (!sentimentResults) return;
   
@@ -406,7 +433,7 @@ function renderSentiment() {
         <div class="sentiment-ratio-label">Positive/Negative Ratio</div>
         <div class="sentiment-ratio-value">${currentSentiment.ratio}% positive</div>
         <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width: ${currentSentiment.ratio}%;"></div>
+          <progress class="progress-bar" max="100" value="${sentimentRatio}"></progress>
         </div>
       </div>
     </div>
@@ -479,24 +506,21 @@ async function extractKeywordsHandler() {
     
     sourceTag.textContent = source;
     statusText.innerHTML = `<span class="status-icon status-success"></span> Found ${currentKeywords.length} keywords from ${currentTotalWords} words.`;
-    
-    if (currentKeywords.length > 0) {
-      insightCard.style.display = 'block';
-      statsBar.style.display = 'block';
-      updateInsight(currentKeywords);
-      drawWordCloud();
-    } else {
-      insightCard.style.display = 'none';
-      statsBar.style.display = 'none';
-    }
+
+    setElementVisibility(statsBar, currentKeywords.length > 0);
     setLoading(false);
   } catch (error) {
     resultsEl.innerHTML = `<div class="empty">⚠️ ${error.message || 'Extraction failed'}</div>`;
     statusText.innerHTML = `<span class="status-icon status-error"></span> ${error.message || 'Failed to extract'}`;
     sourceTag.textContent = 'No data';
     currentKeywords = [];
-    insightCard.style.display = 'none';
-    statsBar.style.display = 'none';
+    currentNgrams = [];
+    currentSentiment = null;
+    currentSeoScore = null;
+    currentRecommendations = [];
+    setElementVisibility(insightCard, false);
+    setElementVisibility(statsBar, false);
+    drawWordCloud([]);
     setLoading(false);
   }
 }
@@ -595,44 +619,177 @@ function renderResults(items) {
   });
 }
 
-function drawWordCloud() {
-  if (!wordCloudCanvas || !currentKeywords.length) return;
-  
-  const canvas = wordCloudCanvas;
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width = 400;
-  const height = canvas.height = 300;
-  
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#f9fbfe';
+function setupWordCloudCanvas() {
+  const bounds = wordCloudCanvas?.getBoundingClientRect();
+  const width = Math.max(360, Math.round(bounds?.width || 400));
+  const height = WORD_CLOUD_HEIGHT;
+  const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  const ctx = wordCloudCanvas?.getContext('2d');
+
+  if (!ctx || !wordCloudCanvas) return null;
+
+  wordCloudCanvas.width = width * dpr;
+  wordCloudCanvas.height = height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  return { ctx, width, height };
+}
+
+function drawWordCloudBackground(ctx, width, height) {
+  const background = ctx.createLinearGradient(0, 0, width, height);
+  background.addColorStop(0, '#F9FBFF');
+  background.addColorStop(1, '#EEF4FF');
+  ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
-  
-  const maxCount = Math.max(...currentKeywords.map(k => k.count));
-  const minSize = 12;
-  const maxSize = 34;
-  
-  const words = currentKeywords.slice(0, 25);
-  
-  words.forEach((item, idx) => {
-    const size = minSize + (item.count / maxCount) * (maxSize - minSize);
-    const angle = (Math.sin(idx) * Math.PI) / 4;
-    
-    let x = width/2 + Math.sin(idx * 0.8) * 80;
-    let y = height/2 + Math.cos(idx * 0.6) * 70;
-    
+
+  const glow = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) * 0.62);
+  glow.addColorStop(0, 'rgba(47, 105, 238, 0.12)');
+  glow.addColorStop(1, 'rgba(47, 105, 238, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = 'rgba(47, 105, 238, 0.07)';
+  for (let x = 26; x < width; x += 36) {
+    for (let y = 24; y < height; y += 36) {
+      ctx.fillRect(x, y, 2, 2);
+    }
+  }
+}
+
+function drawWordCloudPlaceholder(ctx, width, height, message) {
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#35527F';
+  ctx.font = '700 20px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('Word Cloud Preview', width / 2, height / 2 - 18);
+  ctx.fillStyle = '#6B7B93';
+  ctx.font = '600 12px "Segoe UI", Arial, sans-serif';
+  ctx.fillText(message, width / 2, height / 2 + 16);
+  ctx.restore();
+}
+
+function measureWordCloudWord(ctx, word, fontSize, maxWidth) {
+  let size = Math.max(WORD_CLOUD_MIN_SIZE, Math.round(fontSize));
+  let metrics = null;
+
+  while (size > WORD_CLOUD_MIN_SIZE) {
+    ctx.font = `700 ${size}px "Segoe UI", Arial, sans-serif`;
+    metrics = ctx.measureText(word);
+    if (metrics.width <= maxWidth) break;
+    size -= 1;
+  }
+
+  ctx.font = `700 ${size}px "Segoe UI", Arial, sans-serif`;
+  metrics = ctx.measureText(word);
+
+  const ascent = metrics.actualBoundingBoxAscent || size * 0.76;
+  const descent = metrics.actualBoundingBoxDescent || size * 0.24;
+
+  return {
+    fontSize: size,
+    width: metrics.width + 16,
+    height: ascent + descent + 12
+  };
+}
+
+function isCloudBoxOverlapping(candidate, boxes) {
+  return boxes.some(box => !(
+    candidate.right <= box.left ||
+    candidate.left >= box.right ||
+    candidate.bottom <= box.top ||
+    candidate.top >= box.bottom
+  ));
+}
+
+function layoutWordCloudWords(ctx, width, height, keywords) {
+  const items = keywords.slice(0, WORD_CLOUD_MAX_WORDS);
+  const maxCount = Math.max(...items.map(item => item.count), 1);
+  const minCount = Math.min(...items.map(item => item.count), maxCount);
+  const placed = [];
+
+  items.forEach((item, index) => {
+    const ratio = maxCount === minCount ? 1 : (item.count - minCount) / (maxCount - minCount);
+    const preferredSize = WORD_CLOUD_MIN_SIZE + ratio * (WORD_CLOUD_MAX_SIZE - WORD_CLOUD_MIN_SIZE);
+    const measurement = measureWordCloudWord(ctx, item.word, preferredSize, width - WORD_CLOUD_PADDING * 2);
+    const color = WORD_CLOUD_COLORS[index % WORD_CLOUD_COLORS.length];
+
+    for (let attempt = 0; attempt < 420; attempt += 1) {
+      const angle = attempt * 0.62 + index * 0.48;
+      const radius = attempt === 0 ? 0 : 5 + attempt * 1.65;
+      const x = width / 2 + Math.cos(angle) * radius;
+      const y = height / 2 + Math.sin(angle) * radius * 0.72;
+      const box = {
+        left: x - measurement.width / 2 - 6,
+        right: x + measurement.width / 2 + 6,
+        top: y - measurement.height / 2 - 4,
+        bottom: y + measurement.height / 2 + 4
+      };
+
+      const isInsideCanvas =
+        box.left >= WORD_CLOUD_PADDING &&
+        box.right <= width - WORD_CLOUD_PADDING &&
+        box.top >= WORD_CLOUD_PADDING &&
+        box.bottom <= height - WORD_CLOUD_PADDING;
+
+      if (!isInsideCanvas || isCloudBoxOverlapping(box, placed)) continue;
+
+      placed.push({
+        word: item.word,
+        x,
+        y,
+        box,
+        color,
+        fontSize: measurement.fontSize
+      });
+      break;
+    }
+  });
+
+  return placed;
+}
+
+function drawWordCloud(words = getFilteredKeywords()) {
+  if (!wordCloudCanvas) return;
+
+  const canvasSetup = setupWordCloudCanvas();
+  if (!canvasSetup) return;
+
+  const { ctx, width, height } = canvasSetup;
+  const keywordItems = Array.isArray(words) ? words : getFilteredKeywords();
+
+  drawWordCloudBackground(ctx, width, height);
+
+  if (!keywordItems.length) {
+    const message = currentKeywords.length ? 'No keywords match this filter' : 'Extract keywords to create the cloud';
+    drawWordCloudPlaceholder(ctx, width, height, message);
+    if (cloudInfo) {
+      cloudInfo.textContent = currentKeywords.length ? `${getFilterLabel()} filter has no matches` : 'Generate keywords first';
+    }
+    return;
+  }
+
+  const placedWords = layoutWordCloudWords(ctx, width, height, keywordItems);
+
+  if (!placedWords.length) {
+    drawWordCloudPlaceholder(ctx, width, height, 'Try fewer keywords or a different filter');
+    if (cloudInfo) cloudInfo.textContent = 'Unable to fit the current keyword set';
+    return;
+  }
+
+  placedWords.forEach((item, index) => {
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.font = `${Math.floor(size)}px "Segoe UI", Arial, sans-serif`;
-    ctx.fillStyle = `hsl(${200 + (idx * 12) % 160}, 70%, 50%)`;
-    ctx.shadowBlur = 2;
-    ctx.shadowColor = 'rgba(0,0,0,0.1)';
-    ctx.fillText(item.word, -ctx.measureText(item.word).width/2, 0);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `700 ${item.fontSize}px "Segoe UI", Arial, sans-serif`;
+    ctx.fillStyle = item.color;
+    ctx.shadowColor = 'rgba(47, 105, 238, 0.18)';
+    ctx.shadowBlur = index < 6 ? 10 : 0;
+    ctx.fillText(item.word, item.x, item.y);
     ctx.restore();
   });
-  
-  const cloudInfo = document.getElementById('cloudInfo');
-  if (cloudInfo) cloudInfo.textContent = `${words.length} keywords visualized`;
+
+  if (cloudInfo) cloudInfo.textContent = `${placedWords.length} keywords visualized • ${getFilterLabel()}`;
 }
 
 function downloadWordCloud() {
@@ -645,9 +802,12 @@ function downloadWordCloud() {
 
 function updateInsight(keywords) {
   if (!keywords.length) {
-    insightCard.style.display = 'none';
+    setElementVisibility(insightCard, false);
     return;
   }
+
+  setElementVisibility(insightCard, true);
+
   const top3 = keywords.slice(0, 3);
   const topWords = top3.map(k => k.word).join(', ');
   const avgDensity = (keywords.reduce((sum, k) => sum + parseFloat(k.density), 0) / keywords.length).toFixed(2);
@@ -992,15 +1152,17 @@ function renderSeoAnalysis() {
   
   const scoreColor = analysis.score >= 70 ? '#10b981' : analysis.score >= 40 ? '#f59e0b' : '#ef4444';
   const scoreStatus = analysis.score >= 70 ? 'Good' : analysis.score >= 40 ? 'Needs Improvement' : 'Poor';
+  const scoreCircumference = 2 * Math.PI * 54;
+  const scoreDashOffset = scoreCircumference * (1 - analysis.score / 100);
   
   seoResults.innerHTML = `
     <div class="seo-score-container">
       <div class="seo-score-circle">
         <svg width="120" height="120" viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="54" fill="none" stroke="#e5e7eb" stroke-width="8"/>
-          <circle cx="60" cy="60" r="54" fill="none" stroke="${scoreColor}" stroke-width="8" 
-                  stroke-dasharray="${2 * Math.PI * 54}" stroke-dashoffset="${2 * Math.PI * 54 * (1 - analysis.score / 100)}"
-                  transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 0.8s ease"/>
+          <circle class="seo-score-progress" cx="60" cy="60" r="54" fill="none" stroke="${scoreColor}" stroke-width="8"
+                  stroke-dasharray="${scoreCircumference}" stroke-dashoffset="${scoreDashOffset}"
+                  transform="rotate(-90 60 60)"/>
         </svg>
         <div class="seo-score-number">${analysis.score}</div>
       </div>
@@ -1052,7 +1214,7 @@ function renderSeoAnalysis() {
               <span>${kw.density}% (${kw.count}x)</span>
             </div>
             <div class="density-bar-bg">
-              <div class="density-bar-fill" style="width: ${Math.min(100, kw.density * 10)}%"></div>
+              <progress class="density-progress" max="100" value="${Math.min(100, Number(kw.density) * 10)}"></progress>
             </div>
           </div>
         `).join('')}
@@ -1161,3 +1323,8 @@ Generated by Keyword Extractor Pro
 loadHistory();
 renderResults([]);
 updateStatusMessage();
+drawWordCloud([]);
+
+window.addEventListener('resize', () => {
+  if (!cloudTab?.hidden) drawWordCloud();
+});

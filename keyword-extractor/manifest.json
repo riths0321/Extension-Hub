@@ -4,9 +4,9 @@
   "version": "1.2.0",
   "description": "Extract keywords, analyze SEO, generate word clouds, and optimize content",
 
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "permissions": ["activeTab", "scripting", "storage"],
 
-  "host_permissions": ["https://*/*", "http://*/*"],
+  "host_permissions": ["<all_urls>"],
 
   "action": {
     "default_title": "Keyword Extractor Pro",

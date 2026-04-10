@@ -1,16 +1,16 @@
 :root {
   --popup-width:    480px;
 
-  --brand:          #2563EB;
-  --brand-hover:    #1D4ED8;
-  --brand-light:    #EFF6FF;
-  --brand-mid:      #BFDBFE;
+  --brand:          #2F69EE;
+  --brand-hover:    #2357D4;
+  --brand-light:    #EEF4FF;
+  --brand-mid:      #BDD3FF;
 
   --bg:             #FFFFFF;
-  --bg-subtle:      #F9FAFB;
-  --bg-muted:       #F3F4F6;
-  --border:         #E5E7EB;
-  --border-focus:   #93C5FD;
+  --bg-subtle:      #F7FAFF;
+  --bg-muted:       #EFF4FC;
+  --border:         #D8E2F1;
+  --border-focus:   #7CA9FF;
 
   --text-heading:   #111111;
   --text-sub:       #6B7280;
@@ -46,6 +46,10 @@ html, body {
   padding: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   min-height: 580px;
   background: var(--bg);
@@ -58,70 +62,95 @@ body {
 .app {
   width: var(--popup-width);
   min-width: var(--popup-width);
-  padding: 16px;
+  padding: 0 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  background: #FFFFFF;
 }
 
 .hero {
-  background: var(--brand);
-  border-radius: var(--r-xl);
-  padding: 20px 22px;
+  margin: 0 -16px 4px;
+  padding: 28px 22px 24px;
+  background: linear-gradient(90deg, #2A58D5 0%, #3F84F8 100%);
+  border-radius: 0;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(37,99,235,0.28);
-  animation: slideDown 0.45s var(--ease-bounce) both;
+  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.35) inset,
+              0 10px 26px rgba(47, 105, 238, 0.22);
 }
 
-.hero::before,
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+
 .hero::after {
   content: '';
   position: absolute;
+  right: -50px;
+  bottom: -54px;
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
 
-.hero::before {
-  width: 160px; height: 160px;
-  top: -50px; right: -40px;
-  background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
-  animation: float 7s ease-in-out infinite;
+.hero-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.hero::after {
-  width: 100px; height: 100px;
-  bottom: -35px; left: 20px;
-  background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%);
-  animation: float 9s ease-in-out infinite reverse;
+.hero-icon {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+              0 10px 18px rgba(22, 46, 112, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+
+.hero-icon svg {
+  width: 30px;
+  height: 30px;
+  stroke: #FFFFFF;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hero-content {
+  flex: 1;
 }
 
 .hero h1 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: -0.4px;
   color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  position: relative;
-  z-index: 1;
-  line-height: 1.2;
-}
-
-.hero h1::before {
-  content: '🔑';
-  font-size: 22px;
+  letter-spacing: -0.35px;
+  margin: 0;
+  line-height: 1.15;
 }
 
 .hero p {
   margin-top: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(255,255,255,0.75);
-  letter-spacing: 0.3px;
-  position: relative;
-  z-index: 1;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.84);
+  letter-spacing: 0.1px;
 }
 
 .controls,
@@ -131,7 +160,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: 16px 18px;
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.06), var(--shadow-xs);
   transition: box-shadow var(--t-base) var(--ease),
               border-color var(--t-base) var(--ease);
 }
@@ -351,6 +380,10 @@ select:focus {
   flex: 0 1 auto;
 }
 
+.ca-open {
+  z-index: 40;
+}
+
 .options-group .ca-dropdown,
 .adv-options .ca-dropdown {
   min-width: 118px;
@@ -435,8 +468,12 @@ select:focus {
 }
 
 .ca-menu {
-  position: fixed;
-  z-index: 9999;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  max-height: min(242px, calc(100vh - 32px));
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -456,6 +493,8 @@ select:focus {
 }
 
 .ca-dropup .ca-menu {
+  top: auto;
+  bottom: calc(100% + 6px);
   transform-origin: bottom center;
   transform: translateY(6px) scale(0.98);
 }
@@ -864,7 +903,7 @@ select:focus {
 
 #wordCloudCanvas {
   width: 100%;
-  height: auto;
+  height: 300px;
   background: var(--bg-subtle);
   border-radius: var(--r-md);
   margin-top: 10px;
@@ -1053,11 +1092,27 @@ select:focus {
   overflow: hidden;
 }
 
-.progress-bar-fill {
+.progress-bar,
+.density-progress {
+  width: 100%;
   height: 100%;
+  display: block;
+  border: none;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.progress-bar::-webkit-progress-bar,
+.density-progress::-webkit-progress-bar {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.progress-bar::-webkit-progress-value,
+.progress-bar::-moz-progress-bar {
   background: #10b981;
-  border-radius: 3px;
-  width: 0%;
+  border-radius: 999px;
 }
 
 .history-meta {
@@ -1097,6 +1152,11 @@ select:focus {
   color: var(--text-sub);
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.seo-score-progress {
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--t-slow) var(--ease);
 }
 
 .seo-metrics-grid {
@@ -1289,11 +1349,10 @@ select:focus {
   overflow: hidden;
 }
 
-.density-bar-fill {
-  height: 100%;
+.density-progress::-webkit-progress-value,
+.density-progress::-moz-progress-bar {
   background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
-  border-radius: 3px;
-  transition: width var(--t-base) var(--ease);
+  border-radius: 999px;
 }
 
 @media (max-width: 460px) {
