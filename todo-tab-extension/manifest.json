@@ -1,25 +1,23 @@
 {
   "manifest_version": 3,
-  "name": "Todo Tab",
+  "name": "Todo Tab — Smart Productivity",
   "short_name": "Todo Tab",
-  "version": "1.0.0",
-  "description": "A privacy-first todo list with color-coded labels. Your data stays on your device.",
-  
+  "version": "2.0.0",
+  "description": "A premium productivity dashboard. Tasks, priorities, analytics — all stored locally.",
+
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
-  
+
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src 'none'; form-action 'none';"
   },
-  
-  "permissions": ["storage"],
-  
+
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  
+
   "minimum_chrome_version": "88"
 }

@@ -1,186 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo Tab</title>
+
+    <!-- Optional CSP fallback -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';">
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Animated background -->
-    <div class="bg-canvas">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-        <div class="orb orb-4"></div>
-        <div class="grid-overlay"></div>
-    </div>
+    <noscript>
+      <p>This extension requires JavaScript to function properly.</p>
+    </noscript>
 
-    <div class="app-shell">
+    <div id="app" role="main"></div>
 
-        <!-- Header -->
-        <header class="glass-header">
-            <div class="header-brand">
-                <div class="brand-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="brand-title">Todo Tab</h1>
-                    <p class="brand-sub">Color-coded task clarity</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <div class="privacy-pill">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2"/></svg>
-                    Privacy First
-                </div>
-                <button class="glass-icon-btn" id="theme-toggle" title="Toggle theme">
-                    <svg id="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            </div>
-        </header>
+    <script src="domHelpers.js" defer></script>
+    <script src="storageService.js" defer></script>
+    <script src="todoService.js" defer></script>
+    <script src="dropdowns.js" defer></script>
+    <script src="app.js" defer></script>
 
-        <!-- Stats row -->
-        <div class="stats-row">
-            <div class="stat-glass">
-                <span class="stat-num" id="total-count">0</span>
-                <span class="stat-lbl">Total</span>
-            </div>
-            <div class="stat-glass">
-                <span class="stat-num pending" id="pending-count">0</span>
-                <span class="stat-lbl">Pending</span>
-            </div>
-            <div class="stat-glass">
-                <span class="stat-num today" id="today-count">0</span>
-                <span class="stat-lbl">Today</span>
-            </div>
-            <div class="stat-glass">
-                <span class="stat-num done" id="done-count">0</span>
-                <span class="stat-lbl">Done</span>
-            </div>
-        </div>
-
-        <!-- Add Task Panel -->
-        <div class="glass-card add-panel">
-            <div class="input-row">
-                <div class="input-glass-wrap">
-                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                    <input type="text" id="todo-input" placeholder="What needs to be done?" autocomplete="off" spellcheck="false">
-                </div>
-                <button id="add-btn" class="add-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                    Add Task
-                </button>
-            </div>
-
-            <!-- Color categories -->
-            <div class="categories">
-                <button class="cat-btn active" data-color="#4ade80" data-label="Work">
-                    <span class="cat-dot" style="background:#4ade80"></span>
-                    Work
-                </button>
-                <button class="cat-btn" data-color="#60a5fa" data-label="Personal">
-                    <span class="cat-dot" style="background:#60a5fa"></span>
-                    Personal
-                </button>
-                <button class="cat-btn" data-color="#fb923c" data-label="Urgent">
-                    <span class="cat-dot" style="background:#fb923c"></span>
-                    Urgent
-                </button>
-                <button class="cat-btn" data-color="#c084fc" data-label="Ideas">
-                    <span class="cat-dot" style="background:#c084fc"></span>
-                    Ideas
-                </button>
-                <button class="cat-btn" data-color="#f87171" data-label="Important">
-                    <span class="cat-dot" style="background:#f87171"></span>
-                    Important
-                </button>
-                <button class="cat-btn" data-color="#94a3b8" data-label="General">
-                    <span class="cat-dot" style="background:#94a3b8"></span>
-                    General
-                </button>
-            </div>
-            <div class="selected-tag">
-                Category: <span id="selected-label" class="sel-badge">Work</span>
-            </div>
-        </div>
-
-        <!-- Tasks Panel -->
-        <div class="glass-card tasks-panel">
-            <div class="tasks-header">
-                <h2 class="tasks-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                    Your Tasks
-                </h2>
-                <div class="filter-group">
-                    <button class="filter-pill active" data-filter="all">All</button>
-                    <button class="filter-pill" data-filter="pending">Pending</button>
-                    <button class="filter-pill" data-filter="completed">Done</button>
-                    <button class="filter-pill" data-filter="today">Today</button>
-                </div>
-            </div>
-
-            <div class="todo-list" id="todo-list">
-                <div class="empty-state" id="empty-state">
-                    <div class="empty-orb">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    </div>
-                    <p class="empty-title">No tasks yet</p>
-                    <p class="empty-hint">Add your first task above to get started</p>
-                </div>
-            </div>
-
-            <div class="tasks-footer">
-                <button class="ghost-btn" id="clear-completed">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 5H9l-7 7 7 7h11a2 2 0 002-2V7a2 2 0 00-2-2zM18 9l-6 6M12 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    Clear Done
-                </button>
-                <button class="ghost-btn" id="export-btn">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Export
-                </button>
-                <button class="ghost-btn" id="import-btn">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Import
-                </button>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="app-footer">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2"/></svg>
-            All data stored locally — never leaves your browser
-        </div>
-
-    </div>
-
-    <!-- Import Modal -->
-    <div class="modal-backdrop hidden" id="import-modal">
-        <div class="modal-glass">
-            <div class="modal-head">
-                <h3>Import Tasks</h3>
-                <button class="modal-close" id="close-modal">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                </button>
-            </div>
-            <textarea id="import-data" placeholder="Paste your exported JSON here..."></textarea>
-            <p class="modal-hint">Paste JSON data exported from a previous Todo Tab session.</p>
-            <div class="modal-actions">
-                <button class="ghost-btn" id="cancel-import">Cancel</button>
-                <button class="add-btn" id="confirm-import">Import Tasks</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast -->
-    <div class="toast hidden" id="toast"></div>
-
-    <script src="script.js"></script>
 </body>
 </html>
