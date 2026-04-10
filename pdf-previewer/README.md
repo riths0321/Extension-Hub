@@ -1,141 +1,112 @@
-popup
+# 📄 PDF Previewer Pro — Chrome Extension v2.0
 
-📄 PDF Previewer (Chrome Extension)
+A premium, feature-rich Chrome Extension for previewing PDF files instantly — locally and offline. Completely redesigned with a sleek dark glass-noir UI and advanced new capabilities.
 
-A fast and simple Chrome Extension that allows you to instantly preview PDF files directly inside the popup using Chrome’s built-in PDF viewer.
-No uploads, no servers — everything works locally and offline.
+---
 
-✨ Features
-📥 Open PDF Instantly
+## ✨ New Features in v2.0
 
-Select any PDF file from your device → preview loads immediately.
-Uses Chrome's native embed viewer for smooth display.
+### 📥 Drag & Drop
+Drag any PDF file directly onto the popup — no need to click browse.
 
+### 🌐 URL Loading
+Paste any public PDF URL and load it directly into the viewer. Supports any publicly accessible PDF link.
 
-popup
+### 🕐 Recent Files
+Automatically tracks your last 6 opened PDFs. Click any recent item to reload URL-based PDFs instantly. Clear history with one click.
 
-⚡ Completely Offline
+### 🔍 Zoom Controls
+- Zoom In / Zoom Out (25% steps in popup, 15% steps in fullscreen)
+- Reset to 100% with one click
+- Keyboard shortcuts in fullscreen: `Ctrl +`, `Ctrl -`, `Ctrl 0`
 
-Your PDF files never leave your computer.
-No backend, no API, no internet required.
+### 🌙 Dark / Light Theme
+Toggle between a sleek dark glass-noir theme and a clean light theme. Theme preference is saved across sessions.
 
-🎨 Beautiful Blue UI
+### 📂 File Info Bar
+Displays the loaded file's name and size whenever a PDF is active.
 
-A polished, modern design with:
+### 🗑️ Clear PDF
+Remove the current PDF and return to the upload screen with one click.
 
-Gradient blue background
+### 🖥️ Enhanced Fullscreen Viewer
+Dedicated full-page viewer with:
+- Its own toolbar (zoom, theme, close)
+- Document title display
+- Loading animation
+- Full keyboard zoom shortcuts
 
-Stylish buttons
+### 💾 Session Persistence
+When you reopen the popup, your last loaded local PDF is automatically restored.
 
-Smooth shadows
+---
 
-Rounded preview frame
+## 🎨 UI Design
 
+The extension uses a **glass-noir aesthetic**:
+- Deep charcoal/navy backgrounds with frosted glass panels
+- Amber/gold accent color system
+- `Syne` display typeface + `DM Mono` for file metadata
+- Smooth transitions, hover animations, and toast notifications
 
-popup
+---
 
-📄 Large Preview Window
+## 📂 Project Structure
 
-The viewer displays PDFs inside a 400px high preview box, perfect for reading inside popup.
-
-
-popup
-
-📂 Project Structure
+```
 PDF-Previewer/
-│── manifest.json
-│── popup.html
-│── popup.css
-│── popup.js
-│── icons/
-│     ├── icon16.png
-│     ├── icon48.png
-│     ├── icon128.png
+├── manifest.json       ← MV3 config with storage, tabs, downloads
+├── background.js       ← Service worker
+├── popup.html          ← Main popup UI
+├── popup.css           ← Glass-noir design system
+├── popup.js            ← All popup features & logic
+├── viewer.html         ← Fullscreen viewer page
+├── viewer.css          ← Viewer styles
+├── viewer.js           ← Viewer logic (zoom, theme, load)
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
 
-🧠 How It Works
-1️⃣ Select a File
+---
 
-User clicks Select PDF File → hidden input opens the file picker.
+## 🚀 Installation
 
+1. Go to `chrome://extensions/`
+2. Enable **Developer mode** (top right)
+3. Click **Load Unpacked**
+4. Select the `PDF-Previewer` folder
+5. The extension appears in your Chrome toolbar ✅
 
-popup
+---
 
-2️⃣ File Validation
+## 🧠 How It Works
 
-Only PDF files are accepted:
+| Feature | Method |
+|---|---|
+| Local file preview | `URL.createObjectURL()` → `<embed>` |
+| Fullscreen transfer | Base64 via `chrome.storage.local` |
+| URL loading | `fetch()` PDF bytes → Blob/Data URL → `<embed src>` |
+| Zoom | CSS `transform: scale()` |
+| Recent files | `chrome.storage.local` JSON array |
+| Theme | `chrome.storage.local` + CSS class on `<body>` |
+| Session restore | Base64 stored → Blob URL rebuilt on popup open |
 
-if (!file || file.type !== "application/pdf") return;
+---
 
+## 🔧 Technologies
 
-popup
+- HTML5, CSS3, Vanilla JavaScript
+- Chrome Extension Manifest V3
+- Chrome Storage API
+- Chrome Tabs API
+- Chrome Native PDF Viewer (`<embed>`)
+- CSS Custom Properties (design tokens)
+- Google Fonts (Syne, DM Mono)
 
-3️⃣ Generate Preview URL
+---
 
-Uses URL.createObjectURL() to generate a secure local blob for display.
-
-
-popup
-
-4️⃣ Embed Viewer
-
-The preview is shown inside an <embed> element.
-
-
-popup
-
-📜 Manifest (MV3)
-
-Your extension uses a popup-only configuration.
-
-
-manifest
-
-{
-  "manifest_version": 3,
-  "name": "PDF Previewer",
-  "version": "1.0",
-  "description": "Preview PDF files instantly using Chrome's built-in PDF viewer.",
-  "action": {
-    "default_popup": "popup.html"
-  }
-}
-
-🔧 Technologies Used
-
-HTML5
-
-CSS3
-
-JavaScript
-
-Chrome Extension Manifest V3
-
-Chrome Native PDF Viewer (embed)
-
-🚀 Installation (Developer Mode)
-
-Go to chrome://extensions/
-
-Enable Developer mode
-
-Click Load Unpacked
-
-Select the extension folder
-
-The extension will now appear in your Chrome toolbar.
-
-🌟 Future Improvements
-
-Drag-and-drop PDF support
-
-Thumbnail preview mode
-
-Dark/light theme toggle
-
-Zoom controls
-
-PDF page navigation
-
-📄 License
+## 📄 License
 
 MIT — free to use and modify.
