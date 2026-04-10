@@ -355,6 +355,7 @@ body::-webkit-scrollbar-thumb {
 .active-tab-favicon {
   width: 20px;
   height: 20px;
+  display: block;
   flex-shrink: 0;
   border-radius: var(--r-sm);
   object-fit: contain;
@@ -701,6 +702,15 @@ body::-webkit-scrollbar-thumb {
   transform: translateX(4px);
 }
 
+.folder-toggle {
+  margin-right: 8px;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-sub);
+  flex-shrink: 0;
+}
+
 .folder-icon {
   font-size: 16px;
 }
@@ -913,6 +923,10 @@ body::-webkit-scrollbar-thumb {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+.button-stack-compact {
+  margin-top: 12px;
 }
 
 .primary-btn,

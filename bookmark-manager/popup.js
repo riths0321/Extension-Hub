@@ -213,7 +213,6 @@
         faviconImg.alt = '';
         faviconImg.className = 'active-tab-favicon';
         faviconImg.onerror = () => {
-          faviconImg.style.display = 'none';
           const placeholder = document.createElement('span');
           placeholder.className = 'active-tab-favicon-placeholder';
           placeholder.textContent = getBookmarkBadgeLabel({ url: tab.url, title: tab.title });
@@ -677,9 +676,6 @@
           const toggleIcon = document.createElement('span');
           toggleIcon.className = 'folder-toggle';
           toggleIcon.textContent = '▶';
-          toggleIcon.style.marginRight = '8px';
-          toggleIcon.style.cursor = 'pointer';
-          toggleIcon.style.fontSize = '10px';
           folderDiv.insertBefore(toggleIcon, folderDiv.firstChild);
           
           toggleIcon.addEventListener('click', (e) => {
