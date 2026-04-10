@@ -1,12 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Manager",
-  "version": "1.0.0",
+  "version": "1.0",
   "description": "Manage bookmarks and tab sessions locally with search, quick save, and cleanup tools.",
   "permissions": [
     "tabs",
     "bookmarks",
-    "storage"
+    "storage",
+    "windows"
+  ],
+  "host_permissions": [
+    "https://www.google.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -22,6 +26,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://www.google.com; font-src 'self'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';"
   }
 }

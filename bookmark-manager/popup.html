@@ -3,113 +3,150 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://www.google.com; font-src 'self'; connect-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';" />
   <title>Bookmark Manager</title>
-  
-  
-  
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <main class="shell">
     <header class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">Reading Shelf</span>
-        <h1>Bookmark Manager</h1>
-        <p class="subtitle">Search saved links, archive current tabs, and keep your browser shelf clean and easy to restore.</p>
+      <div class="hero-inner">
+        <div class="hero-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M7.25 4.75h9.5a1.5 1.5 0 0 1 1.5 1.5v12.56a.35.35 0 0 1-.54.29L12 16.37 6.29 20.1a.35.35 0 0 1-.54-.29V6.25a1.5 1.5 0 0 1 1.5-1.5Z" />
+            <path d="M9 9h6" />
+            <path d="M9 12h4.5" />
+          </svg>
+        </div>
+        <div class="hero-copy">
+          <span class="eyebrow">Reading Shelf</span>
+          <h1>Bookmark Manager</h1>
+          <p class="subtitle">Manage bookmarks, active tabs, and sessions with powerful search and organization tools.</p>
+        </div>
       </div>
     </header>
 
-    <div id="status" class="status-bar hidden" role="alert" aria-live="polite"></div>
+    <div class="content-stack">
+      <div id="status" class="status-bar hidden" role="alert" aria-live="polite"></div>
 
-    <section class="overview-card">
-      <div class="overview-block">
-        <span class="overview-label">Bookmarks</span>
-        <strong id="bookmarkCount">0</strong>
-      </div>
-      <div class="overview-block">
-        <span class="overview-label">Folders</span>
-        <strong id="folderCount">0</strong>
-      </div>
-      <div class="overview-block">
-        <span class="overview-label">Last session</span>
-        <strong id="sessionCount">0</strong>
-      </div>
-    </section>
+      <section class="overview-card">
+        <div class="overview-block">
+          <span class="overview-label">Bookmarks</span>
+          <strong id="bookmarkCount">0</strong>
+        </div>
+        <div class="overview-block">
+          <span class="overview-label">Folders</span>
+          <strong id="folderCount">0</strong>
+        </div>
+        <div class="overview-block">
+          <span class="overview-label">Sessions</span>
+          <strong id="sessionCount">0</strong>
+        </div>
+      </section>
 
-    <section class="recent-card">
-      <div class="section-head">
-        <div>
-          <span class="section-kicker">Quick access</span>
-          <h2 class="section-title">Recent bookmarks</h2>
+      <!-- Active Tabs Section (New) -->
+      <section class="active-tabs-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Live tabs</span>
+            <h2 class="section-title">Active tabs in this window</h2>
+          </div>
+          <button id="refreshActiveTabs" class="text-btn" type="button">⟳ Refresh</button>
         </div>
-        <button id="clearRecent" class="text-btn" type="button">Clear all</button>
-      </div>
-      <ul id="recentList" class="results-list" role="list" aria-label="Recent bookmarks"></ul>
-    </section>
+        <div id="activeTabsList" class="active-tabs-list"></div>
+        <div class="button-stack two-col" style="margin-top: 12px;">
+          <button id="saveAllTabsToSession" class="secondary-btn" type="button">Save all to folder</button>
+          <button id="bookmarkAllTabs" class="secondary-btn" type="button">Bookmark all tabs</button>
+        </div>
+      </section>
 
-    <section class="search-card">
-      <div class="section-head">
-        <div>
-          <span class="section-kicker">Find bookmarks</span>
-          <h2 class="section-title">Search your library</h2>
+      <section class="recent-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Quick access</span>
+            <h2 class="section-title">Recent bookmarks</h2>
+          </div>
+          <button id="clearRecent" class="text-btn" type="button">Clear all</button>
         </div>
-      </div>
-      <div class="search-wrapper">
-        <input id="search" class="text-input" type="search" placeholder="Search title, URL, or #tag..." autocomplete="off" spellcheck="false" />
-        <div class="search-filters">
-          <button id="filterAll" class="filter-chip active">All</button>
-          <button id="filterFolders" class="filter-chip">Folders</button>
-          <button id="filterRecent" class="filter-chip">Recent</button>
-        </div>
-      </div>
-      <ul id="results" class="results-list" role="list" aria-label="Search results"></ul>
-    </section>
+        <ul id="recentList" class="results-list" role="list" aria-label="Recent bookmarks"></ul>
+      </section>
 
-    <section class="folder-card">
-      <div class="section-head">
-        <div>
-          <span class="section-kicker">Browse</span>
-          <h2 class="section-title">Folder tree</h2>
+      <section class="search-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Find bookmarks</span>
+            <h2 class="section-title">Search your library</h2>
+          </div>
         </div>
-      </div>
-      <div id="folderTree" class="folder-tree"></div>
-    </section>
+        <div class="search-wrapper">
+          <input id="search" class="text-input" type="search" placeholder="Search title, URL, or #tag..." autocomplete="off" spellcheck="false" />
+          <div class="search-filters">
+            <button id="filterAll" class="filter-chip active">All</button>
+            <button id="filterFolders" class="filter-chip">Folders</button>
+            <button id="filterRecent" class="filter-chip">Recent</button>
+          </div>
+        </div>
+        <ul id="results" class="results-list" role="list" aria-label="Search results"></ul>
+      </section>
 
-    <section class="grid-card">
-      <article class="tool-card">
-        <span class="section-kicker">Sessions</span>
-        <h2 class="section-title">Tab shelf snapshot</h2>
-        <div class="button-stack">
-          <button id="saveSession" class="primary-btn" type="button"> Save current tabs</button>
-          <button id="restoreSession" class="secondary-btn" type="button"> Restore saved tabs</button>
+      <section class="folder-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Browse</span>
+            <h2 class="section-title">Folder tree</h2>
+          </div>
         </div>
-      </article>
+        <div id="folderTree" class="folder-tree"></div>
+      </section>
 
-      <article class="tool-card">
-        <span class="section-kicker">Current page</span>
-        <h2 class="section-title">Add bookmark</h2>
-        <div class="button-stack">
-          <button id="openBookmarkOverlay" class="primary-btn" type="button"> Bookmark active page</button>
+      <section class="session-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Sessions</span>
+            <h2 class="section-title">Saved tab folders</h2>
+          </div>
+          <button id="newSessionBtn" class="text-btn" type="button">+ New folder</button>
         </div>
-      </article>
-    </section>
+        <div id="sessionsList" class="sessions-list"></div>
+      </section>
 
-    <section class="cleanup-card">
-      <div class="section-head">
-        <div>
-          <span class="section-kicker">Cleanup</span>
-          <h2 class="section-title">Library maintenance</h2>
+      <section class="grid-card">
+        <article class="tool-card">
+          <span class="section-kicker">Quick session</span>
+          <h2 class="section-title">Quick save/restore</h2>
+          <div class="button-stack">
+            <button id="saveSession" class="primary-btn" type="button"> Save current tabs</button>
+            <button id="restoreSession" class="secondary-btn" type="button"> Restore saved tabs</button>
+          </div>
+        </article>
+
+        <article class="tool-card">
+          <span class="section-kicker">Current page</span>
+          <h2 class="section-title">Add bookmark</h2>
+          <div class="button-stack">
+            <button id="openBookmarkOverlay" class="primary-btn" type="button"> Bookmark active page</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="cleanup-card">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">Cleanup</span>
+            <h2 class="section-title">Library maintenance</h2>
+          </div>
         </div>
-      </div>
-      <div class="button-stack two-col">
-        <button id="removeDuplicates" class="secondary-btn" type="button"> Remove duplicates</button>
-        <button id="cleanFolders" class="secondary-btn" type="button"> Delete empty folders</button>
-        <button id="exportBookmarks" class="secondary-btn" type="button"> Export</button>
-        <button id="importBookmarks" class="secondary-btn" type="button"> Import</button>
-      </div>
-    </section>
+        <div class="button-stack two-col">
+          <button id="removeDuplicates" class="secondary-btn" type="button"> Remove duplicates</button>
+          <button id="cleanFolders" class="secondary-btn" type="button"> Delete empty folders</button>
+          <button id="exportBookmarks" class="secondary-btn" type="button"> Export</button>
+          <button id="importBookmarks" class="secondary-btn" type="button"> Import</button>
+        </div>
+      </section>
+    </div>
   </main>
 
+  <!-- Bookmark Overlay -->
   <div id="bookmarkOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Save bookmark">
     <div class="overlay-card">
       <div class="section-head">
@@ -131,6 +168,7 @@
     </div>
   </div>
 
+  <!-- Bookmark Details Overlay -->
   <div id="bookmarkDetailsOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Bookmark details">
     <div class="overlay-card">
       <div class="section-head">
@@ -144,6 +182,42 @@
         <button id="editBookmark" class="primary-btn" type="button"> Edit</button>
         <button id="deleteBookmark" class="danger-btn" type="button"> Delete</button>
         <button id="closeDetails" class="secondary-btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Session Overlay -->
+  <div id="newSessionOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="New session folder">
+    <div class="overlay-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Save session folder</span>
+          <h2 class="section-title">Name your tab folder</h2>
+        </div>
+      </div>
+      <p class="overlay-note">Save all tabs from current window as a folder</p>
+      <input id="sessionName" class="text-input" type="text" placeholder="Work, Research, Weekend reading..." autocomplete="off" spellcheck="false" />
+      <div class="overlay-actions">
+        <button id="confirmSaveSession" class="primary-btn" type="button">Save folder</button>
+        <button id="cancelSessionOverlay" class="secondary-btn" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Details Overlay -->
+  <div id="sessionDetailsOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Session folder details">
+    <div class="overlay-card">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Session folder</span>
+          <h2 id="sessionDetailsTitle" class="section-title">Session</h2>
+        </div>
+      </div>
+      <div id="sessionDetailsContent" class="details-content"></div>
+      <div class="overlay-actions">
+        <button id="restoreSessionBtn" class="primary-btn" type="button">Restore all tabs</button>
+        <button id="deleteSessionBtn" class="danger-btn" type="button">Delete folder</button>
+        <button id="closeSessionDetails" class="secondary-btn" type="button">Close</button>
       </div>
     </div>
   </div>
