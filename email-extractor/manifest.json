@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "Email Extractor Pro",
   "version": "2.0.0",
-  "description": "Extract email addresses from the current webpage only after user clicks the extension.",
+  "description": "Extract email addresses from the current page, copy them quickly, and export results to CSV.",
+  "minimum_chrome_version": "88",
 
   "permissions": [
     "activeTab",
@@ -11,6 +12,7 @@
   ],
 
   "action": {
+    "default_title": "Email Extractor Pro",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -26,6 +28,6 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
+    "extension_pages": "script-src 'self'; object-src 'none';"
   }
 }

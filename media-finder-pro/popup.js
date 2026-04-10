@@ -239,36 +239,154 @@ tabBtns.forEach((btn) => {
 updateFormatControls();
 
 /* -------------------- SCAN PAGE -------------------- */
-scanBtn.addEventListener("click", async () => {
-  setLoading(true, "🔍 Scanning page for media...");
-
+async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab) {
-    setLoading(false, "❌ No active tab found");
+  return tab || null;
+}
+
+function isBrowserRestrictedUrl(url) {
+  if (!url) return true;
+
+  return [
+    "about:",
+    "brave://",
+    "chrome-extension://",
+    "chrome://",
+    "devtools://",
+    "edge://",
+    "moz-extension://",
+    "opera://",
+    "vivaldi://",
+    "view-source:"
+  ].some((prefix) => url.startsWith(prefix));
+}
+
+function isWebStoreUrl(url) {
+  try {
+    const parsedUrl = new URL(url);
+    return ["chrome.google.com", "chromewebstore.google.com"].includes(parsedUrl.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function sendMessageToTab(tabId, message) {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tabId, message, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+
+      resolve(response);
+    });
+  });
+}
+
+async function injectScannerIntoTab(tabId) {
+  if (chrome.scripting?.executeScript) {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"]
+    });
     return;
+  }
+
+  if (chrome.tabs?.executeScript) {
+    await new Promise((resolve, reject) => {
+      chrome.tabs.executeScript(tabId, { file: "content.js" }, () => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+
+        resolve();
+      });
+    });
+    return;
+  }
+
+  throw new Error(
+    "Reload the extension from chrome://extensions so the new scripting permission can be applied."
+  );
+}
+
+async function scanTabForMedia(tab) {
+  if (!tab?.id) {
+    throw new Error("No active tab found");
+  }
+
+  try {
+    return await sendMessageToTab(tab.id, { type: "SCAN_MEDIA" });
+  } catch (error) {
+    await injectScannerIntoTab(tab.id);
+    return sendMessageToTab(tab.id, { type: "SCAN_MEDIA" });
+  }
+}
+
+function withTimeout(promise, timeoutMs, errorMessage) {
+  let timeoutId = 0;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
+  });
+
+  return Promise.race([
+    promise.finally(() => window.clearTimeout(timeoutId)),
+    timeoutPromise
+  ]);
+}
+
+function getScanErrorMessage(error) {
+  const message = String(error?.message || "");
+
+  if (/timed out/i.test(message)) {
+    return "⏱️ Scan timed out. Try reloading the tab and scanning again.";
+  }
+
+  if (/No active tab found|No tab with id/i.test(message)) {
+    return "❌ No active tab found";
   }
 
   if (
-    tab.url.startsWith("chrome://") ||
-    tab.url.startsWith("edge://") ||
-    tab.url.startsWith("about:")
+    /Cannot access contents of the page|Missing host permission|The extensions gallery cannot be scripted/i.test(
+      message
+    )
   ) {
-    setLoading(false, "❌ Cannot scan browser system pages");
-    return;
+    return "❌ This page blocks extension access";
   }
 
-  const timeout = setTimeout(() => {
-    setLoading(false, "⏱️ Scan timed out - try refreshing the page");
-  }, 8000);
+  if (/Receiving end does not exist|Could not establish connection/i.test(message)) {
+    return "⚠️ Could not connect to the page. Reload it once and try again.";
+  }
 
-  chrome.tabs.sendMessage(tab.id, { type: "SCAN_MEDIA" }, (response) => {
-    clearTimeout(timeout);
+  if (/Reload the extension from chrome:\/\/extensions|new scripting permission/i.test(message)) {
+    return "♻️ Reload the extension in chrome://extensions, then scan again.";
+  }
 
-    if (chrome.runtime.lastError) {
-      console.warn(chrome.runtime.lastError.message);
-      setLoading(false, "⚠️ Connection failed. Please refresh the page and try again.");
+  return `⚠️ Scan failed: ${message || "Unknown error"}`;
+}
+
+scanBtn.addEventListener("click", async () => {
+  setLoading(true, "🔍 Scanning page for media...");
+
+  try {
+    const tab = await getActiveTab();
+    if (!tab) {
+      setLoading(false, "❌ No active tab found");
       return;
     }
+
+    if (isBrowserRestrictedUrl(tab.url) || isWebStoreUrl(tab.url)) {
+      setLoading(false, "❌ Cannot scan this browser-managed page");
+      return;
+    }
+
+    const response = await withTimeout(
+      scanTabForMedia(tab),
+      8000,
+      "Scan timed out - try refreshing the page"
+    );
 
     if (!response || (!response.icons && !response.videos)) {
       setLoading(false, "😕 No media found on this page");
@@ -282,7 +400,10 @@ scanBtn.addEventListener("click", async () => {
     const total = allIcons.length + allVideos.length;
     setLoading(false, getScanSummaryText());
     downloadAllBtn.disabled = total === 0;
-  });
+  } catch (error) {
+    console.warn("Scan failed:", error);
+    setLoading(false, getScanErrorMessage(error));
+  }
 });
 
 /* -------------------- RENDER FUNCTIONS -------------------- */

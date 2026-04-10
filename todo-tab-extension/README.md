@@ -1,291 +1,107 @@
-# 📝 Todo Tab - Privacy First Todo List
+# Todo Tab — Smart Productivity
 
-![Todo Tab Banner](https://via.placeholder.com/800x300/667eea/ffffff?text=Todo+Tab+-+Privacy+First+Todo+List)
+A privacy-first Chrome new-tab extension built with plain JavaScript (MV3, no frameworks).
 
-A minimalist, privacy-focused todo list that replaces your browser's new tab page. Keep track of your tasks with color-coded labels, all while maintaining complete privacy - your data never leaves your browser.
+It replaces the browser new tab with a fast task dashboard featuring:
+- task management with categories, priority, due date, notes
+- local analytics and completion insights
+- light/dark theme toggle
+- custom searchable dropdowns
+- import/export backup
 
-## ✨ Features
+All data is stored locally on-device.
 
-### 🔒 **Privacy First**
-- **100% Local Storage** - All data stays in your browser
-- **No Cloud Sync** - We don't send data to any server
-- **No Analytics/Tracking** - Complete anonymity
-- **Open Source** - Transparent codebase
+## Highlights
 
-### 🎨 **Color-Coded Productivity**
-- **Activity-based categorization** - 6 distinct colors for different task types
-- **Visual organization** - Quickly identify task categories at a glance
-- **Custom labels** - Work, Personal, Urgent, Ideas, Important, General
+- `Manifest V3` extension using `chrome_url_overrides` for New Tab
+- `CSP-safe` architecture (no `eval`, no `innerHTML`, no inline JS handlers)
+- Strong visual contrast for both light and dark themes
+- Drag-and-drop task reordering
+- Category + priority filters
+- Weekly and category analytics views
+- JSON export/import with schema normalization and sanitization
 
-### 📊 **Smart Organization**
-- **Quick Statistics** - Track total, pending, today's, and completed tasks
-- **Smart Filtering** - Filter by All, Pending, Completed, or Today's tasks
-- **Persistent Storage** - Tasks survive browser restarts
+## Installation (Developer Mode)
 
-### 🔧 **Powerful Features**
-- **Add/Edit/Delete** - Full task management
-- **Mark as Complete** - Check off completed tasks
-- **Export/Import** - Backup and restore your data
-- **Clean Interface** - Minimalist, distraction-free design
+1. Open Chrome and go to `chrome://extensions`.
+2. Enable `Developer mode`.
+3. Click `Load unpacked`.
+4. Select this folder: `todo-tab-extension`.
+5. Open a new tab to use the extension.
 
-## 🎯 Perfect For
-- Developers and programmers
-- Students and researchers
-- Project managers
-- Anyone who spends time in their browser
-- Privacy-conscious users
+## How To Use
 
-## 📸 Screenshot
+### Tasks
+- Add a task from the top search/add row.
+- Set category, priority, due date, and notes in the add modal.
+- Use filter pills (`All`, `Active`, `Done`, `Today`, `High`).
+- Use category/priority dropdown filters for focused views.
+- Mark complete with checkbox, delete with trash icon, reorder via drag handle.
 
-![Todo Tab Interface](https://via.placeholder.com/800x500/f5f7fa/667eea?text=Clean+Minimalist+Interface+with+Color-Coded+Tasks)
+### Import / Export
+- Export from footer actions or Settings.
+- Import a previous JSON backup from the import modal.
+- Invalid/partial imports are sanitized and normalized before saving.
 
-## 🚀 Installation
+### Settings
+- Switch Light/Dark theme.
+- Set default category for new tasks.
+- Clear all local data (tasks + settings reset).
 
-### Method 1: Chrome Web Store (Coming Soon)
-1. Visit Chrome Web Store
-2. Search for "Todo Tab"
-3. Click "Add to Chrome"
+### Analytics
+- Completion rate and done-today summary cards
+- 7-day added vs completed chart
+- category-wise task breakdown
 
-### Method 2: Developer Mode (For Testing)
-1. **Download** or clone this repository
-2. **Open Chrome** and go to `chrome://extensions/`
-3. **Enable** Developer mode (toggle in top-right)
-4. **Click** "Load unpacked"
-5. **Select** the extension folder
-6. **Open** a new tab to see Todo Tab!
+## Privacy & Security
 
-## 📁 Project Structure
+- Data storage: `localStorage` only (no cloud sync).
+- Network access: disabled by CSP (`connect-src 'none'`).
+- No remote scripts/styles.
+- Extension CSP in `manifest.json`:
+  - `script-src 'self'`
+  - `object-src 'none'`
+  - `base-uri 'self'`
+  - `frame-ancestors 'none'`
+  - `img-src 'self' data:`
+  - `style-src 'self' 'unsafe-inline'` (required for dynamic inline style updates)
+  - `connect-src 'none'`
+  - `form-action 'none'`
 
-```
+## Tech Stack
+
+- HTML + CSS + Vanilla JavaScript
+- Chrome Extension Manifest V3
+- Modular JS files:
+  - `app.js` — app shell, UI rendering, interactions
+  - `todoService.js` — task business logic, filtering, import validation
+  - `storageService.js` — local storage wrapper + safe settings defaults
+  - `domHelpers.js` — safe DOM/SVG helper utilities
+  - `dropdowns.js` — custom dropdown system
+
+## Project Structure
+
+```text
 todo-tab-extension/
-├── manifest.json          # Extension configuration
-├── index.html            # Main new tab page
-├── style.css             # Clean, minimal styling
-├── script.js             # Core functionality
-├── icons/                # Extension icons
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
-└── README.md             # This documentation
+├── app.js
+├── domHelpers.js
+├── dropdowns.js
+├── storageService.js
+├── todoService.js
+├── style.css
+├── index.html
+├── manifest.json
+├── icons/
+└── fonts/
 ```
 
-## 🛠️ Tech Stack
+## Version
 
-- **HTML5** - Semantic markup
-- **CSS3** - Modern styling with CSS variables
-- **JavaScript (ES6+)** - Core functionality
-- **Chrome Extension API (Manifest V3)** - Browser integration
-- **LocalStorage API** - Data persistence
+- Current version: `2.0.0`
 
-## 💻 How It Works
+## Notes For Contributors
 
-### Data Flow
-```
-User Input → JavaScript Processing → LocalStorage → UI Update
-      ↑                                     ↓
-      └────────── Browser Memory ←─────────┘
-```
-
-### Key Components
-1. **Task Manager** - Handles CRUD operations
-2. **Color Coding System** - Manages task categorization
-3. **Filter Engine** - Filters tasks based on status
-4. **Statistics Calculator** - Updates real-time stats
-5. **Import/Export Handler** - Manages data backup
-
-## 🎨 Color Coding System
-
-| Color | Label | Use Case |
-|-------|-------|----------|
-| 🟢 Green | Work | Professional tasks, office work |
-| 🔵 Blue | Personal | Personal errands, family tasks |
-| 🟠 Orange | Urgent | Time-sensitive, important tasks |
-| 🟣 Purple | Ideas | Creative thoughts, brainstorming |
-| 🔴 Red | Important | Critical tasks, deadlines |
-| ⚫ Gray | General | Miscellaneous, uncategorized |
-
-## 📊 Statistics
-
-Todo Tab provides quick insights:
-- **Total Tasks** - All tasks in your list
-- **Pending** - Tasks waiting to be completed
-- **Today** - Tasks added today
-- **Completed** - Finished tasks
-
-## 🔐 Privacy & Security
-
-### What We **DO NOT** Collect:
-- Your task list content
-- Browser history
-- Personal information
-- Usage analytics
-- Any tracking data
-
-### What We **DO** Store (Locally):
-- Task text (encrypted in localStorage)
-- Task metadata (date, completion status)
-- Color preferences
-- Filter settings
-
-### Data Location:
-- **Storage**: Browser's localStorage
-- **Location**: Your computer only
-- **Access**: Only you through this extension
-
-## 🔄 Export/Import
-
-### Export:
-- **Format**: JSON
-- **Contents**: All tasks with metadata
-- **Use**: Backup or transfer to another browser
-
-### Import:
-- **Support**: JSON format from previous exports
-- **Validation**: Checks for valid format
-- **Merge**: Adds new tasks without duplicates
-
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Enter` | Add new task |
-| `Tab` | Navigate between elements |
-| `Click` | Toggle task completion |
-| `Delete` | Remove task (via button) |
-
-## 📱 Responsive Design
-
-Todo Tab works perfectly on:
-- Desktop browsers
-- Laptops
-- Tablets
-- Large monitors
-
-## 🚦 Performance
-
-- **Lightweight**: < 2MB total size
-- **Fast**: Instant task updates
-- **Efficient**: Minimal memory usage
-- **Optimized**: No external dependencies
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how:
-
-1. **Fork** the repository
-2. **Create** a feature branch
-3. **Make** your changes
-4. **Test** thoroughly
-5. **Submit** a pull request
-
-### Development Setup:
-```bash
-git clone https://github.com/yourusername/todo-tab.git
-cd todo-tab
-# Make changes and test in Chrome
-```
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Inspired by modern productivity tools
-- Built for privacy-conscious users
-- Thanks to all contributors
-
-## 📞 Support
-
-Having issues? Here's how to get help:
-
-1. **Check** existing issues
-2. **Create** a new issue with details
-3. **Include**: Chrome version, steps to reproduce
-
-## 🌟 Why Choose Todo Tab?
-
-### ✅ **Advantages:**
-- **Privacy**: Your data stays with you
-- **Simplicity**: Clean, intuitive interface
-- **Speed**: Lightning-fast performance
-- **Reliability**: No dependencies, no crashes
-- **Free**: 100% free, no subscriptions
-
-### 🆚 **Compared to Alternatives:**
-- **vs Cloud-based**: Your data isn't on someone else's server
-- **vs Complex apps**: Focused on one thing - todo lists
-- **vs Paper lists**: Always accessible, organized, searchable
-
-## 🔮 Future Plans
-
-- [ ] Dark mode enhancement
-- [ ] Task due dates
-- [ ] Recurring tasks
-- [ ] Task priorities
-- [ ] Search functionality
-- [ ] Keyboard shortcuts
-- [ ] Task categories
-- [ ] Progress tracking
-
-## 📈 Statistics
-
-- **Lines of Code**: ~500
-- **Development Time**: 2 weeks
-- **File Size**: < 2MB
-- **Supported Browsers**: Chrome 88+
-
----
-
-<div align="center">
-
-**Made with ❤️ for productive people**
-
-*"Stay organized, stay private, stay productive"*
-
-[Report Bug](https://github.com/yourusername/todo-tab/issues) · 
-[Request Feature](https://github.com/yourusername/todo-tab/issues) · 
-[⭐ Star on GitHub](#)
-
-</div>
-
----
-
-## 📝 Changelog
-
-### v1.0.0 (Current)
-- Initial release
-- Basic todo functionality
-- Color-coded tasks
-- Export/Import
-- Privacy-focused design
-
-## 🔧 Troubleshooting
-
-### Common Issues:
-
-1. **Tasks not saving?**
-   - Check if localStorage is enabled
-   - Clear browser cache and reload
-
-2. **Extension not loading?**
-   - Ensure Developer mode is enabled
-   - Check Chrome version (88+ required)
-
-3. **Import not working?**
-   - Verify JSON format is correct
-   - Check for syntax errors
-
-## 🌐 Browser Compatibility
-
-- ✅ Chrome 88+
-- ✅ Edge 88+
-- ✅ Opera 74+
-- ⚠️ Firefox (requires Manifest V2 port)
-- ⚠️ Safari (not currently supported)
-
----
-
-**Remember**: Your productivity should never compromise your privacy. With Todo Tab, you get both.
-
-**Happy Tasking!** 🎯
+- Keep CSP-safe coding practices.
+- Avoid introducing `innerHTML`, inline handlers, or dynamic code execution.
+- Preserve local-only privacy model.
+- When changing data schema, keep import normalization backward-compatible.
