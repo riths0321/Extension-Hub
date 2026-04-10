@@ -3,6 +3,29 @@
    Font: Outfit (display) + JetBrains Mono
    Theme: Deep space aurora with improved contrast
    ══════════════════════════════════════════ */
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-Regular.ttf") format("truetype");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-Medium.ttf") format("truetype");
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-Bold.ttf") format("truetype");
+  font-weight: 700;
+}
 
 :root {
     /* Enhanced Dark Theme - Better contrast for readability */

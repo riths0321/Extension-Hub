@@ -468,31 +468,6 @@ function setupExportImport() {
   });
 }
 
-// ========== Dark Mode ==========
-function initTheme() {
-  chrome.storage.local.get(['theme'], (data) => {
-    const isDark = data.theme === 'dark';
-    if (isDark) {
-      document.body.classList.add('dark');
-      const themeToggle = document.getElementById('themeToggle');
-      if (themeToggle) themeToggle.textContent = '☀️';
-    } else {
-      document.body.classList.remove('dark');
-      const themeToggle = document.getElementById('themeToggle');
-      if (themeToggle) themeToggle.textContent = '🌙';
-    }
-  });
-}
-
-document.getElementById('themeToggle')?.addEventListener('click', () => {
-  const isDark = document.body.classList.toggle('dark');
-  chrome.storage.local.set({ theme: isDark ? 'dark' : 'light' });
-  const themeToggle = document.getElementById('themeToggle');
-  if (themeToggle) {
-    themeToggle.textContent = isDark ? '☀️' : '🌙';
-  }
-});
-
 // ========== Search Filters ==========
 function setupSearchFilters() {
   const filterAll = document.getElementById('filterAll');
@@ -1326,7 +1301,6 @@ document.getElementById("cleanFolders")?.addEventListener("click", () => {
 
 // ========== Initialization ==========
 function init() {
-  initTheme();
   setupSearchFilters();
   setupSearch();
   setupBookmarkCreation();

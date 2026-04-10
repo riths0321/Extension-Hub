@@ -1,69 +1,31 @@
 :root {
   color-scheme: light;
-  
-  /* Custom colors based on requirements - LIGHT MODE (default) */
+
   --brand: #2563EB;
   --brand-hover: #1D4ED8;
   --brand-light: #EFF6FF;
   --brand-mid: #BFDBFE;
-  
-  /* Text colors - LIGHT MODE */
+
   --text-heading: #111111;
   --text-sub: #6B7280;
   --text-muted: #9CA3AF;
   --text-on-brand: #FFFFFF;
-  
-  /* Background - LIGHT MODE */
+
   --bg: #FFFFFF;
   --bg-subtle: #F9FAFB;
   --bg-muted: #F3F4F6;
-  
-  /* Borders - LIGHT MODE */
+
   --border: #E5E7EB;
   --border-focus: #93C5FD;
-  
-  /* Shadows - LIGHT MODE */
+
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
   --shadow-lg: 0 12px 28px rgba(0,0,0,0.12);
-  
-  /* Status colors */
+
   --success: #10B981;
   --danger: #EF4444;
   --warning: #F59E0B;
-}
-
-/* DARK MODE OVERRIDES */
-body.dark {
-  color-scheme: dark;
-  
-  /* Brand colors - keep same but adjust for dark */
-  --brand: #3B82F6;
-  --brand-hover: #60A5FA;
-  --brand-light: #1E3A5F;
-  --brand-mid: #2E4A7A;
-  
-  /* Text colors - DARK MODE */
-  --text-heading: #F1F5F9;
-  --text-sub: #94A3B8;
-  --text-muted: #64748B;
-  --text-on-brand: #FFFFFF;
-  
-  /* Background - DARK MODE */
-  --bg: #0F172A;
-  --bg-subtle: #1E293B;
-  --bg-muted: #334155;
-  
-  /* Borders - DARK MODE */
-  --border: #334155;
-  --border-focus: #3B82F6;
-  
-  /* Shadows - DARK MODE */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg: 0 12px 28px rgba(0,0,0,0.5);
 }
 
 * {
@@ -94,13 +56,13 @@ body::-webkit-scrollbar {
 
 /* Hero Section */
 .hero {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #2563EB;
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--r-xl);
   padding: 24px;
   margin-bottom: 16px;
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal), background 0.3s ease, border 0.3s ease;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border 0.3s ease;
   position: relative;
 }
 
@@ -115,13 +77,13 @@ body::-webkit-scrollbar {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: var(--brand);
+  color: #FFFFFF;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   display: inline-block;
-  background: var(--brand-light);
+  background: rgba(255, 255, 255, 0.16);
   padding: 4px 12px;
   border-radius: var(--r-pill);
   transition: background 0.3s ease;
@@ -131,7 +93,7 @@ body::-webkit-scrollbar {
   margin: 12px 0 8px;
   font-size: 28px;
   font-weight: 800;
-  color: var(--text-heading);
+  color: #FFFFFF;
   letter-spacing: -0.3px;
   transition: color 0.3s ease;
 }
@@ -140,32 +102,8 @@ body::-webkit-scrollbar {
   margin: 8px 0 0;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--text-sub);
+  color: rgba(255, 255, 255, 0.9);
   transition: color 0.3s ease;
-}
-
-.hero-actions {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-}
-
-.icon-btn {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--r-pill);
-  padding: 8px 12px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  font-family: inherit;
-}
-
-.icon-btn:hover {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: white;
-  transform: scale(1.05);
 }
 
 /* Status Bar */
@@ -198,22 +136,10 @@ body::-webkit-scrollbar {
   border-color: #A7F3D0;
 }
 
-body.dark .status-bar.success {
-  background: #064E3B;
-  color: #34D399;
-  border-color: #065F46;
-}
-
 .status-bar.error {
   background: #FEF2F2;
   color: var(--danger);
   border-color: #FEE2E2;
-}
-
-body.dark .status-bar.error {
-  background: #7F1D1D;
-  color: #FCA5A5;
-  border-color: #991B1B;
 }
 
 .hidden {
@@ -476,11 +402,6 @@ body.dark .status-bar.error {
 }
 
 .bookmark-delete:hover {
-  background: #FEF2F2;
-  color: var(--danger);
-}
-
-body.dark .bookmark-delete:hover {
   background: #7F1D1D;
   color: #FCA5A5;
 }
@@ -829,17 +750,6 @@ body.dark .bookmark-delete:hover {
   background: var(--danger);
   color: white;
   transform: translateY(-1px);
-}
-
-body.dark .danger-btn {
-  background: #7F1D1D;
-  border-color: #991B1B;
-  color: #FCA5A5;
-}
-
-body.dark .danger-btn:hover {
-  background: var(--danger);
-  color: white;
 }
 
 /* Tags */

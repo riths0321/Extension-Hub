@@ -3,51 +3,174 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Keyword Extractor</title>
+  <title>Keyword Extractor Pro</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <main class="app">
     <header class="hero">
       <div>
-        <h1>Keyword Extractor</h1>
-        <p>Analyze page text or your own notes instantly.</p>
+        <h1>Keyword Extractor Pro</h1>
+        <p>SEO • Density • Word Cloud • History • N-grams • Sentiment</p>
       </div>
     </header>
 
     <section class="controls">
       <label class="field-label" for="textInput">Input Text (optional)</label>
-      <textarea
-        id="textInput"
-        placeholder="Paste text here. If empty, the extension reads from the current page."
-      ></textarea>
+      <textarea id="textInput" placeholder="Paste any text, article, or leave empty to analyze current webpage..."></textarea>
 
       <div class="toolbar">
-        <button id="readPageBtn" class="btn btn-secondary" type="button">Read Current Page</button>
-        <button id="extractBtn" class="btn btn-primary" type="button">Extract Keywords</button>
+        <button id="readPageBtn" class="btn btn-secondary">Read Current Page</button>
+        <button id="extractBtn" class="btn btn-primary">Extract Keywords</button>
       </div>
 
-      <div class="options">
-        <label for="topCount">Top keywords</label>
-        <select id="topCount">
-          <option value="10">10</option>
-          <option value="15" selected>15</option>
-          <option value="20">20</option>
-          <option value="30">30</option>
-        </select>
+      <div class="options-row">
+        <div class="options-group">
+          <label for="topCount"> Top keywords</label>
+          <select id="topCount">
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+        <div class="options-group">
+          <label for="ngramSize"> N-gram size</label>
+          <select id="ngramSize">
+            <option value="1">Unigrams (1 word)</option>
+            <option value="2">Bigrams (2 words)</option>
+            <option value="3">Trigrams (3 words)</option>
+          </select>
+        </div>
+        <div class="options-group">
+          <label> Filter</label>
+          <div class="filter-badge" id="filterGroup">
+            <span data-filter="all" class="filter-chip active">All</span>
+            <span data-filter="long" class="filter-chip">Long (≥6)</span>
+            <span data-filter="short" class="filter-chip">Short (3-5)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="negative-row">
+        <label class="field-label field-label-tight" for="negativeKeywords"> Negative Keywords (exclude, comma-separated)</label>
+        <input type="text" id="negativeKeywords" placeholder="e.g., subscribe, click here, email">
+      </div>
+
+      <div class="adv-options">
+        <div class="options-group">
+          <label for="minWordLength"> Min word length</label>
+          <select id="minWordLength">
+            <option value="2">2+ chars</option>
+            <option value="3" selected>3+ chars</option>
+            <option value="4">4+ chars</option>
+            <option value="5">5+ chars</option>
+          </select>
+        </div>
+        <div class="options-group">
+          <label for="minFrequency"> Min frequency</label>
+          <select id="minFrequency">
+            <option value="1">1+ times</option>
+            <option value="2" selected>2+ times</option>
+            <option value="3">3+ times</option>
+            <option value="5">5+ times</option>
+          </select>
+        </div>
       </div>
     </section>
 
-    <section class="result-card" aria-live="polite">
+    <div class="tab-nav">
+      <button id="tabResults" class="tab-btn active" type="button"> Results</button>
+      <button id="tabCloud" class="tab-btn" type="button"> Word Cloud</button>
+      <button id="tabNgrams" class="tab-btn" type="button"> N-grams</button>
+      <button id="tabSentiment" class="tab-btn" type="button"> Sentiment</button>
+      <button id="tabSEO" class="tab-btn" type="button"> SEO Check</button>
+      <button id="tabHistory" class="tab-btn" type="button"> History</button>
+    </div>
+
+    <section class="result-card" id="resultsTab">
       <div class="result-head">
-        <h2>Results</h2>
+        <h2> Keyword Rankings</h2>
         <span id="sourceTag" class="source-tag">No data</span>
       </div>
-      <p id="statusText" class="status">Ready</p>
+      <p id="statusText" class="status"><span class="status-icon"></span> Ready to extract</p>
       <div id="results" class="results"></div>
+      <div class="action-buttons">
+        <button id="copyResultsBtn" class="icon-btn" type="button"> Copy</button>
+        <button id="copyAllBtn" class="icon-btn" type="button"> Copy All (with stats)</button>
+        <select id="exportFormat" class="export-format">
+          <option value="csv">CSV</option>
+          <option value="json">JSON</option>
+          <option value="txt">TXT</option>
+          <option value="markdown">Markdown</option>
+        </select>
+        <button id="exportBtn" class="icon-btn" type="button"> Export</button>
+        <button id="saveHistoryBtn" class="icon-btn" type="button"> Save</button>
+      </div>
+    </section>
+
+    <section class="result-card" id="cloudTab" style="display: none;">
+      <div class="result-head">
+        <h2> Keyword Word Cloud</h2>
+        <span id="cloudInfo" class="source-tag">Generate keywords first</span>
+      </div>
+      <canvas id="wordCloudCanvas" width="400" height="300"></canvas>
+      <div class="action-buttons cloud-buttons">
+        <button id="downloadCloudBtn" class="icon-btn"> Save as Image</button>
+      </div>
+    </section>
+
+    <section class="result-card" id="ngramsTab" style="display: none;">
+      <div class="result-head">
+        <h2> Phrase Analysis (N-grams)</h2>
+        <span id="ngramInfo" class="source-tag">Select n-gram size</span>
+      </div>
+      <div id="ngramsResults" class="results"></div>
+    </section>
+
+    <section class="result-card" id="sentimentTab" style="display: none;">
+      <div class="result-head">
+        <h2> Sentiment Analysis</h2>
+        <span id="sentimentInfo" class="source-tag">Text sentiment score</span>
+      </div>
+      <div id="sentimentResults"></div>
+    </section>
+
+    <section class="result-card" id="seoTab" style="display: none;">
+      <div class="result-head">
+        <h2> SEO Analysis & Recommendations</h2>
+        <span id="seoInfo" class="source-tag">Content optimization</span>
+      </div>
+      <div id="seoResults"></div>
+      <div class="action-buttons seo-buttons">
+        <button id="exportSeoBtn" class="icon-btn" type="button"> Export SEO Report</button>
+      </div>
+    </section>
+
+    <section class="result-card" id="historyTab" style="display: none;">
+      <div class="result-head">
+        <h2> Recent Analyses</h2>
+        <button id="clearHistoryBtn" class="icon-btn clear-history-btn" type="button">Clear All</button>
+      </div>
+      <div id="historyList" class="results history-results"></div>
+    </section>
+
+    <section class="insight-card" id="insightCard" style="display: none;">
+      <div class="insight-title"> SEO Insight</div>
+      <div class="insight-content" id="insightText"></div>
+    </section>
+
+    <section class="stats-bar" id="statsBar" style="display: none;">
+      <div class="stats-bar-content">
+        <span>Total words: <strong id="totalWords">0</strong></span>
+        <span>Unique keywords: <strong id="uniqueKeywords">0</strong></span>
+        <span>Avg density: <strong id="avgDensity">0%</strong></span>
+      </div>
     </section>
   </main>
 
+  <script src="dropdowns.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
