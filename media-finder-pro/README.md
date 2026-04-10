@@ -1,4 +1,4 @@
-# 🎨 Media Finder Pro (Chrome Extension)
+# 🎨 Icon Finder Pro (Chrome Extension)
 
 Extract **SVG and image icons** from any website with a single click.  
 Icon Finder Pro helps developers and designers quickly discover, preview, copy, and download icons used on web pages.

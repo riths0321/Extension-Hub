@@ -1,5 +1,12 @@
 /* content.js - Enhanced Media Extractor */
 
+(() => {
+if (window.__MEDIA_FINDER_CONTENT_SCRIPT_READY__) {
+  return;
+}
+
+window.__MEDIA_FINDER_CONTENT_SCRIPT_READY__ = true;
+
 function extractAllMedia() {
   const icons = [];
   const videos = [];
@@ -31,6 +38,8 @@ function extractAllMedia() {
       processSVG(el);
     } else if (tagName === "img") {
       processImg(el);
+    } else if (tagName === "input" && String(el.type || "").toLowerCase() === "image") {
+      processImageLikeElement(el);
     } else if (tagName === "video") {
       processVideo(el);
     }
@@ -162,21 +171,16 @@ function extractAllMedia() {
   }
 
   function processImg(img) {
-    const src = normalizeUrl(img.currentSrc || img.src);
-    if (!src || seenIcons.has(src)) return;
-
-    if ((img.naturalWidth > 512 || img.naturalHeight > 512) && !src.includes(".svg")) return;
-
-    const itemNumber = iconIndex + 1;
-    seenIcons.add(src);
     const base64 = getBase64Image(img);
-    icons.push({
-      id: iconIndex++,
-      type: "image",
-      content: base64 || src,
-      url: src,
-      ext: getExt(src),
-      name: `image-${itemNumber}.${getExt(src)}`
+    addImageAsset(img.currentSrc || img.src, {
+      content: base64,
+      namePrefix: "image"
+    });
+  }
+
+  function processImageLikeElement(el) {
+    addImageAsset(el.currentSrc || el.src || el.getAttribute("src"), {
+      namePrefix: "image"
     });
   }
 
@@ -189,22 +193,10 @@ function extractAllMedia() {
   function handleUrlProperty(propValue) {
     if (!propValue || propValue === "none" || propValue.includes("gradient")) return;
 
-    const match = propValue.match(/url\(["']?(.*?)["']?\)/);
-    if (!match) return;
-
-    const url = normalizeUrl(match[1]);
-    if (!url || !isIconUrl(url) || seenIcons.has(url)) return;
-
-    const itemNumber = iconIndex + 1;
-    seenIcons.add(url);
-    icons.push({
-      id: iconIndex++,
-      type: "image",
-      content: url,
-      url,
-      ext: getExt(url),
-      name: `icon-${itemNumber}.${getExt(url)}`
-    });
+    const urlMatches = propValue.matchAll(/url\((["']?)(.*?)\1\)/g);
+    for (const match of urlMatches) {
+      addImageAsset(match[2], { namePrefix: "icon" });
+    }
   }
 
   function findVideoLinks() {
@@ -234,6 +226,39 @@ function extractAllMedia() {
         availableFormats: [format],
         name: `video-${itemNumber}.${format}`
       });
+    });
+  }
+
+  function findLinkedImages() {
+    const iconLinkSelector = [
+      'link[rel~="icon"][href]',
+      'link[rel="shortcut icon"][href]',
+      'link[rel="apple-touch-icon"][href]',
+      'link[rel="apple-touch-icon-precomposed"][href]',
+      'link[rel="mask-icon"][href]'
+    ].join(", ");
+
+    document.querySelectorAll(iconLinkSelector).forEach((link) => {
+      addImageAsset(link.href || link.getAttribute("href"), { namePrefix: "site-icon" });
+    });
+
+    const metaImageSelector = [
+      'meta[property="og:image"]',
+      'meta[property="og:image:url"]',
+      'meta[name="twitter:image"]',
+      'meta[name="twitter:image:src"]',
+      'meta[itemprop="image"]'
+    ].join(", ");
+
+    document.querySelectorAll(metaImageSelector).forEach((meta) => {
+      addImageAsset(meta.content || meta.getAttribute("content"), { namePrefix: "meta-image" });
+    });
+
+    document.querySelectorAll("a[href]").forEach((link) => {
+      const href = link.href || link.getAttribute("href");
+      if (!looksLikeDirectImageUrl(href)) return;
+
+      addImageAsset(href, { namePrefix: "linked-image" });
     });
   }
 
@@ -273,9 +298,28 @@ function extractAllMedia() {
     }
   }
 
-  function isIconUrl(url) {
-    if (url.startsWith("data:image/")) return true;
-    return /\.(svg|png|webp|ico|gif|jpg|jpeg|avif)(\?.*)?$/i.test(url);
+  function addImageAsset(url, options = {}) {
+    const normalizedUrl = normalizeUrl(url);
+    if (!normalizedUrl || seenIcons.has(normalizedUrl)) return;
+
+    const itemNumber = iconIndex + 1;
+    const ext = getExt(normalizedUrl);
+
+    seenIcons.add(normalizedUrl);
+    icons.push({
+      id: iconIndex++,
+      type: "image",
+      content: options.content || normalizedUrl,
+      url: normalizedUrl,
+      ext,
+      name: `${options.namePrefix || "image"}-${itemNumber}.${ext}`
+    });
+  }
+
+  function looksLikeDirectImageUrl(url) {
+    if (!url) return false;
+    if (String(url).startsWith("data:image/")) return true;
+    return /\.(svg|png|webp|ico|gif|jpg|jpeg|avif|apng|bmp|tif|tiff)(\?.*)?$/i.test(url);
   }
 
   function getExt(url) {
@@ -316,7 +360,8 @@ function extractAllMedia() {
     }
   }
 
-  traverse(document.body);
+  traverse(document.documentElement || document.body);
+  findLinkedImages();
   findVideoLinks();
 
   return { icons, videos };
@@ -329,3 +374,4 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   return true;
 });
+})();

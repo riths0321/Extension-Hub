@@ -3,13 +3,13 @@
   "name": "Media Finder Pro - Extract Images, Icons & Videos",
   "description": "Extract SVG, images, and videos from any website. Export in multiple formats including PNG, JPG, PDF.",
   "version": "2.0",
-  "permissions": ["activeTab", "downloads", "storage"],
+  "permissions": ["activeTab", "downloads", "storage", "scripting"],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: http: https:; media-src 'self' data: blob: http: https:; connect-src 'self' data: blob: http: https:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: http: https:; media-src 'self' data: blob: http: https:; connect-src 'self' data: blob: http: https:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; frame-src 'none'; child-src 'none'; worker-src 'self'; form-action 'none'; manifest-src 'self'"
   },
   "icons": {
     "16": "icons/icon16.png",
