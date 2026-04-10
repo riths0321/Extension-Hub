@@ -101,6 +101,10 @@ const ICONS = {
   close: () => DOM.svg(14, 14, '0 0 24 24', [
     { d: 'M18 6L6 18M6 6l12 12', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round' },
   ]),
+  edit: () => DOM.svg(14, 14, '0 0 24 24', [
+    { d: 'M12 20h9', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' },
+    { d: 'M16.5 3.5a2.12 2.12 0 113 3L7 19l-4 1 1-4 12.5-12.5z', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' },
+  ]),
   flag: () => DOM.svg(12, 12, '0 0 24 24', [
     { d: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' },
   ]),

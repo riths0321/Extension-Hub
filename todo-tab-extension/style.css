@@ -28,6 +28,7 @@
 /* ── Design Tokens — Light ───────────────────────────── */
 :root {
   color-scheme: light;
+  --user-bg-layer: none;
   --primary:         #2563EB;
   --primary-hover:   #1D4ED8;
   --primary-active:  #1E40AF;
@@ -127,6 +128,38 @@
 html,body { height: 100%; font-family: var(--font); font-size: 14px; line-height: 1.5; color: var(--text); background: var(--bg-secondary); -webkit-font-smoothing: antialiased; }
 button  { font-family: var(--font); cursor: pointer; border: none; background: none; outline: none; }
 input,select,textarea { font-family: var(--font); outline: none; }
+body {
+  position: relative;
+  background: var(--bg-secondary);
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: var(--user-bg-layer);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity .2s var(--ease-out);
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .2s var(--ease-out);
+  background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.72));
+}
+body.has-user-bg::after { opacity: 1; }
+body.has-user-bg::before { opacity: 1; }
+[data-theme="dark"] body::before {
+  background: linear-gradient(180deg, rgba(8,14,26,.58), rgba(8,14,26,.66));
+}
 
 /* ── App shell ───────────────────────────────────────── */
 #app {
@@ -137,6 +170,8 @@ input,select,textarea { font-family: var(--font); outline: none; }
   max-width: none;
   margin: 0 200px;
   padding: 12px 12px 0;
+  position: relative;
+  z-index: 2;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -612,6 +647,62 @@ input[type="date"].modal-input { color-scheme: light; }
 .theme-option:hover  { border-color: var(--primary-border); color: var(--primary); }
 .theme-option.active { border-color: var(--primary); background: var(--primary-subtle); color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
 
+.bg-template-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.bg-template-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--bg-secondary);
+  color: var(--subtext);
+  transition: border-color .15s, background .15s, box-shadow .15s, transform .15s;
+}
+.bg-template-btn:hover {
+  border-color: var(--primary-border);
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+.bg-template-btn.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+  color: var(--primary);
+}
+.bg-template-preview {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background-size: cover;
+  background-position: center;
+}
+.bg-template-label {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bg-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bg-custom-meta {
+  font-size: 11px;
+  color: var(--subtext);
+  font-weight: 600;
+}
+
 .privacy-note {
   display: flex; align-items: center; gap: 7px;
   font-size: 12px; padding: 11px 14px; border-radius: var(--r);
@@ -776,6 +867,7 @@ textarea:focus-visible,
   #app             { margin: 0 10px; padding: 8px 10px 0; }
   .app-body        { padding: 16px 14px 32px; }
   .app-header, .tab-nav { padding: 0 14px; }
+  .bg-template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filter-row .td-dropdown {
     flex: 1 1 calc(50% - 4px);
     min-width: 0;

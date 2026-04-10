@@ -10,11 +10,20 @@ const KEYS = {
 const DEFAULT_SETTINGS = Object.freeze({
   theme: 'light',
   defaultCategory: 'Work',
+  background: Object.freeze({
+    mode: 'default',      // default | template | custom
+    templateId: 'template-1',
+    customDataUrl: '',
+  }),
 });
 
 const StorageService = {
   getDefaultSettings() {
-    return Object.assign({}, DEFAULT_SETTINGS);
+    return {
+      theme: DEFAULT_SETTINGS.theme,
+      defaultCategory: DEFAULT_SETTINGS.defaultCategory,
+      background: Object.assign({}, DEFAULT_SETTINGS.background),
+    };
   },
 
   saveTodos(todos) {
@@ -56,6 +65,12 @@ const StorageService = {
       const parsed = Object.assign(StorageService.getDefaultSettings(), JSON.parse(raw));
       if (parsed.theme !== 'light' && parsed.theme !== 'dark') parsed.theme = 'light';
       if (!parsed.defaultCategory || typeof parsed.defaultCategory !== 'string') parsed.defaultCategory = 'Work';
+      if (!parsed.background || typeof parsed.background !== 'object') {
+        parsed.background = Object.assign({}, DEFAULT_SETTINGS.background);
+      }
+      if (!['default', 'template', 'custom'].includes(parsed.background.mode)) parsed.background.mode = 'default';
+      if (!parsed.background.templateId || typeof parsed.background.templateId !== 'string') parsed.background.templateId = 'template-1';
+      if (typeof parsed.background.customDataUrl !== 'string') parsed.background.customDataUrl = '';
       return parsed;
     } catch (e) {
       return StorageService.getDefaultSettings();

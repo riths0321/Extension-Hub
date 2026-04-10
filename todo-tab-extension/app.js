@@ -3,6 +3,19 @@
    CSP-safe: no innerHTML, no eval, no inline scripts
    ════════════════════════════════════════════════════ */
 
+const BG_TEMPLATES = [
+  { id: 'template-1',  name: 'Template 1',  image: 'url("images/img1.jpg")'  },
+  { id: 'template-2',  name: 'Template 2',  image: 'url("images/img2.jpg")'  },
+  { id: 'template-3',  name: 'Template 3',  image: 'url("images/img3.jpg")'  },
+  { id: 'template-4',  name: 'Template 4',  image: 'url("images/img4.jpg")'  },
+  { id: 'template-5',  name: 'Template 5',  image: 'url("images/img5.jpg")'  },
+  { id: 'template-6',  name: 'Template 6',  image: 'url("images/img6.jpg")'  },
+  { id: 'template-7',  name: 'Template 7',  image: 'url("images/img7.jpg")'  },
+  { id: 'template-8',  name: 'Template 8',  image: 'url("images/img8.jpg")'  },
+  { id: 'template-9',  name: 'Template 9',  image: 'url("images/img9.jpg")'  },
+  { id: 'template-10', name: 'Template 10', image: 'url("images/img10.jpg")' },
+];
+
 class TodoApp {
   constructor() {
     this.todos       = [];
@@ -14,6 +27,7 @@ class TodoApp {
     this.filterPri   = 'all';
     this.selectedCat = 'Work';
     this.expandedId  = null;       // task with expanded notes
+    this.editingId   = null;       // task being edited in modal
     this.dragSrc     = null;
 
     this._toastTimer = null;
@@ -25,6 +39,7 @@ class TodoApp {
     this.settings = StorageService.loadSettings();
     this.todos    = StorageService.loadTodos();
     this.applyTheme(this.settings.theme);
+    this.applyBackgroundSettings();
     this.selectedCat = this.settings.defaultCategory || 'Work';
     this.renderApp();
     this.bindGlobalEvents();
@@ -34,6 +49,57 @@ class TodoApp {
   applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     this.settings.theme = theme;
+    this.applyBackgroundSettings();
+  }
+
+  getTemplateById(id) {
+    return BG_TEMPLATES.find((t) => t.id === id) || BG_TEMPLATES[0];
+  }
+
+  applyBackgroundSettings() {
+    const bg = (this.settings && this.settings.background) ? this.settings.background : {};
+    const root = document.documentElement;
+    const body = document.body;
+
+    let layer = 'none';
+    let hasImage = false;
+    if (bg.mode === 'template') {
+      layer = this.getTemplateById(bg.templateId).image;
+      hasImage = true;
+    }
+
+    root.style.setProperty('--user-bg-layer', layer);
+    if (body) body.classList.toggle('has-user-bg', hasImage);
+  }
+
+  setBackgroundMode(mode, templateId) {
+    if (!this.settings.background) this.settings.background = StorageService.getDefaultSettings().background;
+    this.settings.background.mode = mode;
+    if (templateId) this.settings.background.templateId = templateId;
+    this.applyBackgroundSettings();
+    StorageService.saveSettings(this.settings);
+    this.updateBackgroundTemplateButtons();
+  }
+
+  resetBackgroundSettings() {
+    if (!this.settings.background) this.settings.background = StorageService.getDefaultSettings().background;
+    this.settings.background.mode = 'default';
+    this.settings.background.customDataUrl = '';
+    this.applyBackgroundSettings();
+    StorageService.saveSettings(this.settings);
+    this.updateBackgroundTemplateButtons();
+    const meta = document.getElementById('bg-custom-meta');
+    if (meta) meta.textContent = 'Using default background';
+    this.showToast('Background reset to default');
+  }
+
+  updateBackgroundTemplateButtons() {
+    const bg = this.settings.background || {};
+    const activeId = bg.templateId || 'template-1';
+    document.querySelectorAll('.bg-template-btn').forEach((btn) => {
+      const isActive = bg.mode === 'template' && btn.dataset.templateId === activeId;
+      btn.classList.toggle('active', isActive);
+    });
   }
 
   /* ── Full app render (called once on boot) ── */
@@ -382,6 +448,11 @@ class TodoApp {
       actions.appendChild(expandBtn);
     }
 
+    const editBtn = DOM.el('button', { class: 'task-action-btn', title: 'Edit task' });
+    editBtn.appendChild(ICONS.edit());
+    editBtn.addEventListener('click', (e) => { e.stopPropagation(); this.openEditModal(todo.id); });
+    actions.appendChild(editBtn);
+
     const delBtn = DOM.el('button', { class: 'task-action-btn delete-btn', title: 'Delete task' });
     delBtn.appendChild(ICONS.trash());
     delBtn.addEventListener('click', (e) => { e.stopPropagation(); this.deleteTodo(todo.id); });
@@ -459,7 +530,7 @@ class TodoApp {
 
     // Header
     const head   = DOM.el('div', { class: 'modal-header' });
-    const title  = DOM.el('h3', { class: 'modal-title', text: 'Add New Task' });
+    const title  = DOM.el('h3', { class: 'modal-title', id: 'add-modal-title', text: 'Add New Task' });
     const closeBtn = DOM.el('button', { class: 'icon-btn', id: 'close-add-modal' });
     closeBtn.appendChild(ICONS.close());
     closeBtn.addEventListener('click', () => this.closeAddModal());
@@ -525,7 +596,7 @@ class TodoApp {
     const actions = DOM.el('div', { class: 'modal-actions' });
     const cancelBtn = DOM.el('button', { class: 'btn-ghost', text: 'Cancel' });
     cancelBtn.addEventListener('click', () => this.closeAddModal());
-    const submitBtn = DOM.el('button', { class: 'btn-primary', text: 'Add Task' });
+    const submitBtn = DOM.el('button', { class: 'btn-primary', id: 'add-modal-submit', text: 'Add Task' });
     submitBtn.addEventListener('click', () => this.submitAddModal());
     actions.appendChild(cancelBtn);
     actions.appendChild(submitBtn);
@@ -540,15 +611,56 @@ class TodoApp {
   }
 
   openAddModal() {
+    this.editingId = null;
+    this.setAddModalMode(false);
     this.resetAddModalForm();
     const modal = document.getElementById('add-modal');
     DOM.show(modal);
     setTimeout(() => document.getElementById('task-input').focus(), 50);
   }
 
+  openEditModal(id) {
+    const todo = this.todos.find(t => t.id === id);
+    if (!todo) return;
+
+    this.editingId = id;
+    this.setAddModalMode(true);
+
+    const modal = document.getElementById('add-modal');
+    DOM.show(modal);
+
+    const taskInput = document.getElementById('task-input');
+    const notesInput = document.getElementById('add-notes');
+    const dueInput = document.getElementById('add-due');
+    const priSelect = document.getElementById('add-priority');
+    const catSelect = document.getElementById('add-category');
+
+    if (taskInput) taskInput.value = todo.text || '';
+    if (notesInput) notesInput.value = todo.notes || '';
+    if (dueInput) dueInput.value = todo.dueDate || '';
+    if (priSelect) priSelect.value = todo.priority || 'low';
+    if (catSelect) catSelect.value = todo.category || this.selectedCat || 'Work';
+
+    if (window.TDDropdowns) {
+      window.TDDropdowns.sync('add-priority');
+      window.TDDropdowns.sync('add-category');
+    }
+
+    setTimeout(() => document.getElementById('task-input').focus(), 50);
+  }
+
   closeAddModal() {
     DOM.hide(document.getElementById('add-modal'));
+    this.editingId = null;
+    this.setAddModalMode(false);
     this.resetAddModalForm();
+  }
+
+  setAddModalMode(isEditing) {
+    const title = document.getElementById('add-modal-title');
+    const submit = document.getElementById('add-modal-submit');
+    if (title) title.textContent = isEditing ? 'Edit Task' : 'Add New Task';
+    if (submit) submit.textContent = isEditing ? 'Save Changes' : 'Add Task';
   }
 
   resetAddModalForm() {
@@ -571,6 +683,7 @@ class TodoApp {
   }
 
   submitAddModal() {
+    const isEditing = Boolean(this.editingId);
     const text     = document.getElementById('task-input').value.trim();
     if (!text) { document.getElementById('task-input').focus(); return; }
 
@@ -579,12 +692,32 @@ class TodoApp {
     const dueDate  = document.getElementById('add-due').value;
     const notes    = document.getElementById('add-notes').value.trim();
 
-    const todo = TodoService.create(text, category, priority, dueDate, notes);
-    this.todos.unshift(todo);
+    if (isEditing) {
+      const idx = this.todos.findIndex(t => t.id === this.editingId);
+      if (idx !== -1) {
+        const cat = TodoService.CATEGORIES.find(c => c.label === category) || TodoService.CATEGORIES[0];
+        const nextPriority = ['low', 'medium', 'high'].includes(priority) ? priority : TodoService.detectPriority(text);
+        this.todos[idx] = Object.assign({}, this.todos[idx], {
+          text: TodoService.sanitize(text),
+          category: cat.label,
+          color: cat.color,
+          priority: nextPriority,
+          dueDate: TodoService.normalizeDueDate(dueDate),
+          notes: notes ? TodoService.sanitize(notes) : '',
+        });
+      }
+    } else {
+      const todo = TodoService.create(text, category, priority, dueDate, notes);
+      this.todos.unshift(todo);
+    }
+
     StorageService.saveTodos(this.todos);
     this.closeAddModal();
+
+    const list = document.getElementById('task-list');
+    if (list) DOM.clear(list);
     this.renderTaskList();
-    this.showToast(`Task added${todo.priority === 'high' ? ' (High priority detected)' : ''}`);
+    this.showToast(isEditing ? 'Task updated' : 'Task added');
   }
 
   /* ── Import modal ─────────────────────────── */
@@ -792,6 +925,43 @@ class TodoApp {
     themeCard.appendChild(themeRow);
     panel.appendChild(themeCard);
 
+    // Background templates + custom upload
+    const bgCard = DOM.el('div', { class: 'settings-card' });
+    bgCard.appendChild(DOM.el('div', { class: 'settings-label', text: 'Background' }));
+    bgCard.appendChild(DOM.el('p', { class: 'settings-desc', text: 'Choose from 10 built-in templates or reset to default.' }));
+
+    const grid = DOM.el('div', { class: 'bg-template-grid' });
+    BG_TEMPLATES.forEach((tpl) => {
+      const btn = DOM.el('button', { class: 'bg-template-btn', 'data-template-id': tpl.id, type: 'button' });
+      const preview = DOM.el('div', { class: 'bg-template-preview' });
+      preview.style.backgroundImage = tpl.image;
+      const lbl = DOM.el('span', { class: 'bg-template-label', text: tpl.name });
+      btn.appendChild(preview);
+      btn.appendChild(lbl);
+      btn.addEventListener('click', () => {
+        this.setBackgroundMode('template', tpl.id);
+        const meta = document.getElementById('bg-custom-meta');
+        if (meta) meta.textContent = `Using ${tpl.name}`;
+      });
+      grid.appendChild(btn);
+    });
+    bgCard.appendChild(grid);
+
+    const actionsRow = DOM.el('div', { class: 'bg-actions' });
+    const resetBtn = DOM.el('button', { class: 'btn-ghost', type: 'button' });
+    resetBtn.appendChild(ICONS.close());
+    resetBtn.appendChild(document.createTextNode(' Reset Background'));
+    resetBtn.addEventListener('click', () => this.resetBackgroundSettings());
+
+    actionsRow.appendChild(resetBtn);
+    bgCard.appendChild(actionsRow);
+
+    const bg = this.settings.background || {};
+    const metaText = bg.mode === 'template' ? `Using ${this.getTemplateById(bg.templateId).name}` : 'Using default background';
+    bgCard.appendChild(DOM.el('div', { class: 'bg-custom-meta', id: 'bg-custom-meta', text: metaText }));
+
+    panel.appendChild(bgCard);
+
     // Default category
     const catCard = DOM.el('div', { class: 'settings-card' });
     catCard.appendChild(DOM.el('div', { class: 'settings-label', text: 'Default Category' }));
@@ -840,6 +1010,8 @@ class TodoApp {
       DOM.el('span', { text: ' All data is stored locally in your browser — never sent anywhere.' }),
     ]);
     panel.appendChild(note);
+
+    this.updateBackgroundTemplateButtons();
 
     return panel;
   }
