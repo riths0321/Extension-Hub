@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "PDF Previewer",
-  "version": "1.0",
-  "description": "Preview PDF files instantly using Chrome's built-in PDF viewer.",
+  "name": "PDF Previewer Pro",
+  "version": "2.0",
+  "description": "Advanced PDF previewer with drag & drop, recent files, zoom controls, URL loading, themes, and fullscreen viewer.",
 
   "icons": {
     "16": "icons/icon16.png",
@@ -15,8 +15,13 @@
     "tabs"
   ],
 
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+
   "action": {
-    "default_title": "PDF Previewer",
+    "default_title": "PDF Previewer Pro",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -26,6 +31,6 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self';"
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self'; frame-src 'self' blob:;"
   }
 }

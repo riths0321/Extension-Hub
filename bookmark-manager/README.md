@@ -103,15 +103,15 @@ Type in the search box — results appear instantly in the popup UI. Click any r
 |---|---|
 | `tabs` | Tab access for session management |
 | `bookmarks` | Create, read, and manage bookmarks |
-| `history` | Search browsing history |
 | `storage` | Persist session data locally |
+| `windows` | Create and restore browser windows for saved sessions |
 
 ### CSP (Content Security Policy)
 The extension ships with an explicit MV3-compliant CSP in `manifest.json`:
 - `script-src 'self'` — No inline scripts, no remote scripts
-- `style-src 'self' 'unsafe-inline'` — Allows glassmorphism inline styles
-- `font-src 'self' data:` — Local fonts only
-- `img-src 'self' data:` — Local images only
+- `style-src 'self'` — External stylesheet only; no inline styles
+- `font-src 'self'` — Local extension fonts only
+- `img-src 'self' https://www.google.com https://*.gstatic.com` — Local images plus Google favicon assets
 
 ### APIs Used
 - **Chrome Bookmarks API** — All bookmark CRUD operations

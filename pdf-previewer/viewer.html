@@ -1,29 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PDF Full Screen Viewer</title>
-  <style>
-    body {
-      margin: 0;
-      background: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    embed {
-      width: 95%;
-      height: 95%;
-      border-radius: 10px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    }
-  </style>
+  <title>PDF Viewer — PDF Previewer Pro</title>
+  <link rel="stylesheet" href="viewer.css" />
 </head>
 <body>
 
-  <embed id="fullPdfViewer" type="application/pdf" />
+  <!-- ===== TOP TOOLBAR ===== -->
+  <header class="viewer-header">
+    <div class="header-left">
+      <div class="logo-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="file-title-wrap">
+        <span id="docTitle" class="doc-title">Loading...</span>
+        <span class="doc-badge">PDF</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <!-- Zoom -->
+      <div class="toolbar-group">
+        <button id="vzoomOut" class="v-btn" title="Zoom Out">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <span id="vzoomVal" class="zoom-val">100%</span>
+        <button id="vzoomIn" class="v-btn" title="Zoom In">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="11" y1="8" x2="11" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="vzoomReset" class="v-btn ghost" title="Reset">Fit</button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button id="vThemeToggle" class="v-btn" title="Toggle theme">
+        <svg id="vSun" width="16" height="16" viewBox="0 0 24 24" fill="none" style="display:none"><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg id="vMoon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="vClose" class="v-btn danger" title="Close tab">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== PDF FRAME ===== -->
+  <main class="viewer-main">
+    <div id="viewerWrap" class="viewer-wrap">
+      <iframe id="fullPdfViewer" title="Fullscreen PDF preview"></iframe>
+    </div>
+  </main>
+
+  <!-- ===== LOADING OVERLAY ===== -->
+  <div id="loadOverlay" class="load-overlay">
+    <div class="load-box">
+      <div class="load-ring"></div>
+      <p>Loading PDF...</p>
+    </div>
+  </div>
 
   <script src="viewer.js"></script>
 </body>

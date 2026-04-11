@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Finder Pro</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <rect x="4" y="5" width="16" height="14" rx="3"></rect>
+            <path d="M7.5 14.5 10.5 11.5 13 14l3.5-4"></path>
+            <circle cx="9" cy="9" r="1.4"></circle>
+          </svg>
+        </div>
+        <div class="hero-copy">
+          <h1>Media Finder Pro</h1>
+          <p class="subtitle">Extract images, icons, and videos from the current page in one click.</p>
+        </div>
+        <span id="itemCount" class="hero-status">Ready</span>
+      </div>
+    </header>
+
+    <main class="content-stack">
+      <!-- Tab Navigation -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="images">📷 Images & Icons</button>
+        <button class="tab-btn" data-tab="videos"> Videos</button>
+        <button class="tab-btn" data-tab="all"> All Media</button>
+      </div>
+
+      <div class="actions">
+        <button id="scanBtn" class="primary"> Scan Page</button>
+        <button id="downloadAll" class="secondary" disabled> Download All</button>
+      </div>
+
+      <div id="formatSelector" class="format-controls">
+        <div id="imageFormatSelector" class="custom-dropdown-zone">
+          <span class="dropdown-label"> Image Format</span>
+          <div class="dropdown-wrapper">
+            <select id="downloadFormat" class="format-select">
+              <option value="original">Original</option>
+              <option value="png">PNG</option>
+              <option value="jpg">JPEG</option>
+              <option value="webp">WebP</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+          <label id="qualityToggle" class="quality-toggle">
+            <input type="checkbox" id="highQuality" checked />
+            <span> High Quality</span>
+          </label>
+        </div>
+
+        <div id="videoFormatSelector" class="custom-dropdown-zone is-hidden">
+          <span class="dropdown-label"> Video Format</span>
+          <div class="dropdown-wrapper">
+            <select id="videoDownloadFormat" class="format-select">
+              <option value="original">Original source</option>
+              <option value="mp4">MP4</option>
+              <option value="webm">WebM</option>
+              <option value="mov">MOV</option>
+              <option value="avi">AVI</option>
+              <option value="mkv">MKV</option>
+              <option value="ogg">OGG</option>
+              <option value="m3u8">M3U8</option>
+            </select>
+          </div>
+          <span class="format-help">Downloads a matching source when the page provides it.</span>
+        </div>
+      </div>
+
+      <!-- Image Filters -->
+      <div class="filters" id="imageFilters">
+        <label><input type="checkbox" id="filterSvg" checked />  SVGs</label>
+        <label><input type="checkbox" id="filterImg" checked />  Images</label>
+      </div>
+
+      <!-- Video Filters -->
+      <div class="filters is-hidden" id="videoFilters">
+        <label><input type="checkbox" id="filterMp4" checked />  MP4</label>
+        <label><input type="checkbox" id="filterWebm" checked />  WebM</label>
+        <label><input type="checkbox" id="filterOther" checked />  Other Formats</label>
+      </div>
+
+      <!-- Media Grid -->
+      <div id="items" class="media-grid"></div>
+      <div id="status" class="status"> Click "Scan Page" to start extracting media</div>
+    </main>
+  </div>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="preview-modal">
+    <div class="preview-content">
+      <div class="preview-header">
+        <h3 id="previewTitle">Preview</h3>
+        <button class="close-preview">✕</button>
+      </div>
+      <div class="preview-body" id="previewBody"></div>
+      <div class="preview-footer">
+        <button id="previewDownloadBtn" class="primary"> Download</button>
+        <button id="previewCloseBtn" class="secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="dropdowns.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

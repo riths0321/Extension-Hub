@@ -1,16 +1,22 @@
 {
   "manifest_version": 3,
   "name": "Code Snippet Manager",
-  "version": "1.0",
-  "description": "Save and organize code snippets with syntax highlighting",
+  "version": "2.0.0",
+  "description": "A premium developer tool to save, organize, and instantly reuse code snippets. Tag-based, searchable, and blazing fast.",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "clipboardWrite"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Code Snippet Manager"
+    "default_title": "SnipVault",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
@@ -18,15 +24,25 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "css": ["content.css"],
       "js": ["content.js"]
     }
   ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open SnipVault"
+    }
+  },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-src 'none'; connect-src 'none';"
   }
 }

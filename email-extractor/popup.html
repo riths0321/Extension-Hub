@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email Extractor Pro – Current Page Only</title>
+  <title>Email Extractor Pro - Current Page Only</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
-    <!-- Premium Header with Glassmorphism -->
+
+    <!-- Premium Header -->
     <div class="header">
       <div class="header-content">
         <div class="logo">
@@ -20,32 +21,55 @@
         <div class="header-text">
           <h1>Email Extractor Pro</h1>
           <p>
-            <span>✨ Extract & Manage Emails</span>
+            <span>Extract and Manage Emails</span>
             <span class="badge">v2.0</span>
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Premium Stats Grid -->
+    <!-- Stats Grid (3 columns) -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon-wrapper">📧</div>
+        <div class="stat-icon-wrapper" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 5h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 7l-10 7L2 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div class="stat-content">
           <div class="stat-value" id="emailCount">0</div>
           <div class="stat-label">Emails Found</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon-wrapper">🌐</div>
+        <div class="stat-icon-wrapper" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M3 12h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M12 3c2.7 2.9 4.2 5.9 4.2 9S14.7 18.1 12 21c-2.7-2.9-4.2-5.9-4.2-9S9.3 5.9 12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div class="stat-content">
           <div class="stat-value" id="domainCount">0</div>
-          <div class="stat-label">Unique Domains</div>
+          <div class="stat-label">Domains</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrapper" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value" id="lastScanTime">—</div>
+          <div class="stat-label">Last Scan</div>
         </div>
       </div>
     </div>
 
-    <!-- Premium Extract Button -->
+    <!-- Extract Button -->
     <div class="action-section">
       <button id="extractBtn" class="btn btn-extract">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -57,51 +81,91 @@
       </button>
     </div>
 
-    <!-- Premium Email List Section -->
-    <div class="email-section">
-      <div class="section-header">
-        <h3>
-          <span>📋 Extracted Emails</span>
-          <span class="header-badge" id="emailCountBadge">0</span>
-        </h3>
-        <button id="clearBtn" class="btn-clear" disabled>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Clear All
-        </button>
-      </div>
-
-      <div class="email-list-container">
-        <div id="emailList" class="email-list"></div>
-        <div id="emptyState" class="empty-state">
-          <div class="empty-icon">📭</div>
-          <div class="empty-text">No emails extracted yet</div>
-          <div class="empty-subtext">Click the button above to scan the current page</div>
-        </div>
-      </div>
+    <div class="toolbar toggle-row">
+      <button id="autoDetectBtn" class="toolbar-btn toggle-pill" title="Automatically scan when the popup opens">
+        <span class="pill-dot"></span>
+        <span id="autoDetectLabel">Auto Detect: OFF</span>
+      </button>
     </div>
 
-    <!-- Premium Bottom Actions -->
+    <!-- Toolbar: Search, Sort, Group, Select -->
+    <div class="toolbar">
+      <div class="search-wrapper">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search emails or domains…">
+      </div>
+      <button id="sortBtn"   class="toolbar-btn" title="Sort order">Sort A-Z</button>
+      <button id="groupBtn"  class="toolbar-btn" title="Group by domain">Group</button>
+      <button id="selectBtn" class="toolbar-btn" title="Select mode">Select</button>
+    </div>
+
+    <!-- Extraction History (hidden by default) -->
+    <div class="history-panel" id="historyPanel">
+      <div class="history-header">
+        <span>Recent Extractions</span>
+        <button id="closeHistoryBtn" class="toolbar-btn" style="padding:2px 8px;font-size:11px;">Close</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- Middle Actions -->
     <div class="bottom-actions">
       <button id="copyAllBtn" class="btn btn-secondary" disabled>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Copy All
       </button>
       <button id="exportBtn" class="btn btn-secondary" disabled>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Export CSV
       </button>
+      <button id="historyBtn" class="btn btn-secondary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        History
+      </button>
     </div>
 
-    <!-- Premium Toast Notification -->
+    <!-- Email List Section -->
+    <div class="email-section">
+      <div class="section-header">
+        <h3>
+          <span>Extracted Emails</span>
+          <span class="header-badge" id="emailCountBadge">0</span>
+        </h3>
+        <div class="section-header-right">
+          <span class="select-count" id="selectCount">0 selected</span>
+          <button id="clearBtn" class="btn-clear" disabled>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div class="email-list-container">
+        <div id="emailList" class="email-list"></div>
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">No Data</div>
+          <div class="empty-text">No emails extracted yet</div>
+          <div class="empty-subtext">Click the button above to scan the current page</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
     <div id="toast" class="toast">
       <div class="toast-icon"></div>
       <div class="toast-message"></div>

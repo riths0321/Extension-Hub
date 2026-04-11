@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Campaign Studio</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+
+      <!-- ─── Hero ─────────────────────────────────────────── -->
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Campaign Studio</p>
+          <h1 id="title">
+            <span class="title-main">UTM Link Builder</span>
+            <span class="title-accent">with URL Shortener</span>
+          </h1>
+          <p class="subtitle">Build clean campaign links, shorten them fast, and generate QR codes in one polished workspace.</p>
+        </div>
+        <div class="hero-side">
+          <span class="hero-badge">Links + QR</span>
+          <button id="themeToggle" class="theme-btn" title="Toggle dark mode" aria-label="Toggle theme">
+            <span class="theme-icon">🌙</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ─── Tab Bar ──────────────────────────────────────── -->
+      <div class="tab-bar" role="tablist">
+        <button class="tab-btn active" data-tab="builder" role="tab" aria-selected="true">Builder</button>
+        <button class="tab-btn" data-tab="shortener" role="tab" aria-selected="false">Shortener</button>
+        <button class="tab-btn" data-tab="history" role="tab" aria-selected="false">History</button>
+        <button class="tab-btn" data-tab="presets" role="tab" aria-selected="false">Presets</button>
+      </div>
+
+      <!-- ─── Tab: Builder ─────────────────────────────────── -->
+      <div id="tab-builder" class="tab-content active">
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-label">Link details</p>
+              <h2 class="section-title">UTM Parameters</h2>
+            </div>
+            <span class="hint-chip"><span class="required-star">*</span> Required</span>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span class="label-text">Base URL <span class="required-star">*</span></span>
+              <input id="url" class="input" type="url" placeholder="https://example.com/page" autocomplete="off" spellcheck="false" />
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="label-text">Source <span class="required-star">*</span></span>
+                <input id="source" class="input" type="text" placeholder="google" autocomplete="off" />
+              </label>
+              <label class="field">
+                <span class="label-text">Medium <span class="required-star">*</span></span>
+                <input id="medium" class="input" type="text" placeholder="cpc" autocomplete="off" />
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="label-text">Campaign <span class="required-star">*</span></span>
+              <input id="campaign" class="input" type="text" placeholder="spring_launch_2025" autocomplete="off" />
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="label-text">Term</span>
+                <input id="term" class="input" type="text" placeholder="running+shoes" autocomplete="off" />
+              </label>
+              <label class="field">
+                <span class="label-text">Content</span>
+                <input id="content" class="input" type="text" placeholder="hero_banner" autocomplete="off" />
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="label-text">UTM ID <span class="badge-ga4">GA4</span></span>
+                <input id="utmId" class="input" type="text" placeholder="abc123" autocomplete="off" />
+              </label>
+              <div class="field">
+                <span class="label-text">Copy Format</span>
+                <div id="copyFormatMenu" class="select-menu">
+                  <select id="copyFormat" class="select-native" tabindex="-1" aria-hidden="true">
+                    <option value="url">Plain URL</option>
+                    <option value="markdown">Markdown Link</option>
+                    <option value="html">HTML Anchor</option>
+                  </select>
+                  <button id="copyFormatTrigger" class="select-trigger" type="button"
+                    aria-haspopup="listbox" aria-expanded="false" aria-controls="copyFormatOptions">
+                    <span id="copyFormatLabel">Plain URL</span>
+                    <span class="select-trigger-icon" aria-hidden="true">▾</span>
+                  </button>
+                  <div id="copyFormatOptions" class="select-options hidden" role="listbox" aria-label="Copy Format">
+                    <button class="select-option is-selected" type="button" data-value="url" role="option" aria-selected="true">Plain URL</button>
+                    <button class="select-option" type="button" data-value="markdown" role="option" aria-selected="false">Markdown Link</button>
+                    <button class="select-option" type="button" data-value="html" role="option" aria-selected="false">HTML Anchor</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-label">Output</p>
+              <h2 class="section-title">Generated URL</h2>
+            </div>
+            <div class="preview-controls">
+              <span id="statusPill" class="status-pill">Waiting</span>
+              <button id="clear" class="icon-btn" type="button">Clear Fields</button>
+            </div>
+          </div>
+
+          <textarea id="result" class="result-box" readonly placeholder="Your UTM URL will appear here as you type…"></textarea>
+
+          <div id="qrContainer" class="qr-panel hidden">
+            <img id="qrImg" class="qr-img" src="" alt="QR Code" />
+            <div class="qr-meta">
+              <span class="qr-label">Scan to open your UTM link</span>
+              <a id="qrDownload" class="qr-download" href="#" download="qr-code.png">⬇ Save PNG</a>
+            </div>
+          </div>
+
+          <div class="meta-row">
+            <span id="lengthMeta" class="meta-text">0 characters</span>
+            <span id="lengthWarning" class="warn-text hidden">⚠ URL may be too long</span>
+            <span class="meta-text shortcuts-hint">Ctrl+U · Ctrl+C · Esc</span>
+          </div>
+
+          <div class="action-row">
+            <button id="copy" class="btn btn-surface" type="button">Copy URL</button>
+            <button id="qrToggle" class="btn btn-secondary" type="button">⊞ Generate QR</button>
+          </div>
+        </section>
+
+      </div><!-- /tab-builder -->
+
+      <!-- ─── Tab: Shortener ───────────────────────────────── -->
+      <div id="tab-shortener" class="tab-content">
+
+        <!-- Input Card -->
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-label">Paste your link</p>
+              <h2 class="section-title">URL Shortener</h2>
+            </div>
+            <span class="hint-chip">Short link</span>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span class="label-text">Long URL</span>
+              <input id="sht-url" class="input" type="url" placeholder="https://your-very-long-url.com/page?lots=of&params=here" autocomplete="off" spellcheck="false" />
+            </label>
+            <p class="field-hint">Paste any full URL and generate a shorter shareable link instantly.</p>
+          </div>
+
+          <div class="action-row">
+            <button id="sht-shorten" class="btn btn-primary" type="button">
+              <span class="btn-label">✂️ Shorten URL</span>
+              <span class="btn-spinner hidden"></span>
+            </button>
+          </div>
+
+          <p id="sht-msg" class="sht-msg hidden"></p>
+        </section>
+
+        <!-- Result Card -->
+        <section id="sht-result-card" class="card hidden">
+          <div class="section-head">
+            <div>
+              <p class="section-label">Ready to share</p>
+              <h2 class="section-title">Short URL</h2>
+            </div>
+            <span id="sht-statusPill" class="status-pill status-pill--success">Done</span>
+          </div>
+
+          <div class="sht-result-row">
+            <a id="sht-short-link" class="sht-short-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+            <button id="sht-copy" class="btn btn-surface" type="button">Copy</button>
+          </div>
+
+          <div class="sht-orig-row">
+            <span class="meta-text">Original:</span>
+            <span id="sht-orig-url" class="sht-orig-url"></span>
+          </div>
+
+          <div class="action-row">
+            <button id="sht-qrToggle" class="btn btn-secondary" type="button">⊞ Generate QR</button>
+          </div>
+
+          <div id="sht-qrContainer" class="qr-panel hidden">
+            <img id="sht-qrImg" class="qr-img" src="" alt="QR Code for short URL" />
+            <div class="qr-meta">
+              <span class="qr-label">Scan to open your short link</span>
+              <a id="sht-qrDownload" class="qr-download" href="#" download="short-url-qr.png">⬇ Save PNG</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Short History Card -->
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-label">Recent</p>
+              <h2 class="section-title">Shortened Links</h2>
+            </div>
+            <button id="sht-clearHistory" class="icon-btn icon-btn--danger" title="Clear shortener history">🗑 Clear</button>
+          </div>
+          <div id="sht-historyList" class="history-list">
+            <p class="empty-state">No links yet — shorten something above!</p>
+          </div>
+        </section>
+
+      </div><!-- /tab-shortener -->
+
+      <!-- ─── Tab: History ─────────────────────────────────── -->
+      <div id="tab-history" class="tab-content">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-label">Recent Links</p>
+              <h2 class="section-title">UTM History</h2>
+            </div>
+            <div class="btn-group">
+              <button id="exportCsv" class="icon-btn" title="Export history as CSV">📥 CSV</button>
+              <button id="clearHistory" class="icon-btn icon-btn--danger" title="Clear all history">🗑 Clear</button>
+            </div>
+          </div>
+          <p class="history-count" id="historyCount"></p>
+          <div id="historyList" class="history-list">
+            <p class="empty-state">No links yet — start building in the Builder tab!</p>
+          </div>
+        </section>
+      </div><!-- /tab-history -->
+
+      <!-- ─── Tab: Presets ──────────────────────────────────── -->
+      <div id="tab-presets" class="tab-content">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-label">Quick Fill</p>
+              <h2 class="section-title">Source Presets</h2>
+            </div>
+          </div>
+          <div id="builtinPresets" class="preset-grid"></div>
+
+          <div class="divider"></div>
+
+          <div class="section-head">
+            <div>
+              <p class="section-label">Saved by You</p>
+              <h2 class="section-title section-title--compact">Custom Presets</h2>
+            </div>
+            <button id="savePreset" class="icon-btn" title="Save current fields as a preset">＋ Save Current</button>
+          </div>
+
+          <div id="savePresetForm" class="save-form hidden">
+            <input id="presetNameInput" class="input" type="text" placeholder="Preset name (e.g. Q4 Email)" maxlength="40" />
+            <div class="save-form-actions">
+              <button id="confirmSavePreset" class="btn btn-primary" type="button">Save</button>
+              <button id="cancelSavePreset" class="btn btn-secondary" type="button">Cancel</button>
+            </div>
+          </div>
+
+          <div id="customPresetsList" class="preset-grid preset-grid--spaced">
+            <p class="empty-state">No custom presets yet. Fill in the Builder and click ＋ Save Current!</p>
+          </div>
+        </section>
+      </div><!-- /tab-presets -->
+
+      <p id="message" class="message" aria-live="polite"></p>
+
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
