@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Local PDF Toolkit",
+  "version": "2.0.0",
+  "description": "All-in-One PDF Utility — 18 tools, 100% local, privacy-first, no uploads, CSP-compliant.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Local PDF Toolkit"
+  },
+  "permissions": ["downloads", "storage"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; object-src 'self'; connect-src 'none'; worker-src 'self'"
+  }
+}
