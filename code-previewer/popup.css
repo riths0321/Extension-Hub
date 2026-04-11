@@ -609,7 +609,7 @@ header::after {
   height: 180px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #fff;
+  background: transparent;
   display: block;
   transition: width var(--transition);
 }

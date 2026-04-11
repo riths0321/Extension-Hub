@@ -13,6 +13,7 @@ const fullscreenBtn = document.getElementById('fullscreenBtn');
 const formatBtn = document.getElementById('formatBtn');
 const copyBtn = document.getElementById('copyBtn');
 const darkModeBtn = document.getElementById('darkModeBtn');
+const themeIcon = document.getElementById('themeIcon');
 const autoRunBtn = document.getElementById('autoRunBtn');
 const templatesBtn = document.getElementById('templatesBtn');
 const templateMenu = document.getElementById('templateMenu');
@@ -142,13 +143,16 @@ editor.addEventListener('keydown', event => {
 function buildSrc() {
   const hasHtml = code.html.trim();
   const hasCss = code.css.trim();
+  const themeStyles = isDark
+    ? 'body{margin:0;min-height:100vh;background:#0f172a;color:#f8fafc;} a{color:#60a5fa;}'
+    : 'body{margin:0;min-height:100vh;background:#ffffff;color:#111111;} a{color:#2563eb;}';
 
   if (hasHtml) {
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${code.css}</style></head><body>${code.html}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${themeStyles}${code.css}</style></head><body>${code.html}</body></html>`;
   }
 
   if (hasCss) {
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${code.css}</style></head><body>
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${themeStyles}${code.css}</style></head><body>
       <div style="padding:1rem;font-family:system-ui,sans-serif">
         <h1>Heading 1</h1><h2>Heading 2</h2><p>Paragraph text. <a href="#">A link</a>. <strong>Bold</strong> and <em>italic</em>.</p>
         <button>Button</button>
@@ -158,7 +162,7 @@ function buildSrc() {
     </body></html>`;
   }
 
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${themeStyles}</style></head><body></body></html>`;
 }
 
 function runCode(changedType) {
@@ -241,6 +245,25 @@ function formatCSS(src) {
     .trim();
 }
 
+const sunIcon = `
+  <circle cx="12" cy="12" r="5" />
+  <line x1="12" y1="1" x2="12" y2="3" />
+  <line x1="12" y1="21" x2="12" y2="23" />
+  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+  <line x1="1" y1="12" x2="3" y2="12" />
+  <line x1="21" y1="12" x2="23" y2="12" />
+  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+`;
+const moonIcon = `
+  <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z" />
+`;
+
+function updateThemeIcon() {
+  themeIcon.innerHTML = isDark ? moonIcon : sunIcon;
+}
+
 autoRunBtn.addEventListener('click', () => {
   autoRun = !autoRun;
   autoRunBtn.classList.toggle('active', autoRun);
@@ -250,17 +273,18 @@ autoRunBtn.addEventListener('click', () => {
 darkModeBtn.addEventListener('click', () => {
   isDark = !isDark;
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  document.querySelector('.sun-icon').style.display = isDark ? 'none' : '';
-  document.querySelector('.moon-icon').style.display = isDark ? '' : 'none';
+  updateThemeIcon();
   localStorage.setItem('cp_dark', isDark ? '1' : '0');
 });
 
 if (localStorage.getItem('cp_dark') === '1') {
   isDark = true;
   document.documentElement.setAttribute('data-theme', 'dark');
-  document.querySelector('.sun-icon').style.display = 'none';
-  document.querySelector('.moon-icon').style.display = '';
+  updateThemeIcon();
+} else {
+  updateThemeIcon();
 }
+
 
 templatesBtn.addEventListener('click', event => {
   event.stopPropagation();

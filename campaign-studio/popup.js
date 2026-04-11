@@ -460,9 +460,11 @@ confirmSavePreset.addEventListener('click', async () => {
 // SECTION 4 — URL SHORTENER
 // ══════════════════════════════════════════════════
 
-const SHT_API_ENDPOINT = 'https://api.tinysrc.me/v1/create';
+const SHT_API_ENDPOINT = 'https://api.t.ly/api/v1/link/shorten';
+const SHT_DEFAULT_DOMAIN = 'https://t.ly/';
 const MAX_SHT_HISTORY  = 10;
 
+const shtTokenInput  = $('#sht-token');
 const shtUrlInput    = $('#sht-url');
 const shtShortenBtn  = $('#sht-shorten');
 const shtBtnLabel    = $('.btn-label', $('#sht-shorten'));
@@ -478,15 +480,32 @@ const shtQrImg       = $('#sht-qrImg');
 const shtQrDownload  = $('#sht-qrDownload');
 const shtClearHist   = $('#sht-clearHistory');
 const shtHistList    = $('#sht-historyList');
+const SHT_DEFAULT_BTN_LABEL = '✂️ Shorten URL';
+
+let shtRequestInFlight = false;
+let shtCooldownUntil = 0;
+let shtCooldownTimer = null;
 
 // Shorten
 shtShortenBtn.addEventListener('click', handleShorten);
 shtUrlInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleShorten(); });
+shtTokenInput.addEventListener('input', async () => {
+  await store.set({ shtApiToken: shtTokenInput.value.trim() });
+});
 
 async function handleShorten() {
+  if (shtRequestInFlight) return;
+  if (Date.now() < shtCooldownUntil) {
+    shtShowMsg(`Rate limit active. ${formatCooldownMessage(shtCooldownUntil)}.`, 'error');
+    return;
+  }
+
+  const apiToken = shtTokenInput.value.trim();
   const longUrl = shtUrlInput.value.trim();
+  if (!apiToken) { shtShowMsg('Enter your T.LY API token first.', 'error'); return; }
   if (!longUrl) { shtShowMsg('Please enter a URL.', 'error'); return; }
   try { new URL(longUrl); } catch { shtShowMsg('Enter a valid URL (include https://).', 'error'); return; }
+  shtRequestInFlight = true;
   shtSetLoading(true);
   shtClearMsg();
   shtResultCard.classList.add('hidden');
@@ -495,19 +514,24 @@ async function handleShorten() {
     const resp = await fetch(SHT_API_ENDPOINT, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        url: longUrl,
-        auth_required: 0,
-        password: '',
-        expiration_time: '',
+        long_url: longUrl,
+        domain: SHT_DEFAULT_DOMAIN,
+        format: 'json',
+        public_stats: false,
+        include_qr_code: false,
       }),
     });
-    const data = await resp.json();
+    const data = await parseShortenerResponse(resp);
     if (!resp.ok) {
-      throw new Error(data.error || data.message || `Request failed (${resp.status})`);
+      if (resp.status === 429) {
+        startShtCooldown(getRetryAfterMs(resp));
+      }
+      throw new Error(getShortenerErrorMessage(resp, data));
     }
     const shortUrl = data.url || data.shortUrl || data.short_url || data.data?.url || data.data?.shortUrl || data.data?.short_url;
     if (!shortUrl) {
@@ -520,14 +544,19 @@ async function handleShorten() {
   } catch (err) {
     shtShowMsg(err.message || 'Failed to shorten URL.', 'error');
   } finally {
+    shtRequestInFlight = false;
     shtSetLoading(false);
   }
 }
 
 function shtSetLoading(on) {
-  shtShortenBtn.disabled = on;
-  shtBtnLabel.classList.toggle('hidden', on);
+  const coolingDown = Date.now() < shtCooldownUntil;
+  shtShortenBtn.disabled = on || coolingDown;
+  shtBtnLabel.classList.toggle('hidden', on && !coolingDown);
   shtBtnSpinner.classList.toggle('hidden', !on);
+  if (!on && !coolingDown) {
+    shtBtnLabel.textContent = SHT_DEFAULT_BTN_LABEL;
+  }
 }
 
 function shtShowResult(shortUrl, longUrl) {
@@ -545,6 +574,85 @@ function shtShowMsg(text, type) {
 function shtClearMsg() {
   shtMsg.textContent = '';
   shtMsg.className = 'sht-msg hidden';
+}
+
+async function parseShortenerResponse(resp) {
+  const text = await resp.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
+
+function getShortenerErrorMessage(resp, data) {
+  const apiMessage = data?.error || data?.message || data?.detail;
+  if (resp.status === 401 || resp.status === 403) {
+    return apiMessage || 'Your T.LY token was rejected. Double-check the API token and try again.';
+  }
+  if (resp.status === 429) {
+    const retryAfterMs = getRetryAfterMs(resp);
+    if (retryAfterMs > 0) {
+      return `T.LY rate limit reached. ${formatCooldownMessage(Date.now() + retryAfterMs)}.`;
+    }
+    return apiMessage || 'T.LY rate limit reached. Wait a moment, then try again.';
+  }
+  return apiMessage || `Request failed (${resp.status})`;
+}
+
+function getRetryAfterMs(resp) {
+  const retryAfter = resp.headers.get('retry-after');
+  if (!retryAfter) return 0;
+
+  const seconds = Number.parseInt(retryAfter, 10);
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return seconds * 1000;
+  }
+
+  const retryAt = Date.parse(retryAfter);
+  if (Number.isNaN(retryAt)) return 0;
+
+  return Math.max(0, retryAt - Date.now());
+}
+
+function startShtCooldown(retryAfterMs) {
+  clearInterval(shtCooldownTimer);
+  if (!retryAfterMs || retryAfterMs <= 0) {
+    shtCooldownUntil = 0;
+    return;
+  }
+
+  shtCooldownUntil = Date.now() + retryAfterMs;
+  updateShtCooldownLabel();
+  shtSetLoading(false);
+
+  shtCooldownTimer = setInterval(() => {
+    if (Date.now() >= shtCooldownUntil) {
+      clearInterval(shtCooldownTimer);
+      shtCooldownTimer = null;
+      shtCooldownUntil = 0;
+      shtBtnLabel.textContent = SHT_DEFAULT_BTN_LABEL;
+      shtSetLoading(false);
+      return;
+    }
+    updateShtCooldownLabel();
+  }, 1000);
+}
+
+function updateShtCooldownLabel() {
+  const remainingMs = Math.max(0, shtCooldownUntil - Date.now());
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  shtBtnLabel.textContent = `Retry in ${remainingSeconds}s`;
+  shtBtnLabel.classList.remove('hidden');
+  shtBtnSpinner.classList.add('hidden');
+  shtShortenBtn.disabled = true;
+}
+
+function formatCooldownMessage(retryUntil) {
+  const remainingMs = Math.max(0, retryUntil - Date.now());
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  return `Try again in about ${remainingSeconds} second${remainingSeconds === 1 ? '' : 's'}`;
 }
 
 // Copy short URL
@@ -692,8 +800,10 @@ function relTime(ts) {
 }
 
 // ── Init ──────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
+  const { shtApiToken = '' } = await store.get(['shtApiToken']);
+  shtTokenInput.value = shtApiToken;
   loadShtHistory();
   urlInput.focus();
 });
