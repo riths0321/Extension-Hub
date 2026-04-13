@@ -3,55 +3,296 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Design Token Generator</title>
+  <title>Design Token Extractor Pro</title>
   <link rel="stylesheet" href="styles/popup.css" />
 </head>
 <body>
-  <main class="shell" aria-live="polite">
-    <header class="hero">
-      <h1>Design Token Generator</h1>
-      <p>Extract clean tokens from the active page and export instantly.</p>
-    </header>
 
-    <section class="panel">
-      <h2>Token Scope</h2>
-      <div class="checks">
-        <label><input type="checkbox" id="colors" checked />Colors</label>
-        <label><input type="checkbox" id="typography" checked />Typography</label>
-        <label><input type="checkbox" id="spacing" checked />Spacing</label>
-        <label><input type="checkbox" id="shadows" checked />Shadows</label>
-        <label><input type="checkbox" id="borderRadius" checked />Border Radius</label>
-        <label><input type="checkbox" id="breakpoints" checked />Breakpoints</label>
+  <!-- ══════════════════════════════════════════════
+       HEADER — always visible
+       ══════════════════════════════════════════════ -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="5" cy="5" r="2" fill="white" stroke="none"/>
+          <circle cx="11" cy="5" r="2" fill="white" stroke="none"/>
+          <circle cx="5" cy="11" r="2" fill="white" stroke="none"/>
+          <rect x="8.5" y="8.5" width="4" height="4" rx="1" fill="white" stroke="none"/>
+        </svg>
       </div>
-    </section>
+      <div class="header-text">
+        <span class="header-title">Design Token Extractor</span>
+        <span class="header-sub" id="headerSub">Pro</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="inspect-badge" id="inspectBadge">Inspect ON</span>
 
-    <section class="panel compact">
-      <label class="field-label" for="format">Export Format</label>
-      <select id="format">
+      <button class="btn-icon" id="themeBtn" title="Toggle dark mode" aria-label="Toggle theme">
+        <svg id="themeIconSun" viewBox="0 0 16 16">
+          <circle cx="8" cy="8" r="3"/>
+          <line x1="8" y1="1" x2="8" y2="2.5"/>
+          <line x1="8" y1="13.5" x2="8" y2="15"/>
+          <line x1="1" y1="8" x2="2.5" y2="8"/>
+          <line x1="13.5" y1="8" x2="15" y2="8"/>
+          <line x1="3.05" y1="3.05" x2="4.1" y2="4.1"/>
+          <line x1="11.9" y1="11.9" x2="12.95" y2="12.95"/>
+          <line x1="12.95" y1="3.05" x2="11.9" y2="4.1"/>
+          <line x1="4.1" y1="11.9" x2="3.05" y2="12.95"/>
+        </svg>
+        <svg id="themeIconMoon" class="hidden" viewBox="0 0 16 16">
+          <path d="M13 10A6 6 0 0 1 6 3a6 6 0 1 0 7 7z"/>
+        </svg>
+      </button>
+
+      <button class="btn-icon" id="inspectBtn" title="Live inspect mode" aria-label="Toggle inspect">
+        <svg viewBox="0 0 16 16">
+          <circle cx="8" cy="8" r="2.5"/>
+          <path d="M1 8c1.5-3.5 3.7-5.5 7-5.5S13.5 4.5 15 8c-1.5 3.5-3.7 5.5-7 5.5S2.5 11.5 1 8Z"/>
+        </svg>
+      </button>
+
+      <button class="btn-icon hidden" id="rescanBtn" title="Re-scan page" aria-label="Re-scan">
+        <svg viewBox="0 0 16 16">
+          <path d="M2 8a6 6 0 1 0 1.2-3.6"/>
+          <path d="M2 4v4h4"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════
+       SCREEN 1 — HOW IT WORKS (REDESIGNED - MORE ATTRACTIVE)
+       ══════════════════════════════════════════════ -->
+  <section id="howtoScreen" class="howto-screen">
+    <div class="howto-scroll">
+
+      <!-- ANIMATED HERO SECTION -->
+      <div class="howto-hero">
+        <div class="howto-hero-icon-glow">
+          <div class="howto-hero-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="7" cy="7" r="3"/>
+              <circle cx="17" cy="7" r="3"/>
+              <circle cx="7" cy="17" r="3"/>
+              <rect x="14" y="14" width="6" height="6" rx="1.5"/>
+            </svg>
+          </div>
+        </div>
+        <div class="hero-badge">
+          <span class="hero-badge-text">✨ v2.1 Pro</span>
+        </div>
+        <h2>Extract Design Tokens<br>in One Click</h2>
+        <p class="hero-desc">Scan any website to get colors, typography, spacing, shadows, WCAG scores, and more — then export as CSS, Tailwind, JSON, Figma tokens.</p>
+        
+        <div class="hero-stats-preview">
+          <div class="hero-stat">
+            <span class="hero-stat-num">8+</span>
+            <span class="hero-stat-label">Token Types</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-num">5</span>
+            <span class="hero-stat-label">Export Formats</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-num">WCAG</span>
+            <span class="hero-stat-label">Accessibility</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BODY CONTENT -->
+      <div class="howto-body">
+
+        <!-- HOW TO USE - VISUAL STEPS -->
+        <span class="howto-section-label">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><line x1="8" y1="4" x2="8" y2="8"/><line x1="8" y1="11" x2="8.01" y2="11"/></svg>
+          How to use
+        </span>
+        <div class="steps-list">
+          <div class="step-row">
+            <div class="step-num">
+              <span>1</span>
+            </div>
+            <div class="step-text">
+              <strong>Open any webpage</strong>
+              <span>Navigate to any site you want to inspect</span>
+            </div>
+            <div class="step-arrow">→</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">
+              <span>2</span>
+            </div>
+            <div class="step-text">
+              <strong>Click "Scan Active Tab"</strong>
+              <span>Instant design token extraction</span>
+            </div>
+            <div class="step-arrow">→</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">
+              <span>3</span>
+            </div>
+            <div class="step-text">
+              <strong>Browse & Export</strong>
+              <span>Copy tokens or download as your preferred format</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- WHAT GETS EXTRACTED -->
+        <span class="howto-section-label">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg>
+          What gets extracted
+        </span>
+        <div class="token-grid" id="tokenFeatureGrid"></div>
+
+        <!-- EXPORT FORMATS - WORKING DROPDOWN REPLACEMENT -->
+        <span class="howto-section-label">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h10v10H3zM7 7h6M7 11h4"/></svg>
+          Export formats
+        </span>
+        <div class="export-format-selector" id="exportFormatSelector">
+          <div class="format-select-trigger" id="formatSelectTrigger">
+            <span class="format-select-value" id="formatSelectValue">CSS Variables</span>
+            <svg class="format-select-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 4.5 6 7.5 9 4.5"/></svg>
+          </div>
+          <div class="format-select-menu" id="formatSelectMenu">
+            <div class="format-option" data-format="css">CSS Variables</div>
+            <div class="format-option" data-format="tailwind">Tailwind Config</div>
+            <div class="format-option" data-format="scss">SCSS Variables</div>
+            <div class="format-option" data-format="figma">Figma Tokens</div>
+            <div class="format-option" data-format="json">JSON</div>
+          </div>
+        </div>
+
+        <!-- BONUS FEATURES -->
+        <span class="howto-section-label">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10"/></svg>
+          Pro features
+        </span>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon inspect-icon">🔍</div>
+            <div class="feature-info">
+              <strong>Live Inspect Mode</strong>
+              <span>Hover to see element styles</span>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon wcag-icon">♿</div>
+            <div class="feature-info">
+              <strong>WCAG Scoring</strong>
+              <span>AA/AAA contrast analysis</span>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon score-icon">📊</div>
+            <div class="feature-info">
+              <strong>Design Score</strong>
+              <span>Consistency + accessibility</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CTA - STICKY BOTTOM -->
+    <div class="howto-cta">
+      <button class="btn-scan-large" id="scanBtn" type="button">
+        <svg viewBox="0 0 16 16">
+          <circle cx="7" cy="7" r="4.5"/>
+          <line x1="10.5" y1="10.5" x2="14" y2="14"/>
+        </svg>
+        Scan Active Tab
+      </button>
+      <p class="howto-hint">Works on any http/https page • Results cached for 2 min</p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SCREEN 2 — LOADING
+       ══════════════════════════════════════════════ -->
+  <section id="loadingScreen" class="loading-screen hidden">
+    <div class="spinner"></div>
+    <p class="loading-text" id="loadingText">Extracting tokens...</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       SCREEN 3 — RESULTS
+       ══════════════════════════════════════════════ -->
+  <section id="resultsScreen" class="results-screen hidden">
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-value" id="statColors">0</span>
+        <span class="stat-label">Colors</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statSpacing">0</span>
+        <span class="stat-label">Spacing</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statFonts">0</span>
+        <span class="stat-label">Fonts</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statShadows">0</span>
+        <span class="stat-label">Shadows</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="statScore">—</span>
+        <span class="stat-label">Score</span>
+      </div>
+    </div>
+
+    <!-- Export bar -->
+    <div class="export-bar">
+      <select class="export-select" id="exportFormat" aria-label="Export format">
         <option value="css">CSS Variables</option>
         <option value="tailwind">Tailwind Config</option>
-        <option value="json">Design System JSON</option>
-        <option value="scss">SCSS Variables</option>
+        <option value="json">JSON</option>
+        <option value="scss">SCSS</option>
         <option value="figma">Figma Tokens</option>
       </select>
-    </section>
+      <button class="btn-export-secondary" id="copyExportBtn" type="button">Copy</button>
+      <button class="btn-export" id="downloadExportBtn" type="button">Export</button>
+    </div>
 
-    <button id="scanBtn" class="scan-btn" type="button">Scan Active Tab</button>
+    <!-- Tabs -->
+    <nav class="tabs-bar" role="tablist" aria-label="Token categories">
+      <button class="tab-btn active" role="tab" aria-selected="true" data-tab="colors">Colors</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="typography">Typography</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="spacing">Spacing</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="shadows">Shadows</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="wcag">WCAG</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="components">Components</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="css-vars">CSS Vars</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="score">Score</button>
+    </nav>
 
-    <p id="loading" class="loading hidden">Scanning page styles...</p>
+    <!-- Tab panels -->
+    <div class="tab-content">
+      <div class="tab-panel active" id="panel-colors" role="tabpanel"><div id="colorsContent"></div></div>
+      <div class="tab-panel" id="panel-typography" role="tabpanel"><div id="typographyContent"></div></div>
+      <div class="tab-panel" id="panel-spacing" role="tabpanel"><div id="spacingContent"></div></div>
+      <div class="tab-panel" id="panel-shadows" role="tabpanel"><div id="shadowsContent"></div></div>
+      <div class="tab-panel" id="panel-wcag" role="tabpanel"><div id="wcagContent"></div></div>
+      <div class="tab-panel" id="panel-components" role="tabpanel"><div id="componentsContent"></div></div>
+      <div class="tab-panel" id="panel-css-vars" role="tabpanel"><div id="cssVarsContent"></div></div>
+      <div class="tab-panel" id="panel-score" role="tabpanel"><div id="scoreContent"></div></div>
+    </div>
 
-    <section id="results" class="results hidden">
-      <textarea id="output" readonly placeholder="Generated tokens will appear here."></textarea>
-      <div class="actions">
-        <button id="copyBtn" class="action-btn" type="button">Copy</button>
-        <button id="downloadBtn" class="action-btn" type="button">Download</button>
-        <button id="clearBtn" class="action-btn danger" type="button">Clear</button>
-      </div>
-      <p class="stats" id="stats">No scan yet.</p>
-    </section>
-  </main>
+  </section>
 
-  <script src="templates/template-generator.js"></script>
-  <script src="popup.js"></script>
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="ui/dropdowns.js"></script>
+  <script src="ui/popup.js"></script>
 </body>
 </html>

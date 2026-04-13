@@ -1,6 +1,6 @@
-# Design Token Generator
+# Design Token Extractor Pro
 
-Design Token Generator scans the active webpage and exports design tokens in developer-friendly formats.
+Design Token Extractor Pro scans the active webpage and exports design tokens in developer-friendly formats.
 
 ## Features
 - Extracts colors, typography, spacing, shadows, border radius, and breakpoints.
@@ -17,9 +17,9 @@ Design Token Generator scans the active webpage and exports design tokens in dev
 ## File Structure
 - `manifest.json`
 - `popup.html`
-- `popup.js`
+- `ui/dropdowns.js`
+- `ui/popup.js`
 - `content.js`
-- `templates/template-generator.js`
 - `styles/popup.css`
 - `styles/content.css`
 - `icons/`
@@ -28,4 +28,4 @@ Design Token Generator scans the active webpage and exports design tokens in dev
 1. Open `chrome://extensions`
 2. Enable Developer Mode
 3. Click `Load unpacked`
-4. Select `design-token-generator`
+4. Select `design-token-extractor`

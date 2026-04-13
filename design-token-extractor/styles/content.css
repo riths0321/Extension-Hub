@@ -1,6 +1,7 @@
-/* Styles for content script UI if needed in future */
-.design-token-highlight {
-outline: 2px solid #6366F1 !important;
-outline-offset: 2px !important;
-background-color: rgba(99, 102, 241, 0.1) !important;
+/* Design Token Extractor Pro — content.css */
+/* Only styles used by the inspect mode tooltip; minimal surface */
+
+#__dte_inspect_tooltip__ {
+  font-family: system-ui, -apple-system, sans-serif !important;
+  line-height: 1.5 !important;
 }
