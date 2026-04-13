@@ -1,10 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Website Preview Pro",
-  "version": "2.3",
-  "description": "Preview any website instantly. Dark mode, mobile/desktop views, history, copy screenshot.",
-  "permissions": ["tabs", "storage", "clipboardWrite", "clipboardRead"],
-  "host_permissions": ["https://image.thum.io/*"],
+  "version": "3.0",
+  "description": "Instant website previews — compare, batch, QR codes, site info, download screenshots, pin favourites & more.",
+  "permissions": ["storage", "clipboardWrite", "clipboardRead"],
+  "host_permissions": [
+    "https://image.thum.io/*",
+    "https://quickchart.io/*"
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -14,7 +17,6 @@
     "default_popup": "popup.html"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://image.thum.io; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
- }
-  
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://image.thum.io https://quickchart.io; connect-src 'self' https://image.thum.io https://quickchart.io; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; frame-src 'none';"
+  }
 }
