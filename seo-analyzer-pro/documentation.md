@@ -1,4 +1,4 @@
-# SEO Generator (SEO Analyzer Pro)
+# SEO Analyzer Pro
 
 ## Overview
 
