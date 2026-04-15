@@ -1,7 +1,5 @@
 # 📈 SEO Analyzer Pro
 
-## 👨‍💻 Made by Saurabh Tiwari
-
 ### 🧩 Description
 **SEO Analyzer Pro** gives you an instant SEO health check for any webpage. One click reveals critical onsite SEO metrics like Meta Tags, Heading Hierarchy (H1-H6), Image Alt attributes, and internal/external link counts. Optimize your site faster.
 

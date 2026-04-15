@@ -1,12 +1,21 @@
 {
   "manifest_version": 3,
   "name": "SEO Analyzer Pro",
-  "description": "Analyze on-page SEO of the current website tab including meta tags, headings and technical SEO signals. Runs only when user clicks Analyze.",
-  "version": "1.0",
+  "description": "Professional on-page SEO audit: SERP preview, image alt audit, link analysis, schema detection, scoring & export.",
+  "version": "3.0",
 
   "action": {
     "default_popup": "popup.html",
-    "default_title": "SEO Analyzer Pro"
+    "default_title": "SEO Analyzer Pro",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "background": {
+    "service_worker": "background.js"
   },
 
   "permissions": [
@@ -15,13 +24,13 @@
     "scripting"
   ],
 
-  "optional_host_permissions": [
-    "<all_urls>"
-  ],
-
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https: http:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';"
   }
 }

@@ -1,895 +1,1019 @@
-/* -------------------------------------------------
-   SEO Analyzer Pro – Enhanced Popup Script
-   Version 3.0
--------------------------------------------------- */
-document.addEventListener("DOMContentLoaded", () => {
-  initializeTheme();
-  initializeElements();
-  initializeTabs();
-});
+'use strict';
 
 let currentReport = null;
-let analysisHistory = [];
+const sectionState = {
+  summaryHeader: '',
+  summary: '',
+  headers: '',
+  images: '',
+  links: '',
+  social: '',
+  tools: ''
+};
 
-/* ================= SAFE TAB MESSAGE ================= */
-function sendMessageToTab(tabId, message) {
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    initTabs();
+    initButtons();
+    await initTheme();
+  } catch (err) {
+    console.error('Popup init failed:', err);
+  }
+});
+
+function initTabs() {
+  const buttons = document.querySelectorAll('.tab-btn[data-tab]');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      panels.forEach(p => p.classList.add('hidden'));
+
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const panel = document.getElementById('tab-' + btn.dataset.tab);
+      if (panel) panel.classList.remove('hidden');
+    });
+  });
+}
+
+function initButtons() {
+  bindClick('analyzeBtn', analyzePage);
+  bindClick('exportJsonBtn', exportJson);
+  bindClick('exportTxtBtn', exportTxt);
+  bindClick('historyBtn', openHistory);
+  bindClick('closeHistory', closeHistory);
+  bindClick('clearHistoryBtn', clearHistory);
+
+  const themeToggle = $('themeToggle');
+  if (!themeToggle) return;
+  themeToggle.addEventListener('change', () => {
+    const theme = themeToggle.checked ? 'dark' : 'light';
+    applyTheme(theme);
+    if (chrome?.storage?.local) {
+      chrome.storage.local.set({ seoAnalyzerTheme: theme });
+    }
+  });
+}
+
+async function initTheme() {
+  if (!chrome?.storage?.local) {
+    applyTheme('light');
+    return;
+  }
+  const theme = await new Promise(resolve => {
+    chrome.storage.local.get(['seoAnalyzerTheme'], res => {
+      resolve(res?.seoAnalyzerTheme || 'light');
+    });
+  });
+  applyTheme(theme);
+  const toggle = $('themeToggle');
+  if (toggle) toggle.checked = theme === 'dark';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+}
+
+async function analyzePage() {
+  setProgress(5);
+  setLoading(true, 'Checking tab...');
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) throw new Error('No active tab found.');
+    if (!tab.url || /^(chrome|chrome-extension|about|edge):\/\//.test(tab.url)) {
+      throw new Error('Navigate to a regular http/https page first.');
+    }
+
+    setProgress(20);
+    setLoading(true, 'Injecting analyzer...');
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+
+    setProgress(45);
+    setLoading(true, 'Collecting SEO data...');
+    const report = await sendMsg(tab.id, { type: 'GET_FULL_SEO' });
+    if (!report || report.error) throw new Error(report?.error || 'Content script returned nothing.');
+
+    setProgress(80);
+    setLoading(true, 'Rendering...');
+
+    currentReport = report;
+    renderAll(report);
+
+    chrome.runtime.sendMessage({
+      type: 'SAVE_HISTORY',
+      entry: {
+        url: report.url,
+        title: report.title || '(no title)',
+        ts: new Date().toISOString()
+      }
+    });
+
+    setProgress(100);
+    setTimeout(() => setProgress(0), 700);
+  } catch (err) {
+    toast('Error: ' + err.message, true);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function sendMsg(tabId, msg) {
   return new Promise((resolve, reject) => {
-    chrome.tabs.sendMessage(tabId, message, (response) => {
+    chrome.tabs.sendMessage(tabId, msg, response => {
       if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
+        reject(new Error(chrome.runtime.lastError.message));
       } else {
         resolve(response);
       }
     });
   });
 }
-/* ================= INITIALIZATION ================= */
 
-async function initializeTheme() {
-  const toggle = document.getElementById('darkModeToggle');
-  const container = document.querySelector('.container');
-  
-  // Load saved theme
-  const result = await chrome.storage.sync.get(['theme']);
-  const savedTheme = result.theme || 'light';
-  
-  // Apply theme
-  container.setAttribute('data-theme', savedTheme);
-  toggle.checked = savedTheme === 'dark';
-  
-  // Add event listener
-  toggle.addEventListener('change', async (e) => {
-    const theme = e.target.checked ? 'dark' : 'light';
-    container.setAttribute('data-theme', theme);
-    await chrome.storage.sync.set({ theme: theme });
-    
-    // Update UI elements that need theme-specific adjustments
-    updateThemeColors();
+function renderAll(r) {
+  show('reportView');
+  hide('emptyState');
+
+  resetToSummaryTab();
+
+  renderIfChanged('summaryHeader', {
+    path: r.urlPath || '',
+    anchor: r.urlHash || '',
+    anchorText: r.anchorText || '',
+    headingCounts: getHeadingCounts(r),
+    images: r.images?.total || 0,
+    links: r.links?.totalCount || 0
+  }, renderHeaderSummary);
+
+  renderIfChanged('summary', {
+    title: r.title,
+    metaDescription: r.metaDescription,
+    keywords: r.keywords,
+    canonical: r.canonical,
+    robots: r.robots,
+    author: r.author,
+    publisher: r.publisher,
+    lang: r.indexability?.lang || '',
+    url: r.url,
+    headings: r.headings,
+    images: r.images?.total || 0,
+    links: r.links?.totalCount || 0,
+    robotsTxtUrl: r.robotsTxtUrl,
+    sitemapXmlUrl: r.sitemapXmlUrl
+  }, renderSummary);
+
+  renderIfChanged('headers', r.headings || {}, renderHeaders);
+  renderIfChanged('images', r.images || {}, renderImages);
+  renderIfChanged('links', r.links || {}, renderLinks);
+  renderIfChanged('social', { og: r.og || {}, twitter: r.twitter || {} }, renderSocial);
+  renderIfChanged('tools', {
+    indexability: r.indexability || {},
+    schema: r.schema || [],
+    canonical: r.canonical || '',
+    robots: r.robots || '',
+    viewport: r.viewport || '',
+    charset: r.charset || '',
+    wordCount: r.wordCount || 0,
+    hreflangCount: r.hreflang?.length || 0,
+    performance: r.performance || {},
+    url: r.url || '',
+    robotsTxtUrl: r.robotsTxtUrl || '',
+    sitemapXmlUrl: r.sitemapXmlUrl || ''
+  }, renderTools);
+}
+
+function renderIfChanged(key, payload, renderer) {
+  const snapshot = JSON.stringify(payload);
+  if (sectionState[key] === snapshot) return;
+  sectionState[key] = snapshot;
+  renderer(currentReport);
+}
+
+function resetToSummaryTab() {
+  const buttons = document.querySelectorAll('.tab-btn[data-tab]');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  buttons.forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
   });
-  
-  // Initialize theme-specific colors
-  updateThemeColors();
+  panels.forEach(p => p.classList.add('hidden'));
+
+  const summaryBtn = document.querySelector('.tab-btn[data-tab="summary"]');
+  if (summaryBtn) {
+    summaryBtn.classList.add('active');
+    summaryBtn.setAttribute('aria-selected', 'true');
+  }
+  show('tab-summary');
 }
 
-function updateThemeColors() {
-  // Update any dynamic colors here if needed
-  const isDark = document.querySelector('.container').getAttribute('data-theme') === 'dark';
-  
-  // Example: Update gauge colors based on theme
-  const gaugeFill = document.getElementById('gaugeFill');
-  if (gaugeFill) {
-    if (isDark) {
-      gaugeFill.style.background = 'linear-gradient(to right, #ef4444, #f59e0b, #10b981)';
-    } else {
-      gaugeFill.style.background = 'linear-gradient(to right, #ef4444, #f59e0b, #10b981)';
-    }
-  }
-}
+function renderHeaderSummary(r) {
+  const target = $('headerSummary');
+  clear(target);
 
-function initializeElements() {
-  // Main Actions
-  document.getElementById("analyzeBtn")?.addEventListener("click", analyzeCurrentPage);
-  document.getElementById("analyzeCustomBtn")?.addEventListener("click", analyzeCustomUrl);
-  
-  // Export Actions
-  document.getElementById("copyReportBtn")?.addEventListener("click", copyFullReport);
-  document.getElementById("downloadReportBtn")?.addEventListener("click", downloadReport);
-  document.getElementById("exportPDFBtn")?.addEventListener("click", exportPDF);
-  
-  // Quick Actions
-  document.getElementById("quickHeadings")?.addEventListener("click", () => quickAnalyze('headings'));
-  document.getElementById("quickMeta")?.addEventListener("click", () => quickAnalyze('meta'));
-  document.getElementById("quickImages")?.addEventListener("click", () => quickAnalyze('images'));
-  document.getElementById("quickLinks")?.addEventListener("click", () => quickAnalyze('links'));
-  
-  // Extra Actions
-  document.getElementById("screenshotBtn")?.addEventListener("click", takeScreenshot);
-  document.getElementById("historyBtn")?.addEventListener("click", showHistory);
-  document.getElementById("settingsBtn")?.addEventListener("click", showSettings);
-  
-  // Footer Links
-  document.getElementById("helpBtn")?.addEventListener("click", showHelp);
-  document.getElementById("feedbackBtn")?.addEventListener("click", showFeedback);
-  document.getElementById("aboutBtn")?.addEventListener("click", showAbout);
-  
-  // Info Button
-  document.getElementById("infoBtn")?.addEventListener("click", showInstructions);
-  
-  // Enter key for custom URL
-  document.getElementById("customUrl")?.addEventListener("keypress", (e) => {
-    if (e.key === 'Enter') analyzeCustomUrl();
-  });
-}
-
-function initializeTabs() {
-  const tabs = document.querySelectorAll('.tab-btn');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      // Remove active class from all tabs
-      tabs.forEach(t => t.classList.remove('active'));
-      // Add active class to clicked tab
-      tab.classList.add('active');
-      
-      // Hide all tab content
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.style.display = 'none';
-      });
-      
-      // Show selected tab content
-      const tabId = tab.dataset.tab + 'Tab';
-      document.getElementById(tabId).style.display = 'block';
-    });
-  });
-}
-
-/* ================= ANALYZE WEBSITE ================= */
-async function analyzeCurrentPage() {
-  console.log("Starting analysis...");
-  showLoading();
-  updateProgress(10);
-
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab || !tab.id) throw new Error("No active tab found");
-
-    if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("chrome-extension://")) {
-      throw new Error("Please open a normal website (http/https)");
-    }
-
-    updateProgress(40);
-
-    // Inject content script ONLY after user action (Chrome review safe)
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ["content.js"]
-    });
-
-    // Small delay so script loads properly
-    await new Promise(r => setTimeout(r, 120));
-
-    // Now request data
-    const report = await sendMessageToTab(tab.id, { type: "GET_SEO_DATA" });
-
-    updateProgress(80);
-
-    if (!report) throw new Error("Failed to get SEO report");
-
-    currentReport = report;
-
-    renderSEOReport(report);
-
-    // save after score rendered
-    setTimeout(() => saveToHistory(report, tab.url), 100);
-
-    updateProgress(100);
-
-  } catch (error) {
-    console.error("Analysis error:", error);
-    showError("Reload the page once and try again.\n\n" + error.message);
-  } finally {
-    hideLoading();
-  }
-}
-
-async function analyzeCustomUrl() {
-  const urlInput = document.getElementById('customUrl');
-  const url = urlInput.value.trim();
-  
-  if (!url) {
-    showError("Please enter a URL");
-    return;
-  }
-  
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    showError("Please enter a valid URL starting with http:// or https://");
-    return;
-  }
-  
-  showLoading();
-  
-  try {
-    // In a real extension, you would need to create a new tab and analyze it
-    // For demo purposes, we'll simulate analysis
-    const simulatedReport = {
-      url: url,
-      title: "Test Page - " + new URL(url).hostname,
-      metaDescription: "This is a simulated analysis for custom URL",
-      h1: ["Test Heading"],
-      h2: ["Sub Heading 1", "Sub Heading 2"],
-      canonical: url,
-      robots: "index, follow",
-      viewport: "width=device-width, initial-scale=1.0",
-      charset: "UTF-8",
-      og: {
-        title: "Test Page",
-        description: "Simulated analysis"
-      },
-      images: []
-    };
-    
-    currentReport = simulatedReport;
-    renderSEOReport(simulatedReport);
-    
-  } catch (error) {
-    showError("Failed to analyze URL: " + error.message);
-  } finally {
-    hideLoading();
-  }
-}
-
-async function injectContentScript(tabId) {
-  return new Promise((resolve, reject) => {
-    chrome.scripting.executeScript({
-      target: { tabId },
-      files: ["content.js"]
-    }, () => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
-async function fetchSEOReport() {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      { type: "GET_SEO_REPORT" },
-      (report) => {
-        if (chrome.runtime.lastError) {
-          console.error("Error fetching report:", chrome.runtime.lastError);
-          reject(chrome.runtime.lastError);
-        } else {
-          console.log("Report received:", report);
-          resolve(report);
-        }
-      }
-    );
-  });
-}
-
-/* ================= QUICK ANALYZE ================= */
-async function quickAnalyze(type) {
-  showLoading();
-  updateLoadingStat(`Checking ${type}...`);
-
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) throw new Error("No active tab");
-
-    const result = await sendMessageToTab(tab.id, { type: `QUICK_${type.toUpperCase()}` });
-
-    showQuickResult(type, result || {});
-  } catch (error) {
-    showError("Reload page & try again");
-  } finally {
-    hideLoading();
-  }
-}
-
-function showQuickResult(type, data) {
-  let message = "";
-  
-  switch(type) {
-    case 'headings':
-      const h1Count = data.h1?.length || 0;
-      const h2Count = data.h2?.length || 0;
-      message = `H1: ${h1Count}, H2: ${h2Count}`;
-      break;
-    case 'meta':
-      const title = data.title ? "✓" : "✗";
-      const desc = data.metaDescription ? "✓" : "✗";
-      message = `Title: ${title}, Desc: ${desc}`;
-      break;
-    case 'images':
-      const altCount = data.imagesWithAlt || 0;
-      const totalImages = data.totalImages || 0;
-      message = `Images: ${altCount}/${totalImages} have alt text`;
-      break;
-    case 'links':
-      const internal = data.internalLinks || 0;
-      const external = data.externalLinks || 0;
-      message = `Links: ${internal} internal, ${external} external`;
-      break;
-  }
-  
-  alert(`Quick ${type} analysis:\n${message}`);
-}
-
-/* ================= RENDER REPORT ================= */
-function renderSEOReport(report) {
-  const reportSection = document.getElementById("seoReport");
-  reportSection.style.display = "block";
-  
-  // Basic Info
-  document.getElementById("rTitle").textContent = report.title || "Missing";
-  document.getElementById("rDesc").textContent = report.metaDescription || "Missing";
-  document.getElementById("rH1").textContent = report.h1?.length || 0;
-  document.getElementById("rH2").textContent = report.h2?.length || 0;
-  
-  // Advanced Info
-  document.getElementById("rCanonical").textContent = report.canonical ? report.canonical : "No";
-  document.getElementById("rRobots").textContent = report.robots || "No";
-  document.getElementById("rViewport").textContent = report.viewport || "No";
-  document.getElementById("rCharset").textContent = report.charset || "No";
-  
-  // Calculate lengths and status
-  updateLengthStats(report);
-  
-  // Calculate and display score
-  const score = calculateEnhancedScore(report);
-  displayScore(score);
-  
-  // Render warnings and recommendations
-  renderWarnings(report);
-  renderRecommendations(report);
-  renderIssues(report);
-  
-  // Update issues count
-  updateIssuesCount(report);
-}
-
-function updateLengthStats(report) {
-  const titleLength = report.title?.length || 0;
-  const descLength = report.metaDescription?.length || 0;
-  
-  document.getElementById("titleLength").textContent = `${titleLength} chars`;
-  document.getElementById("descLength").textContent = `${descLength} chars`;
-  
-  // Update status badges
-  document.getElementById("titleStatus").textContent = 
-    titleLength >= 50 && titleLength <= 60 ? "Good" : 
-    titleLength < 30 ? "Too Short" : "Needs Work";
-  document.getElementById("titleStatus").className = 
-    `status-badge ${getStatusClass(titleLength >= 50 && titleLength <= 60)}`;
-  
-  document.getElementById("descStatus").textContent = 
-    descLength >= 120 && descLength <= 160 ? "Good" : 
-    descLength < 100 ? "Too Short" : "Needs Work";
-  document.getElementById("descStatus").className = 
-    `status-badge ${getStatusClass(descLength >= 120 && descLength <= 160)}`;
-  
-  document.getElementById("h1Status").textContent = 
-    (report.h1?.length || 0) === 1 ? "Good" : 
-    (report.h1?.length || 0) === 0 ? "Missing" : "Multiple";
-  document.getElementById("h1Status").className = 
-    `status-badge ${getStatusClass((report.h1?.length || 0) === 1)}`;
-}
-
-function getStatusClass(isGood) {
-  return isGood ? "good" : "warning";
-}
-
-/* ================= SCORE CALCULATION ================= */
-function calculateEnhancedScore(report) {
-  let score = 0;
-  const maxScore = 100;
-  
-  // Title (15 points)
-  if (report.title) {
-    const titleLength = report.title.length;
-    if (titleLength >= 50 && titleLength <= 60) score += 15;
-    else if (titleLength >= 30 && titleLength < 70) score += 10;
-    else score += 5;
-  }
-  
-  // Meta Description (15 points)
-  if (report.metaDescription) {
-    const descLength = report.metaDescription.length;
-    if (descLength >= 120 && descLength <= 160) score += 15;
-    else if (descLength >= 80 && descLength < 180) score += 10;
-    else score += 5;
-  }
-  
-  // H1 (20 points)
-  const h1Count = report.h1?.length || 0;
-  if (h1Count === 1) score += 20;
-  else if (h1Count > 1) score += 10;
-  
-  // H2 (10 points)
-  if ((report.h2?.length || 0) > 0) score += 10;
-  
-  // Canonical (10 points)
-  if (report.canonical) score += 10;
-  
-  // Robots (10 points)
-  if (report.robots && report.robots.includes('index')) score += 10;
-  
-  // Viewport (5 points)
-  if (report.viewport && report.viewport.includes('width=device-width')) score += 5;
-  
-  // Charset (5 points)
-  if (report.charset && report.charset.toLowerCase().includes('utf-8')) score += 5;
-  
-  // Open Graph (10 points)
-  if (Object.keys(report.og || {}).length >= 2) score += 10;
-  
-  return Math.min(score, maxScore);
-}
-
-function displayScore(score) {
-  // Update score badge
-  document.getElementById("scoreBadge").textContent = score;
-  
-  // Update gauge
-  const gaugeFill = document.getElementById("gaugeFill");
-  const gaugeText = document.getElementById("gaugeText");
-  
-  gaugeFill.style.height = `${score}%`;
-  gaugeText.textContent = score;
-  
-  // Update gauge color based on score
-  if (score >= 80) {
-    gaugeFill.style.background = "linear-gradient(to right, #10b981, #34d399)";
-  } else if (score >= 50) {
-    gaugeFill.style.background = "linear-gradient(to right, #f59e0b, #fbbf24)";
-  } else {
-    gaugeFill.style.background = "linear-gradient(to right, #ef4444, #f87171)";
-  }
-}
-
-/* ================= WARNINGS & RECOMMENDATIONS ================= */
-function renderWarnings(report) {
-  const warningsList = document.getElementById("warningsList");
-  // Clear container using safe DOM manipulation
-  while (warningsList.firstChild) {
-    warningsList.removeChild(warningsList.firstChild);
-  }
-  
-  const warnings = [];
-  
-  // Check title
-  if (!report.title) {
-    warnings.push("Missing title tag");
-  } else if (report.title.length < 30) {
-    warnings.push("Title is too short (minimum 30 characters)");
-  } else if (report.title.length > 60) {
-    warnings.push("Title is too long (maximum 60 characters)");
-  }
-  
-  // Check meta description
-  if (!report.metaDescription) {
-    warnings.push("Missing meta description");
-  } else if (report.metaDescription.length < 120) {
-    warnings.push("Meta description is too short (minimum 120 characters)");
-  } else if (report.metaDescription.length > 160) {
-    warnings.push("Meta description is too long (maximum 160 characters)");
-  }
-  
-  // Check H1
-  if (!report.h1 || report.h1.length === 0) {
-    warnings.push("Missing H1 tag");
-  } else if (report.h1.length > 1) {
-    warnings.push("Multiple H1 tags found");
-  }
-  
-  // Check canonical
-  if (!report.canonical) {
-    warnings.push("Missing canonical tag");
-  }
-  
-  // Check robots
-  if (!report.robots) {
-    warnings.push("Missing robots meta tag");
-  }
-  
-  // Check viewport
-  if (!report.viewport || !report.viewport.includes('width=device-width')) {
-    warnings.push("Missing or improper viewport tag");
-  }
-  
-  // Render warnings
-  warnings.forEach(warning => {
-    const warningDiv = document.createElement("div");
-    warningDiv.className = "warning-item";
-    warningDiv.textContent = warning;
-    warningsList.appendChild(warningDiv);
-  });
-}
-
-function renderRecommendations(report) {
-  const recommendationsList = document.getElementById("recommendationsList");
-  // Clear container using safe DOM manipulation
-  while (recommendationsList.firstChild) {
-    recommendationsList.removeChild(recommendationsList.firstChild);
-  }
-  
-  const recommendations = [];
-  
-  if (report.title && report.title.length < 50) {
-    recommendations.push("Optimize title length to 50-60 characters");
-  }
-  
-  if (report.metaDescription && report.metaDescription.length < 120) {
-    recommendations.push("Expand meta description to 120-160 characters");
-  }
-  
-  if (report.h1 && report.h1.length === 0) {
-    recommendations.push("Add a single H1 tag with primary keyword");
-  }
-  
-  if (!report.canonical) {
-    recommendations.push("Add canonical tag to avoid duplicate content");
-  }
-  
-  if (!report.robots) {
-    recommendations.push("Add robots meta tag for better crawl control");
-  }
-  
-  // Add general recommendations if less than 3 specific ones
-  if (recommendations.length < 3) {
-    recommendations.push("Add schema markup for rich results");
-    recommendations.push("Optimize images with alt text");
-    recommendations.push("Ensure mobile responsiveness");
-  }
-  
-  // Render recommendations
-  recommendations.forEach(rec => {
-    const li = document.createElement("li");
-    li.textContent = rec;
-    recommendationsList.appendChild(li);
-  });
-}
-
-function renderIssues(report) {
-  const issuesList = document.getElementById("issuesList");
-  // Clear container using safe DOM manipulation
-  while (issuesList.firstChild) {
-    issuesList.removeChild(issuesList.firstChild);
-  }
-  
-  // This would be populated based on actual issues found
-  // For now, using warnings as issues
-  const issues = [
-    { severity: "high", title: "Missing Meta Description", description: "Add a compelling meta description" },
-    { severity: "medium", title: "No Canonical Tag", description: "Add canonical URL to avoid duplicate content" },
-    { severity: "low", title: "Multiple H1 Tags", description: "Use only one H1 tag per page" }
+  const headingCounts = getHeadingCounts(r);
+  const cards = [
+    { label: 'URL Path / Anchor', value: (r.urlPath || '/') + (r.urlHash || '') },
+    { label: 'Anchor Text', value: r.anchorText || 'N/A' },
+    { label: 'H1', value: String(headingCounts.H1) },
+    { label: 'H2', value: String(headingCounts.H2) },
+    { label: 'H3', value: String(headingCounts.H3) },
+    { label: 'H4', value: String(headingCounts.H4) },
+    { label: 'H5', value: String(headingCounts.H5) },
+    { label: 'H6', value: String(headingCounts.H6) },
+    { label: 'Images', value: String(r.images?.total || 0) },
+    { label: 'Links', value: String(r.links?.totalCount || 0) }
   ];
-  
-  issues.forEach(issue => {
-    const issueDiv = document.createElement("div");
-    issueDiv.className = "issue-item";
-    
-    let icon = "⚠️";
-    if (issue.severity === "high") icon = "🔴";
-    if (issue.severity === "medium") icon = "🟡";
-    if (issue.severity === "low") icon = "🟢";
-    
-    // Create elements individually for CSP compliance
-    const iconDiv = document.createElement('div');
-    iconDiv.className = 'issue-icon';
-    iconDiv.textContent = icon;
-    
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'issue-content';
-    
-    const titleEl = document.createElement('h5');
-    titleEl.textContent = issue.title;
-    
-    const descEl = document.createElement('p');
-    descEl.textContent = issue.description;
-    
-    contentDiv.appendChild(titleEl);
-    contentDiv.appendChild(descEl);
-    
-    issueDiv.appendChild(iconDiv);
-    issueDiv.appendChild(contentDiv);
-    
-    issuesList.appendChild(issueDiv);
+
+  cards.forEach(card => {
+    const el = mk('div');
+    el.className = 'summary-card';
+
+    const label = mk('div');
+    label.className = 'summary-card-label';
+    label.textContent = card.label;
+
+    const value = mk('div');
+    value.className = 'summary-card-value';
+    value.textContent = card.value;
+
+    el.appendChild(label);
+    el.appendChild(value);
+    target.appendChild(el);
   });
 }
 
-function updateIssuesCount(report) {
-  // Count warnings as issues for now
-  const warnings = document.querySelectorAll('.warning-item').length;
-  document.getElementById("issuesCount").textContent = warnings;
+function getHeadingCounts(r) {
+  return {
+    H1: (r.headings?.h1 || []).length,
+    H2: (r.headings?.h2 || []).length,
+    H3: (r.headings?.h3 || []).length,
+    H4: (r.headings?.h4 || []).length,
+    H5: (r.headings?.h5 || []).length,
+    H6: (r.headings?.h6 || []).length
+  };
 }
 
-/* ================= EXPORT FUNCTIONS ================= */
-function buildEnhancedReport(report, score) {
-  const date = new Date().toLocaleString();
-  
-  return `SEO ANALYZER PRO REPORT
-===============================
-Generated: ${date}
-URL: ${report.url || 'Current Page'}
-Score: ${score}/100
+function renderSummary(r) {
+  const table = $('sumTable');
+  const headingRow = $('sumHeadingRow');
+  const footer = $('sumFooter');
 
-📊 BASIC SEO METRICS
--------------------------
-Title: ${report.title || 'Missing'}
-Title Length: ${report.title?.length || 0} characters
+  clear(table);
+  clear(headingRow);
+  clear(footer);
 
-Meta Description: ${report.metaDescription || 'Missing'}
-Description Length: ${report.metaDescription?.length || 0} characters
+  const titleLength = (r.title || '').length;
+  const descLength = (r.metaDescription || '').length;
 
-H1 Count: ${report.h1?.length || 0}
-H2 Count: ${report.h2?.length || 0}
+  addSummaryRow(table, 'Title', () => {
+    const wrap = mk('div');
+    if (r.title) {
+      const title = mk('div');
+      title.textContent = r.title;
+      const count = mk('span');
+      count.className = 'sum-char-count ' + (titleLength > 60 ? 'bad' : titleLength >= 50 ? 'good' : 'warn');
+      count.textContent = titleLength + ' characters';
+      wrap.appendChild(title);
+      wrap.appendChild(count);
+    } else {
+      const missing = mk('span');
+      missing.className = 'sum-missing';
+      missing.textContent = 'Title tag is missing.';
+      wrap.appendChild(missing);
+    }
+    return wrap;
+  });
 
-🔧 TECHNICAL SEO
--------------------------
-Canonical: ${report.canonical || 'Missing'}
-Robots Meta: ${report.robots || 'Missing'}
-Viewport: ${report.viewport || 'Missing'}
-Charset: ${report.charset || 'Missing'}
+  addSummaryRow(table, 'Description', () => {
+    const wrap = mk('div');
+    if (r.metaDescription) {
+      const desc = mk('div');
+      desc.textContent = r.metaDescription;
+      const count = mk('span');
+      let cls = 'warn';
+      if (descLength >= 120 && descLength <= 160) cls = 'good';
+      if (descLength > 160) cls = 'bad';
+      count.className = 'sum-char-count ' + cls;
+      count.textContent = descLength + ' characters';
+      wrap.appendChild(desc);
+      wrap.appendChild(count);
+    } else {
+      const missing = mk('span');
+      missing.className = 'sum-missing';
+      missing.textContent = 'Meta description is missing.';
+      wrap.appendChild(missing);
+    }
+    return wrap;
+  });
 
-📱 OPEN GRAPH TAGS
--------------------------
-${Object.entries(report.og || {}).map(([key, value]) => `${key}: ${value}`).join('\n') || 'No Open Graph tags found'}
+  addSummaryRow(table, 'Keywords', () => {
+    const el = mk('span');
+    if (r.keywords) {
+      el.textContent = r.keywords;
+    } else {
+      el.className = 'sum-absent';
+      el.textContent = 'Keywords are missing.';
+    }
+    return el;
+  });
 
-⚠️ ISSUES FOUND
--------------------------
-${Array.from(document.querySelectorAll('.warning-item')).map(w => `• ${w.textContent}`).join('\n') || 'No issues found'}
+  addSummaryRow(table, 'URL', () => {
+    const link = mk('a');
+    link.href = r.url || '#';
+    link.target = '_blank';
+    link.textContent = r.url || 'N/A';
+    return link;
+  });
 
-💡 RECOMMENDATIONS
--------------------------
-${Array.from(document.querySelectorAll('#recommendationsList li')).map(li => `• ${li.textContent}`).join('\n') || 'No recommendations'}
+  addSummaryRow(table, 'Canonical', () => {
+    if (r.canonical) {
+      const link = mk('a');
+      link.href = r.canonical;
+      link.target = '_blank';
+      link.textContent = r.canonical;
+      return link;
+    }
+    const missing = mk('span');
+    missing.className = 'sum-absent';
+    missing.textContent = 'Canonical tag is missing.';
+    return missing;
+  });
 
-===============================
-Generated by SEO Analyzer Pro v3.0
-`;
+  addSummaryRow(table, 'Robots', () => {
+    const el = mk('span');
+    if (r.robots) {
+      el.textContent = r.robots;
+    } else {
+      el.className = 'sum-absent';
+      el.textContent = 'Robots meta not found.';
+    }
+    return el;
+  });
+
+  addSummaryRow(table, 'Author', () => {
+    const el = mk('span');
+    if (r.author) {
+      el.textContent = r.author;
+    } else {
+      el.className = 'sum-absent';
+      el.textContent = 'Author is missing.';
+    }
+    return el;
+  });
+
+  addSummaryRow(table, 'Publisher', () => {
+    const el = mk('span');
+    if (r.publisher) {
+      el.textContent = r.publisher;
+    } else {
+      el.className = 'sum-absent';
+      el.textContent = 'Publisher is missing.';
+    }
+    return el;
+  });
+
+  addSummaryRow(table, 'Language', () => {
+    const el = mk('span');
+    if (r.indexability?.lang) {
+      el.textContent = r.indexability.lang;
+    } else {
+      el.className = 'sum-absent';
+      el.textContent = 'Language not set.';
+    }
+    return el;
+  });
+
+  const headingCounts = getHeadingCounts(r);
+  const statOrder = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'];
+  statOrder.forEach(tag => {
+    const group = mk('div');
+    group.className = 'hc-group';
+
+    const label = mk('div');
+    label.className = 'hc-label';
+    label.textContent = tag;
+
+    const value = mk('div');
+    value.className = 'hc-val' + (tag === 'H1' && headingCounts[tag] !== 1 ? ' bad' : '');
+    value.textContent = String(headingCounts[tag]);
+
+    group.appendChild(label);
+    group.appendChild(value);
+    headingRow.appendChild(group);
+  });
+
+  [
+    { label: 'Images', value: r.images?.total || 0 },
+    { label: 'Links', value: r.links?.totalCount || 0 }
+  ].forEach(entry => {
+    const group = mk('div');
+    group.className = 'hc-group';
+
+    const label = mk('div');
+    label.className = 'hc-label';
+    label.textContent = entry.label;
+
+    const value = mk('div');
+    value.className = 'hc-val';
+    value.textContent = String(entry.value);
+
+    group.appendChild(label);
+    group.appendChild(value);
+    headingRow.appendChild(group);
+  });
+
+  if (r.robotsTxtUrl) {
+    const robotsLink = mk('a');
+    robotsLink.href = r.robotsTxtUrl;
+    robotsLink.target = '_blank';
+    robotsLink.textContent = 'Robots.txt';
+    footer.appendChild(robotsLink);
+  }
+
+  if (r.robotsTxtUrl && r.sitemapXmlUrl) {
+    const sep = mk('span');
+    sep.textContent = '|';
+    footer.appendChild(sep);
+  }
+
+  if (r.sitemapXmlUrl) {
+    const sitemapLink = mk('a');
+    sitemapLink.href = r.sitemapXmlUrl;
+    sitemapLink.target = '_blank';
+    sitemapLink.textContent = 'Sitemap.xml';
+    footer.appendChild(sitemapLink);
+  }
+
+  if (!r.robotsTxtUrl && !r.sitemapXmlUrl) {
+    const none = mk('span');
+    none.textContent = 'No robots.txt or sitemap.xml detected.';
+    footer.appendChild(none);
+  }
 }
 
-async function copyFullReport() {
-  if (!currentReport) {
-    showError("No report available. Please analyze a page first.");
+function addSummaryRow(parent, labelText, contentFactory) {
+  const row = mk('div');
+  row.className = 'sum-row';
+
+  const label = mk('div');
+  label.className = 'sum-label';
+  label.textContent = labelText;
+
+  const value = mk('div');
+  value.className = 'sum-value';
+  value.appendChild(contentFactory());
+
+  row.appendChild(label);
+  row.appendChild(value);
+  parent.appendChild(row);
+}
+
+function renderHeaders(r) {
+  const tree = $('headersTree');
+  clear(tree);
+
+  const all = [];
+  ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].forEach(tag => {
+    (r.headings?.[tag] || []).forEach(text => all.push({ tag, text }));
+  });
+
+  if (!all.length) {
+    const empty = mk('div');
+    empty.className = 'social-empty';
+    empty.textContent = 'No heading tags found on this page.';
+    tree.appendChild(empty);
     return;
   }
-  
-  const score = document.getElementById("scoreBadge").textContent;
-  const reportText = buildEnhancedReport(currentReport, score);
-  
-  try {
-    await navigator.clipboard.writeText(reportText);
-    showNotification("✅ Report copied to clipboard!");
-  } catch (err) {
-    showError("Failed to copy report: " + err.message);
-  }
+
+  all.forEach(item => {
+    const level = Number(item.tag.slice(1));
+    const row = mk('div');
+    row.className = 'h-item h-indent-' + Math.max(0, level - 1);
+
+    const tag = mk('span');
+    tag.className = 'h-tag';
+    tag.textContent = '<' + item.tag.toUpperCase() + '>';
+
+    const text = mk('span');
+    text.className = 'h-text';
+    text.textContent = item.text;
+
+    row.appendChild(tag);
+    row.appendChild(text);
+    tree.appendChild(row);
+  });
 }
 
-async function downloadReport() {
-  if (!currentReport) {
-    showError("No report available. Please analyze a page first.");
+function renderImages(r) {
+  const stats = $('imgBigStats');
+  const list = $('imgList');
+
+  clear(stats);
+  clear(list);
+
+  const images = r.images || {};
+  const total = images.total || 0;
+  const missingAlt = (images.missingAlt?.length || 0) + (images.emptyAlt?.length || 0);
+  const missingTitle = images.withoutTitle || 0;
+
+  addBigStat(stats, 'Images', total, '');
+  addBigStat(stats, 'Missing Alt', missingAlt, missingAlt > 0 ? 'bad' : 'good');
+  addBigStat(stats, 'Missing Title', missingTitle, missingTitle > 0 ? 'bad' : 'good');
+
+  const all = images.list || [];
+  if (!all.length) {
+    const empty = mk('div');
+    empty.className = 'social-empty';
+    empty.textContent = 'No images found on this page.';
+    list.appendChild(empty);
     return;
   }
-  
-  const score = document.getElementById("scoreBadge").textContent;
-  const reportText = buildEnhancedReport(currentReport, score);
-  const date = new Date().toISOString().split('T')[0];
-  
-  const blob = new Blob([reportText], { type: "text/plain" });
+
+  all.forEach(img => {
+    const item = mk('div');
+    item.className = 'img-item';
+
+    const row = mk('div');
+    row.className = 'img-row';
+
+    const thumb = mk('img');
+    thumb.className = 'img-thumb';
+    thumb.src = img.src || '';
+    thumb.alt = img.alt === null ? '' : (img.alt || '');
+    thumb.loading = 'lazy';
+    thumb.decoding = 'async';
+    thumb.referrerPolicy = 'no-referrer';
+    thumb.title = 'URL: ' + (img.src || 'N/A') + '\nALT: ' + (img.alt === null ? '(missing)' : (img.alt || '(empty)'));
+
+    const info = mk('div');
+    info.className = 'img-info';
+
+    const alt = mk('div');
+    alt.className = 'img-alt';
+    const altStrong = mk('strong');
+    altStrong.textContent = 'ALT: ';
+    alt.appendChild(altStrong);
+    alt.appendChild(document.createTextNode(img.alt === null ? '(missing)' : (img.alt || '(empty)')));
+
+    const url = mk('div');
+    url.className = 'img-url';
+    url.title = 'URL: ' + (img.src || 'N/A') + '\nALT: ' + (img.alt === null ? '(missing)' : (img.alt || '(empty)'));
+    const urlStrong = mk('strong');
+    urlStrong.textContent = 'URL: ';
+    const truncated = mk('span');
+    truncated.className = 'img-url-truncated';
+    truncated.textContent = truncateText(img.src || '', 90);
+    url.appendChild(urlStrong);
+    url.appendChild(truncated);
+
+    info.appendChild(alt);
+    info.appendChild(url);
+
+    row.appendChild(thumb);
+    row.appendChild(info);
+    item.appendChild(row);
+    list.appendChild(item);
+  });
+}
+
+function addBigStat(parent, labelText, valueText, toneClass) {
+  const cell = mk('div');
+  cell.className = 'big-stat-cell';
+
+  const label = mk('div');
+  label.className = 'big-stat-label';
+  label.textContent = labelText;
+
+  const value = mk('div');
+  value.className = 'big-stat-val' + (toneClass ? ' ' + toneClass : '');
+  value.textContent = String(valueText);
+
+  cell.appendChild(label);
+  cell.appendChild(value);
+  parent.appendChild(cell);
+}
+
+function renderLinks(r) {
+  const stats = $('linkStats');
+  const list = $('linkList');
+
+  clear(stats);
+  clear(list);
+
+  const links = r.links || {};
+  const internalCount = links.internal?.length || 0;
+  const externalCount = links.external?.length || 0;
+  const uniqueCount = links.uniqueCount || 0;
+
+  addLinkStat(stats, 'Internal Links', internalCount);
+  addLinkStat(stats, 'External Links', externalCount);
+  addLinkStat(stats, 'Unique Links', uniqueCount);
+
+  const all = links.allLinks || [];
+  if (!all.length) {
+    const empty = mk('div');
+    empty.className = 'social-empty';
+    empty.textContent = 'No links found on this page.';
+    list.appendChild(empty);
+    return;
+  }
+
+  all.slice(0, 100).forEach(link => {
+    const item = mk('div');
+    item.className = 'link-item';
+
+    const href = mk('a');
+    href.className = 'link-href';
+    href.href = link.href;
+    href.target = '_blank';
+    href.textContent = link.href;
+
+    const meta = mk('div');
+    meta.className = 'link-meta';
+
+    const type = link.isInternal ? 'Internal' : 'External';
+    const anchorText = link.anchor || 'N/A';
+    meta.textContent = type + ' | Anchor: ' + truncateText(anchorText, 80);
+    meta.title = 'Sample: ' + link.href;
+
+    item.appendChild(href);
+    item.appendChild(meta);
+    list.appendChild(item);
+  });
+}
+
+function addLinkStat(parent, labelText, valueText) {
+  const cell = mk('div');
+  cell.className = 'link-stat-cell';
+
+  const label = mk('div');
+  label.className = 'link-stat-label';
+  label.textContent = labelText;
+
+  const value = mk('div');
+  value.className = 'link-stat-val';
+  value.textContent = String(valueText);
+
+  cell.appendChild(label);
+  cell.appendChild(value);
+  parent.appendChild(cell);
+}
+
+function renderSocial(r) {
+  renderSocialSection('ogSection', 'Open Graph', 'og', r.og || {});
+  renderSocialSection('twitterSection', 'Twitter Cards', 'twitter', r.twitter || {});
+}
+
+function renderSocialSection(containerId, title, keyPrefix, payload) {
+  const container = $(containerId);
+  clear(container);
+
+  const header = mk('div');
+  header.className = 'social-header';
+  header.textContent = title;
+  container.appendChild(header);
+
+  const keys = Object.keys(payload).filter(key => !key.startsWith('_'));
+  if (!keys.length) {
+    const empty = mk('div');
+    empty.className = 'social-empty';
+    empty.textContent = 'No ' + title.toLowerCase() + ' tags found on this page.';
+    container.appendChild(empty);
+    return;
+  }
+
+  keys.forEach(key => {
+    const row = mk('div');
+    row.className = 'social-row';
+
+    const keyEl = mk('div');
+    keyEl.className = 'social-key';
+    keyEl.textContent = keyPrefix + ':' + key;
+
+    const valEl = mk('div');
+    valEl.className = 'social-val';
+    valEl.textContent = String(payload[key]);
+
+    row.appendChild(keyEl);
+    row.appendChild(valEl);
+    container.appendChild(row);
+  });
+}
+
+function renderTools(r) {
+  const el = $('toolsSection');
+  clear(el);
+
+  appendSectionTitle(el, 'Technical SEO');
+
+  const idx = r.indexability || {};
+  appendKVRows(el, [
+    { key: 'HTTPS', value: idx.isHttps ? 'Enabled' : 'Not secure', cls: idx.isHttps ? 'good' : 'bad' },
+    { key: 'Canonical URL', value: r.canonical || 'Missing', cls: r.canonical ? 'good' : 'warn' },
+    { key: 'Robots Meta', value: r.robots || 'Not set', cls: r.robots && !idx.noindex ? 'good' : idx.noindex ? 'bad' : 'warn' },
+    { key: 'Noindex', value: idx.noindex ? 'Yes' : 'No', cls: idx.noindex ? 'bad' : 'good' },
+    { key: 'Viewport', value: r.viewport || 'Missing', cls: idx.hasViewport ? 'good' : 'warn' },
+    { key: 'Charset', value: r.charset || 'Missing', cls: idx.hasCharset ? 'good' : 'warn' },
+    { key: 'Language', value: idx.lang || 'Not set', cls: idx.lang ? 'good' : 'warn' },
+    { key: 'Schema Markup', value: (r.schema || []).length ? r.schema.join(', ') : 'None', cls: (r.schema || []).length ? 'good' : 'warn' },
+    { key: 'Word Count', value: String(r.wordCount || 0), cls: (r.wordCount || 0) >= 300 ? 'good' : 'warn' }
+  ]);
+
+  appendSectionTitle(el, 'Performance Signals');
+  const p = r.performance || {};
+  appendKVRows(el, [
+    { key: 'DOM Nodes', value: String(p.domNodes ?? '-'), cls: (p.domNodes || 0) < 1000 ? 'good' : 'warn' },
+    { key: 'Scripts', value: String(p.scripts ?? '-'), cls: (p.scripts || 0) < 25 ? 'good' : 'warn' },
+    { key: 'Stylesheets', value: String(p.stylesheets ?? '-'), cls: 'info' },
+    { key: 'Iframes', value: String(p.iframes ?? '-'), cls: (p.iframes || 0) === 0 ? 'good' : 'warn' },
+    { key: 'Lazy Images', value: String(p.lazyImages ?? '-'), cls: (p.lazyImages || 0) > 0 ? 'good' : 'info' },
+    { key: 'Estimated Weight', value: p.estimatedWeight != null ? p.estimatedWeight + ' KB' : '-', cls: p.estimatedWeight != null && p.estimatedWeight < 1200 ? 'good' : 'warn' }
+  ]);
+
+  appendSectionTitle(el, 'Quick Links');
+  const list = mk('div');
+  list.className = 'tools-list';
+
+  const links = [
+    { key: 'R', name: 'Robots.txt', desc: 'Check crawl directives', url: r.robotsTxtUrl },
+    { key: 'S', name: 'Sitemap.xml', desc: 'View XML sitemap', url: r.sitemapXmlUrl },
+    { key: 'GSC', name: 'Google Search Console', desc: 'Monitor search performance', url: 'https://search.google.com/search-console' },
+    { key: 'PS', name: 'PageSpeed Insights', desc: 'Test Core Web Vitals', url: r.url ? 'https://pagespeed.web.dev/report?url=' + encodeURIComponent(r.url) : 'https://pagespeed.web.dev' }
+  ];
+
+  links.forEach(entry => {
+    if (!entry.url) return;
+
+    const a = mk('a');
+    a.className = 'tool-item';
+    a.href = entry.url;
+    a.target = '_blank';
+
+    const icon = mk('div');
+    icon.className = 'tool-icon';
+    icon.textContent = entry.key;
+
+    const info = mk('div');
+    info.className = 'tool-info';
+
+    const name = mk('div');
+    name.className = 'tool-name';
+    name.textContent = entry.name;
+
+    const desc = mk('div');
+    desc.className = 'tool-desc';
+    desc.textContent = entry.desc;
+
+    const arrow = mk('span');
+    arrow.className = 'tool-arrow';
+    arrow.textContent = '>'; 
+
+    info.appendChild(name);
+    info.appendChild(desc);
+    a.appendChild(icon);
+    a.appendChild(info);
+    a.appendChild(arrow);
+    list.appendChild(a);
+  });
+
+  el.appendChild(list);
+}
+
+function appendSectionTitle(parent, text) {
+  const title = mk('div');
+  title.className = 'kv-section-title';
+  title.textContent = text;
+  parent.appendChild(title);
+}
+
+function appendKVRows(parent, rows) {
+  const list = mk('div');
+  list.className = 'kv-list';
+
+  rows.forEach(row => {
+    const item = mk('div');
+    item.className = 'kv-row';
+
+    const key = mk('span');
+    key.className = 'kv-key';
+    key.textContent = row.key;
+
+    const val = mk('span');
+    val.className = 'kv-val';
+    val.textContent = row.value;
+
+    const dot = mk('span');
+    dot.className = 'kv-dot ' + row.cls;
+
+    item.appendChild(key);
+    item.appendChild(val);
+    item.appendChild(dot);
+    list.appendChild(item);
+  });
+
+  parent.appendChild(list);
+}
+
+function openHistory() {
+  chrome.storage.local.get(['analysisHistory'], res => {
+    renderHistoryList(res?.analysisHistory || []);
+    show('historyPanel');
+  });
+}
+
+function closeHistory() {
+  hide('historyPanel');
+}
+
+function clearHistory() {
+  chrome.runtime.sendMessage({ type: 'CLEAR_HISTORY' }, () => {
+    renderHistoryList([]);
+    toast('History cleared');
+  });
+}
+
+function renderHistoryList(items) {
+  const list = $('historyList');
+  clear(list);
+
+  if (!items?.length) {
+    const empty = mk('div');
+    empty.className = 'history-empty';
+    empty.textContent = 'No history yet. Analyze a few pages first.';
+    list.appendChild(empty);
+    return;
+  }
+
+  items.forEach(item => {
+    const row = mk('div');
+    row.className = 'history-item';
+
+    const url = mk('div');
+    url.className = 'history-url';
+    url.textContent = (item.url || '').replace(/^https?:\/\//, '');
+
+    const title = mk('div');
+    title.className = 'history-title-el';
+    title.textContent = item.title || '(no title)';
+
+    const time = mk('div');
+    time.className = 'history-time';
+    try {
+      time.textContent = new Date(item.ts).toLocaleString();
+    } catch (_e) {
+      time.textContent = item.ts || '';
+    }
+
+    row.appendChild(url);
+    row.appendChild(title);
+    row.appendChild(time);
+    list.appendChild(row);
+  });
+}
+
+function exportJson() {
+  if (!currentReport) {
+    toast('Analyze a page first.');
+    return;
+  }
+
+  const blob = new Blob([
+    JSON.stringify({ report: currentReport, generatedAt: new Date().toISOString() }, null, 2)
+  ], { type: 'application/json' });
+
+  download(blob, 'seo-report-' + dateStamp() + '.json');
+  toast('JSON exported');
+}
+
+function exportTxt() {
+  if (!currentReport) {
+    toast('Analyze a page first.');
+    return;
+  }
+
+  const r = currentReport;
+  const lines = [
+    'SEO ANALYZER PRO - PAGE REPORT',
+    'Generated: ' + new Date().toLocaleString(),
+    'URL: ' + (r.url || ''),
+    '',
+    'Title (' + (r.title || '').length + ' chars): ' + (r.title || 'Missing'),
+    'Description (' + (r.metaDescription || '').length + ' chars): ' + (r.metaDescription || 'Missing'),
+    'Canonical: ' + (r.canonical || 'Missing'),
+    'Robots: ' + (r.robots || 'Not set'),
+    '',
+    'Headings:',
+    'H1: ' + (r.headings?.h1 || []).length,
+    'H2: ' + (r.headings?.h2 || []).length,
+    'H3: ' + (r.headings?.h3 || []).length,
+    'H4: ' + (r.headings?.h4 || []).length,
+    'H5: ' + (r.headings?.h5 || []).length,
+    'H6: ' + (r.headings?.h6 || []).length,
+    '',
+    'Images: ' + (r.images?.total || 0),
+    'Links: ' + (r.links?.totalCount || 0),
+    'Internal Links: ' + (r.links?.internal?.length || 0),
+    'External Links: ' + (r.links?.external?.length || 0),
+    'Unique Links: ' + (r.links?.uniqueCount || 0)
+  ];
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  download(blob, 'seo-report-' + dateStamp() + '.txt');
+  toast('TXT exported');
+}
+
+function download(blob, filename) {
   const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement("a");
+  const a = mk('a');
   a.href = url;
-  a.download = `seo-report-${date}.txt`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  
-  showNotification("📥 Report downloaded!");
 }
 
-async function exportPDF() {
-  showNotification("PDF export feature coming soon!");
-  // In a real implementation, you would use a PDF library like jsPDF
+function dateStamp() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-/* ================= SCREENSHOT SAFE ================= */
-async function takeScreenshot() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+function setLoading(active, message) {
+  const loading = $('loadingState');
+  const button = $('analyzeBtn');
 
-    if (!tab || tab.url.startsWith("chrome://")) {
-      showError("Screenshots not allowed on this page");
-      return;
-    }
-
-    chrome.tabs.captureVisibleTab(null, { format: 'png' }, (dataUrl) => {
-      if (chrome.runtime.lastError || !dataUrl) {
-        showError("Screenshot failed. Try on normal website.");
-        return;
-      }
-
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `seo-screenshot-${Date.now()}.png`;
-      a.click();
-
-      showNotification("📸 Screenshot saved!");
-    });
-
-  } catch (error) {
-    showError("Screenshot not supported here");
-  }
-}
-
-function showHistory() {
-  // Simple history implementation
-  if (analysisHistory.length === 0) {
-    alert("No analysis history yet. Analyze some pages first!");
+  if (active) {
+    loading.classList.remove('hidden');
+    button.disabled = true;
+    $('loadingText').textContent = message || 'Analyzing...';
+    show('emptyState');
+    hide('reportView');
     return;
   }
-  
-  const historyText = analysisHistory.map((item, index) => 
-    `${index + 1}. ${item.url} - Score: ${item.score}/100`
-  ).join('\n');
-  
-  alert(`Analysis History:\n\n${historyText}`);
+
+  loading.classList.add('hidden');
+  button.disabled = false;
 }
 
-function showSettings() {
-  alert("Settings feature coming soon!\n\nPlanned features:\n• API integration\n• Custom scoring rules\n• Export templates\n• Auto-analysis");
+function setProgress(percent) {
+  const bar = $('progressBar');
+  bar.classList.remove('w-0', 'w-5', 'w-20', 'w-45', 'w-80', 'w-100');
+  const key = [0, 5, 20, 45, 80, 100].includes(percent) ? percent : 0;
+  bar.classList.add('w-' + key);
 }
 
-/* ================= HISTORY FIX ================= */
-function saveToHistory(report, url) {
-  const score = parseInt(document.getElementById("scoreBadge").textContent) || 0;
-
-  analysisHistory.unshift({
-    url,
-    score,
-    timestamp: new Date().toISOString(),
-    title: report.title || 'Untitled'
-  });
-
-  if (analysisHistory.length > 10) analysisHistory.pop();
-
-  chrome.storage.local.set({ analysisHistory });
+function show(id) {
+  $(id).classList.remove('hidden');
 }
 
-/* ================= UI UTILITIES ================= */
-function showLoading() {
-  document.getElementById("loading").classList.add("active");
-  document.getElementById("analyzeBtn").disabled = true;
-  updateProgress(0);
+function hide(id) {
+  $(id).classList.add('hidden');
 }
 
-function hideLoading() {
-  document.getElementById("loading").classList.remove("active");
-  document.getElementById("analyzeBtn").disabled = false;
+function $(id) {
+  return document.getElementById(id);
 }
 
-function updateProgress(percent) {
-  const progressBar = document.getElementById("progressBar");
-  if (progressBar) {
-    progressBar.style.width = `${percent}%`;
+function bindClick(id, handler) {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('click', handler);
+}
+
+function mk(tag) {
+  return document.createElement(tag);
+}
+
+function clear(node) {
+  while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function truncateText(value, max) {
+  if (!value || value.length <= max) return value || '';
+  return value.slice(0, max - 1) + '...';
+}
+
+let toastTimer = null;
+function toast(message, isError) {
+  let el = document.querySelector('.toast');
+  if (!el) {
+    el = mk('div');
+    el.className = 'toast';
+    document.body.appendChild(el);
   }
+
+  el.textContent = message;
+  el.classList.toggle('error', !!isError);
+  el.classList.add('show');
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    el.classList.remove('error');
+  }, 2400);
 }
-
-function updateLoadingStat(text) {
-  const statElement = document.getElementById("loadingStat");
-  if (statElement) {
-    statElement.textContent = text;
-  }
-}
-
-function showError(message) {
-  alert(`❌ Error: ${message}`);
-}
-
-function showNotification(message) {
-  // Create notification element
-  const notification = document.createElement("div");
-  notification.className = "notification";
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: #10b981;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
-    font-size: 14px;
-    animation: slideIn 0.3s ease;
-  `;
-  
-  document.body.appendChild(notification);
-  
-  setTimeout(() => {
-    notification.style.animation = "slideOut 0.3s ease";
-    setTimeout(() => notification.remove(), 300);
-  }, 2000);
-}
-
-// Add CSS for notifications
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  @keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-  }
-`;
-document.head.appendChild(style);
-
-/* ================= FOOTER ACTIONS ================= */
-function showHelp() {
-  const helpText = `
-SEO Analyzer Pro - Help Guide
-
-🚀 HOW TO USE:
-1. Open any website in Chrome
-2. Click "Analyze Current Page"
-3. View detailed SEO report
-
-📊 QUICK ACTIONS:
-• H1/H2: Check heading structure
-• Meta: Check title & description
-• Images: Check image optimization
-• Links: Check link structure
-
-📈 SCORE BREAKDOWN:
-• 80-100: Excellent
-• 50-79: Good
-• 0-49: Needs Improvement
-
-Need more help? Contact support@example.com
-`;
-  
-  alert(helpText);
-}
-
-function showFeedback() {
-  const feedbackUrl = "https://forms.gle/example"; // Replace with actual form
-  chrome.tabs.create({ url: feedbackUrl });
-}
-
-function showAbout() {
-  const aboutText = `
-SEO Analyzer Pro v3.0
-
-🔧 A powerful SEO analysis tool for web developers, marketers, and SEO specialists.
-
-✨ FEATURES:
-• Complete SEO analysis
-• Technical SEO audit
-• Performance recommendations
-• Export capabilities
-• Dark/Light theme
-
-📝 Made with ❤️ for the SEO community
-
-🌐 Website: https://example.com
-🐙 GitHub: https://github.com/example
-`;
-  
-  alert(aboutText);
-}
-
-function showInstructions() {
-  const instructions = `
-🔍 How to use SEO Analyzer Pro:
-
-1. Navigate to any website
-2. Click the "Analyze Current Page" button
-3. Wait for the analysis to complete
-4. Review the SEO score and recommendations
-5. Use the tabs to view different report sections
-6. Export the report if needed
-
-💡 Tips:
-• Use Quick Actions for specific checks
-• Switch to Dark Mode for better visibility
-• Check Recommendations for improvement ideas
-• Save reports for tracking progress
-`;
-  
-  alert(instructions);
-}
-
-/* ================= LOAD HISTORY ================= */
-chrome.storage.local.get(['analysisHistory'], (result) => {
-  if (result.analysisHistory) {
-    analysisHistory = result.analysisHistory;
-  }
-});

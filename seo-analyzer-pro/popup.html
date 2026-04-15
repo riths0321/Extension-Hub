@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,208 +8,154 @@
 </head>
 
 <body>
-  <div class="container" data-theme="light">
+<div class="app" id="app">
 
-    <!-- HEADER with Toggle Switch -->
-    <header class="header">
-      <div class="header-top">
-        <div>
-          <h1>SEO Analyzer Pro</h1>
-          <p>Analyze complete website SEO instantly</p>
-        </div>
-        <div class="theme-toggle">
-          <span class="theme-icon">🌙</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="darkModeToggle">
-            <span class="toggle-slider"></span>
-          </label>
-          <span class="theme-icon">☀️</span>
-        </div>
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <svg class="brand-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+          <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M8 11h6M11 8v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <h2 class="brand-name">SEO Analyzer Pro</h2>
       </div>
-      
-      <!-- Progress Bar -->
-      <div class="progress-container">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-    </header>
-
-    <!-- ================= ANALYZER ================= -->
-    <div class="form">
-      <div class="section-header">
-        <h3>🔍 Website SEO Analyzer</h3>
-        <button class="info-btn" id="infoBtn" title="How to use">?</button>
-      </div>
-
-      <p class="description">
-        This will analyze the <strong>currently opened website tab</strong>
-      </p>
-
-      <!-- URL Input -->
-      <div class="input-group">
-        <input type="text" id="customUrl" placeholder="Or enter custom URL..." />
-        <button id="analyzeCustomBtn" class="btn-secondary">Analyze</button>
-      </div>
-
-      <button id="analyzeBtn" class="btn-primary">
-        🚀 Analyze Current Page
-      </button>
-
-      <!-- Loading -->
-      <div id="loading" class="loading-container">
-        <div class="spinner"></div>
-        <span>🔍 Analyzing website SEO…</span>
-        <div class="loading-stats">
-          <span id="loadingStat">Initializing...</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ================= SEO REPORT ================= -->
-    <div id="seoReport" class="seo-report">
-
-      <div class="section-header">
-        <h3>📊 SEO Report</h3>
-        <div class="score-badge" id="scoreBadge">0</div>
-      </div>
-
-      <!-- Score Gauge -->
-      <div class="score-gauge">
-        <div class="gauge">
-          <div class="gauge-fill" id="gaugeFill"></div>
-          <div class="gauge-text" id="gaugeText">0</div>
-        </div>
-        <div class="score-labels">
-          <span>Poor</span>
-          <span>Good</span>
-          <span>Excellent</span>
-        </div>
-      </div>
-
-      <!-- Report Tabs -->
-      <div class="report-tabs">
-        <button class="tab-btn active" data-tab="basic">Basic</button>
-        <button class="tab-btn" data-tab="advanced">Advanced</button>
-        <button class="tab-btn" data-tab="issues">Issues</button>
-      </div>
-
-      <!-- Tab Content -->
-      <div class="tab-content active" id="basicTab">
-        <div class="report-grid">
-          <div class="report-card">
-            <span class="report-label">Title</span>
-            <div class="report-value" id="rTitle">-</div>
-            <div class="report-detail">
-              <span id="titleLength">0 chars</span>
-              <span class="status-badge" id="titleStatus">-</span>
-            </div>
-          </div>
-
-          <div class="report-card">
-            <span class="report-label">Meta Description</span>
-            <div class="report-value" id="rDesc">-</div>
-            <div class="report-detail">
-              <span id="descLength">0 chars</span>
-              <span class="status-badge" id="descStatus">-</span>
-            </div>
-          </div>
-
-          <div class="report-card">
-            <span class="report-label">H1 Count</span>
-            <div class="report-value" id="rH1">0</div>
-            <div class="report-detail">
-              <span class="status-badge" id="h1Status">-</span>
-            </div>
-          </div>
-
-          <div class="report-card">
-            <span class="report-label">H2 Count</span>
-            <div class="report-value" id="rH2">0</div>
-            <div class="report-detail">
-              <span class="status-badge" id="h2Status">-</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-content" id="advancedTab">
-        <div class="report-grid">
-          <div class="report-card">
-            <span class="report-label">Canonical</span>
-            <div class="report-value" id="rCanonical">-</div>
-          </div>
-          <div class="report-card">
-            <span class="report-label">Robots Tag</span>
-            <div class="report-value" id="rRobots">-</div>
-          </div>
-          <div class="report-card">
-            <span class="report-label">Viewport</span>
-            <div class="report-value" id="rViewport">-</div>
-          </div>
-          <div class="report-card">
-            <span class="report-label">Charset</span>
-            <div class="report-value" id="rCharset">-</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-content" id="issuesTab">
-        <div class="issues-list" id="issuesList">
-          <!-- Issues will be populated here -->
-        </div>
-      </div>
-    </div>
-
-    <!-- WARNINGS -->
-    <div id="seoWarnings" class="seo-warnings">
-      <div class="warnings-header">
-        <h4>⚠️ Issues Found</h4>
-        <span class="badge" id="issuesCount">0</span>
-      </div>
-      <div class="warnings-list" id="warningsList"></div>
-    </div>
-
-    <!-- RECOMMENDATIONS -->
-    <div class="recommendations">
-      <h4>💡 Recommendations</h4>
-      <ul id="recommendationsList">
-        <!-- Recommendations will be populated here -->
-      </ul>
-    </div>
-
-    <!-- EXPORT & ACTIONS -->
-    <div class="actions-section">
-      <div class="export-actions">
-        <button id="copyReportBtn" class="btn-secondary">
-          📋 Copy Report
-        </button>
-        <button id="downloadReportBtn" class="btn-secondary">
-          ⬇ Download TXT File
-        </button>
-      </div>
-      
-      <div class="extra-actions">
-        <button id="screenshotBtn" class="btn-icon-small" title="Take Screenshot">
-          📸
-        </button>
-        <button id="historyBtn" class="btn-icon-small" title="View History">
-          📊
-        </button>
-        <button id="settingsBtn" class="btn-icon-small" title="Settings">
-          ⚙️
+      <div class="header-actions">
+        <label class="theme-toggle" for="themeToggle" title="Toggle theme">
+          <span class="theme-toggle-label">Theme</span>
+          <input id="themeToggle" type="checkbox" aria-label="Toggle dark mode" />
+          <span class="theme-toggle-track" aria-hidden="true"></span>
+        </label>
+        <button class="icon-btn" id="historyBtn" title="History" aria-label="History">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 8v4l3 3M3.05 11A9 9 0 1 0 4 7.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 4v4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </button>
       </div>
     </div>
+    <div class="progress-track"><div class="progress-fill w-0" id="progressBar"></div></div>
+  </header>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-      <div class="footer-content">
-        <small>v3.0 · SEO Analyzer Pro</small>
-      </div>
-    </footer>
-
+  <div class="analyze-bar">
+    <button class="btn-analyze" id="analyzeBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.2"/>
+        <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      Analyze Current Page
+    </button>
+    <div id="loadingState" class="loading-state hidden">
+      <div class="spinner"></div>
+      <span id="loadingText">Analyzing...</span>
+    </div>
   </div>
 
-  <script src="popup.js"></script>
+  <div id="reportView" class="report-view hidden">
+    <nav class="tab-nav" role="tablist">
+      <button class="tab-btn active" data-tab="summary" role="tab" aria-selected="true">SUMMARY</button>
+      <button class="tab-btn" data-tab="headers" role="tab" aria-selected="false">HEADERS</button>
+      <button class="tab-btn" data-tab="images" role="tab" aria-selected="false">IMAGES</button>
+      <button class="tab-btn" data-tab="links" role="tab" aria-selected="false">LINKS</button>
+      <button class="tab-btn" data-tab="social" role="tab" aria-selected="false">SOCIAL</button>
+      <button class="tab-btn" data-tab="tools" role="tab" aria-selected="false">TOOLS</button>
+    </nav>
+
+    <div class="tab-panel" id="tab-summary">
+      <div class="sum-table" id="sumTable"></div>
+      <div class="sum-heading-row" id="sumHeadingRow"></div>
+      <div class="sum-footer" id="sumFooter"></div>
+    </div>
+
+    <div class="tab-panel hidden" id="tab-headers">
+      <div class="h-note">The following heading tags were found in HTML.</div>
+      <div class="h-tree" id="headersTree"></div>
+      <section id="headerSummary" class="header-summary"></section>
+    </div>
+
+    <div class="tab-panel hidden" id="tab-images">
+      <div class="big-stats" id="imgBigStats"></div>
+      <div class="list-section-title">IMAGES</div>
+      <div class="img-list" id="imgList"></div>
+    </div>
+
+    <div class="tab-panel hidden" id="tab-links">
+      <div class="link-stats" id="linkStats"></div>
+      <div class="list-section-title">LINKS</div>
+      <div class="link-list" id="linkList"></div>
+    </div>
+
+    <div class="tab-panel hidden" id="tab-social">
+      <div id="ogSection"></div>
+      <div id="twitterSection"></div>
+    </div>
+
+    <div class="tab-panel hidden" id="tab-tools">
+      <div id="toolsSection"></div>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M8 11h6M11 8v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    <p class="empty-title">Analyze Any Page</p>
+    <p class="empty-sub">Navigate to a web page and click Analyze to get a full SEO report.</p>
+    <div class="empty-grid" aria-hidden="true">
+      <div class="empty-card">
+        <div class="empty-card-title">What You'll Get</div>
+        <div class="empty-chip-list">
+          <span class="empty-chip">Titles & Meta</span>
+          <span class="empty-chip">H1-H6 Audit</span>
+          <span class="empty-chip">Image ALT Check</span>
+          <span class="empty-chip">Link Insights</span>
+        </div>
+      </div>
+      <div class="empty-card">
+        <div class="empty-card-title">Quick Start</div>
+        <div class="empty-steps">
+          <div class="empty-step"><span>1</span> Open any website page</div>
+          <div class="empty-step"><span>2</span> Click Analyze Current Page</div>
+          <div class="empty-step"><span>3</span> Review tabs and export report</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="historyPanel" class="side-panel hidden" role="dialog" aria-label="Analysis History">
+    <div class="panel-header">
+      <span class="panel-title">Analysis History</span>
+      <button class="icon-btn" id="closeHistory" aria-label="Close">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="panel-actions">
+      <button class="small-btn danger" id="clearHistoryBtn">Clear All</button>
+    </div>
+    <div id="historyList" class="history-list"></div>
+  </div>
+
+  <footer class="footer">
+    <button class="footer-btn" id="exportJsonBtn">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      JSON
+    </button>
+    <button class="footer-btn" id="exportTxtBtn">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      TXT
+    </button>
+    <div class="footer-ver">SEO Pro v4.1</div>
+  </footer>
+
+</div>
+<script src="popup.js"></script>
 </body>
 </html>
