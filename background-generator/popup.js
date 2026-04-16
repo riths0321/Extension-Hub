@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // ============================================
@@ -42,6 +43,18 @@ document.addEventListener('DOMContentLoaded', () => {
     { name: 'Cosmic',  value: 'conic-gradient(from 0deg, #2563EB, #7C3AED, #EC4899, #2563EB)' },
   ];
 
+  const IMAGE_CATEGORY_KEYWORDS = {
+    random: 'wallpaper,background',
+    nature: 'nature',
+    abstract: 'abstract',
+    technology: 'technology',
+    minimal: 'minimal',
+    architecture: 'architecture',
+    travel: 'travel',
+  };
+
+  const TRUSTED_IMAGE_HOST = 'loremflickr.com';
+
   // ============================================
   // DOM HELPERS
   // ============================================
@@ -50,6 +63,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const $$ = (sel) => document.querySelectorAll(sel);
 
   const previewBox  = $('preview-box');
+
+  function createIcon(iconId, className = 'ui-icon ui-icon-14') {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', className);
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', `icons.svg#${iconId}`);
+    svg.appendChild(use);
+    return svg;
+  }
+
+  function buildImageUrl(category) {
+    const safeCategory = Object.prototype.hasOwnProperty.call(IMAGE_CATEGORY_KEYWORDS, category)
+      ? category
+      : 'random';
+    const keyword = IMAGE_CATEGORY_KEYWORDS[safeCategory];
+    const lock = Math.floor(Math.random() * 10000).toString();
+    const url = new URL(`https://${TRUSTED_IMAGE_HOST}/640/480/${keyword}`);
+    url.searchParams.set('lock', lock);
+    return url.toString();
+  }
+
+  function isTrustedImageUrl(value) {
+    if (!value || typeof value !== 'string') return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && url.hostname === TRUSTED_IMAGE_HOST;
+    } catch {
+      return false;
+    }
+  }
 
   // ============================================
   // INIT
@@ -61,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGradientControls();
     setupSolidControls();
     setupPatternControls();
+    setupImageControls();
     setupOutputControls();
     setupHeaderControls();
     setupHistory();
@@ -68,6 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPatternThumbs();
     updateAll();
     renderSaved();
+    // Init custom dropdowns (CSP-safe, replaces native <select> elements)
+    if (window.BGDropdowns) window.BGDropdowns.init();
   }
 
   // ============================================
@@ -98,12 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $$('#gradient-type-seg .seg-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         state.gradient.type = btn.dataset.value;
-        const angleControl = $('angle-control');
-        if (state.gradient.type === 'linear') {
-          angleControl.classList.remove('hidden');
-        } else {
-          angleControl.classList.add('hidden');
-        }
+        $('angle-control').classList.toggle('hidden', state.gradient.type !== 'linear');
         updateGradient();
       });
     });
@@ -163,9 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateColorStops() {
     const container = $('color-stops-row');
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
+    container.replaceChildren();
 
     state.gradient.colors.forEach((color, i) => {
       const item  = document.createElement('div');
@@ -215,14 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderGradientPresets() {
     const grid = $('gradient-presets');
-    while (grid.firstChild) {
-      grid.removeChild(grid.firstChild);
-    }
-
     GRADIENT_PRESETS.forEach(preset => {
       const swatch = document.createElement('div');
       swatch.className = 'preset-swatch';
-      swatch.setAttribute('data-bg', preset.value);
+      applyStylesToElement(swatch, { background: preset.value });
       swatch.title = preset.name;
 
       const lbl = document.createElement('div');
@@ -268,8 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateSolid() {
     const hex = state.solid.color;
     setPreview({ background: hex });
-    const previewSwatch = $('solid-preview-swatch');
-    previewSwatch.setAttribute('data-bg', hex);
+    $('solid-preview-swatch').style.background = hex;
     $('solid-color-name').textContent = getColorName(hex);
     updateSolidOutput();
     renderShades();
@@ -298,15 +333,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderShades() {
     const { h, s } = hexToHsl(state.solid.color);
     const row = $('shades-row');
-    while (row.firstChild) {
-      row.removeChild(row.firstChild);
-    }
-
+    row.replaceChildren();
     [95, 85, 75, 65, 50, 40, 30, 20, 10].forEach(l => {
       const shadeHex = hslToHex(h, s, l);
       const sw = document.createElement('div');
       sw.className = 'shade-swatch';
-      sw.setAttribute('data-bg', shadeHex);
+      sw.style.background = shadeHex;
       sw.title = shadeHex;
       sw.addEventListener('click', () => {
         state.solid.color = shadeHex;
@@ -339,14 +371,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHarmonyGroup(id, colors) {
     const container = $(id);
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
-
+    container.replaceChildren();
     colors.forEach(color => {
       const sw = document.createElement('div');
       sw.className = 'harmony-swatch';
-      sw.setAttribute('data-bg', color);
+      sw.style.background = color;
       sw.title = color.toUpperCase();
       sw.addEventListener('click', () => {
         state.solid.color = color;
@@ -472,10 +501,97 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================
-  // OUTPUT
+  // IMAGE TAB
+  // ============================================
+
+  function setupImageControls() {
+    $('generate-image').addEventListener('click', generateImage);
+
+    $('btn-copy-image-url').addEventListener('click', () => {
+      const url = $('image-url-output').textContent;
+      if (url && !url.startsWith('Click')) copyText(url);
+    });
+
+    $('btn-copy-output-image').addEventListener('click', () => {
+      const css = $('output-code-image').textContent;
+      if (css && !css.includes('...')) copyText(css);
+    });
+
+    $('open-image-tab').addEventListener('click', () => {
+      const url = $('image-url-output').textContent;
+      if (!isTrustedImageUrl(url)) {
+        showToast('Generate a valid image first');
+        return;
+      }
+      window.open(url, '_blank', 'noopener,noreferrer');
+    });
+
+    $('btn-save-image').addEventListener('click', () => {
+      const url = $('image-url-output').textContent;
+      if (!isTrustedImageUrl(url)) { showToast('Generate an image first'); return; }
+      const snapshot = capturePreviewSnapshot();
+      const item = {
+        id: Date.now(),
+        snapshot,
+        css: `background-image: url('${url}'); background-size: cover; background-position: center;`,
+        label: new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
+      };
+      state.saved.unshift(item);
+      if (state.saved.length > 12) state.saved.pop();
+      persistToStorage();
+      renderSaved();
+      showToast('Saved ✓');
+    });
+  }
+
+  function generateImage() {
+    const category = $('image-category').value;
+    const url = buildImageUrl(category);
+
+    // Show loader, disable button
+    $('image-loader').classList.remove('hidden');
+    $('generate-image').disabled = true;
+    $('image-url-output').textContent = 'Loading...';
+    $('output-code-image').textContent = 'Loading...';
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.addEventListener('load', () => {
+      // Apply as preview background via the central setPreview helper
+      setPreview({
+        'background-image':    `url('${url}')`,
+        'background-size':     'cover',
+        'background-position': 'center',
+      });
+
+      const css = `background-image: url('${url}'); background-size: cover; background-position: center;`;
+      state.currentCSS = css;
+      $('image-url-output').textContent = url;
+      $('output-code-image').textContent = css;
+      updateOutput();
+
+      $('image-loader').classList.add('hidden');
+      $('generate-image').disabled = false;
+      showToast('Image loaded ✓');
+    });
+
+    img.addEventListener('error', () => {
+      $('image-url-output').textContent = 'Error loading image. Try again.';
+      $('output-code-image').textContent = 'Error loading image.';
+      $('image-loader').classList.add('hidden');
+      $('generate-image').disabled = false;
+      showToast('Failed to load image');
+    });
+
+    img.src = url;
+  }
+
+  // ============================================
   // ============================================
 
   function setupOutputControls() {
+    // Handle gradient tab output
     $$('#output-format-toggle .fmt-btn').forEach(btn => {
       btn.addEventListener('click', () => { setOutputFormat(btn.dataset.fmt); });
     });
@@ -483,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
       copyText($('output-code').textContent);
     });
 
+    // Handle solid tab output
     $$('#output-format-toggle-solid .fmt-btn').forEach(btn => {
       btn.addEventListener('click', () => { setOutputFormat(btn.dataset.fmt); });
     });
@@ -490,6 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
       copyText($('output-code-solid').textContent);
     });
 
+    // Handle pattern tab output
     $$('#output-format-toggle-pattern .fmt-btn').forEach(btn => {
       btn.addEventListener('click', () => { setOutputFormat(btn.dataset.fmt); });
     });
@@ -497,6 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
       copyText($('output-code-pattern').textContent);
     });
 
+    // Handle saved tab output
     $$('#output-format-toggle-saved .fmt-btn').forEach(btn => {
       btn.addEventListener('click', () => { setOutputFormat(btn.dataset.fmt); });
     });
@@ -507,6 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setOutputFormat(format) {
     state.outputFormat = format;
+    // Update active state for all toggle groups
     $$('.fmt-toggle .fmt-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.fmt === format);
     });
@@ -515,7 +635,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateOutput() {
     const css = state.outputFormat === 'tailwind' ? generateTailwind() : state.currentCSS;
-    const ids = ['output-code', 'output-code-solid', 'output-code-pattern', 'output-code-saved'];
+    // Update all output code elements
+    const ids = ['output-code', 'output-code-solid', 'output-code-pattern', 'output-code-saved', 'output-code-image'];
     ids.forEach(id => { const el = $(id); if (el) el.textContent = css; });
   }
 
@@ -549,11 +670,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ============================================
-  // HEADER — APPLY TO PAGE (CSP COMPLIANT)
+  // HEADER — APPLY TO PAGE
   // ============================================
 
   function setupHeaderControls() {
     $('btn-apply-page').addEventListener('click', applyToPage);
+    // Handle all save buttons (now have unique IDs per tab)
     ['btn-save-gradient', 'btn-save-solid', 'btn-save-pattern'].forEach(id => {
       const btn = $(id);
       if (btn) btn.addEventListener('click', saveCurrentBackground);
@@ -574,23 +696,23 @@ document.addEventListener('DOMContentLoaded', () => {
           .map(([k, v]) => `${k}: ${v}`)
           .join('; ');
       } else {
-        const bgVal = previewBox.style.background || previewBox.style.backgroundColor;
-        cssProps = `background: ${bgVal}`;
+        // Read from state, not from element.style
+        cssProps = state.currentCSS
+          .replace(/;?\s*$/, '')          // trim trailing semicolon
+          .replace(/^background-color:/, 'background:'); // normalise
       }
 
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: (css) => {
-          const styleId = 'bg-gen-pro-injected';
-          let styleEl = document.getElementById(styleId);
-          
-          if (!styleEl) {
-            styleEl = document.createElement('style');
-            styleEl.id = styleId;
-            document.head.appendChild(styleEl);
+          const STYLE_ID = '__bg_gen_style__';
+          let el = document.getElementById(STYLE_ID);
+          if (!el) {
+            el = document.createElement('style');
+            el.id = STYLE_ID;
+            document.head.appendChild(el);
           }
-          
-          styleEl.textContent = `body { ${css} !important; }`;
+          el.textContent = `body { ${css} !important; }`;
         },
         args: [cssProps],
       });
@@ -623,35 +745,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderSaved() {
     const container = $('saved-container');
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
+    container.replaceChildren();
 
     if (state.saved.length === 0) {
-      const emptyDiv = document.createElement('div');
-      emptyDiv.className = 'empty-saved';
-      
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('width', '40');
-      svg.setAttribute('height', '40');
-      svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', 'currentColor');
-      svg.setAttribute('stroke-width', '1');
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z');
-      svg.appendChild(path);
-      
-      const p = document.createElement('p');
-      p.textContent = 'No saved backgrounds yet';
-      
-      const small = document.createElement('small');
-      small.textContent = 'Use the bookmark icon to save';
-      
-      emptyDiv.appendChild(svg);
-      emptyDiv.appendChild(p);
-      emptyDiv.appendChild(small);
-      container.appendChild(emptyDiv);
+      const empty = document.createElement('div');
+      empty.className = 'empty-saved';
+
+      const icon = createIcon('icon-bookmark', 'ui-icon');
+      icon.setAttribute('width', '40');
+      icon.setAttribute('height', '40');
+      empty.appendChild(icon);
+
+      const title = document.createElement('p');
+      title.textContent = 'No saved backgrounds yet';
+      empty.appendChild(title);
+
+      const hint = document.createElement('small');
+      hint.textContent = 'Use the bookmark icon to save';
+      empty.appendChild(hint);
+
+      container.appendChild(empty);
       return;
     }
 
@@ -690,13 +803,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       el.addEventListener('mouseenter', () => {
+        // Temporarily show this item's CSS in the output
         const originalCSS = state.currentCSS;
         state.currentCSS = item.css;
         updateOutput();
+        // Store original for mouseleave
         el._originalCSS = originalCSS;
       });
 
       el.addEventListener('mouseleave', () => {
+        // Restore original CSS
         if (el._originalCSS) {
           state.currentCSS = el._originalCSS;
           updateOutput();
@@ -722,6 +838,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  // History
   function pushHistory(cssValue) {
     if (!cssValue) return;
     if (state.history[0] && state.history[0].value === cssValue) return;
@@ -740,40 +857,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHistory() {
     const row = $('recent-history-row');
-    while (row.firstChild) {
-      row.removeChild(row.firstChild);
-    }
+    row.replaceChildren();
 
     if (state.history.length === 0) {
-      const emptyDiv = document.createElement('div');
-      emptyDiv.className = 'empty-recent';
-      
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('width', '40');
-      svg.setAttribute('height', '40');
-      svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', 'currentColor');
-      svg.setAttribute('stroke-width', '1');
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', '12');
-      circle.setAttribute('cy', '12');
-      circle.setAttribute('r', '10');
-      const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-      polyline.setAttribute('points', '12 6 12 12 16 14');
-      svg.appendChild(circle);
-      svg.appendChild(polyline);
-      
-      const p = document.createElement('p');
-      p.textContent = 'No history yet';
-      
-      const small = document.createElement('small');
-      small.textContent = 'Your recent backgrounds will appear here';
-      
-      emptyDiv.appendChild(svg);
-      emptyDiv.appendChild(p);
-      emptyDiv.appendChild(small);
-      row.appendChild(emptyDiv);
+      const empty = document.createElement('div');
+      empty.className = 'empty-recent';
+
+      const icon = createIcon('icon-recent', 'ui-icon');
+      icon.setAttribute('width', '40');
+      icon.setAttribute('height', '40');
+      empty.appendChild(icon);
+
+      const title = document.createElement('p');
+      title.textContent = 'No history yet';
+      empty.appendChild(title);
+
+      const hint = document.createElement('small');
+      hint.textContent = 'Your recent backgrounds will appear here';
+      empty.appendChild(hint);
+
+      row.appendChild(empty);
       return;
     }
 
@@ -792,74 +895,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const copyBtn = document.createElement('button');
       copyBtn.className = 'history-item-copy-btn';
       copyBtn.title = 'Copy to clipboard';
-      
-      const copySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      copySvg.setAttribute('width', '14');
-      copySvg.setAttribute('height', '14');
-      copySvg.setAttribute('viewBox', '0 0 24 24');
-      copySvg.setAttribute('fill', 'none');
-      copySvg.setAttribute('stroke', 'currentColor');
-      copySvg.setAttribute('stroke-width', '2');
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', '9');
-      rect.setAttribute('y', '9');
-      rect.setAttribute('width', '13');
-      rect.setAttribute('height', '13');
-      rect.setAttribute('rx', '2');
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1');
-      copySvg.appendChild(rect);
-      copySvg.appendChild(path);
-      copyBtn.appendChild(copySvg);
-      
-      copyBtn.classList.add('history-btn-hidden');
+      copyBtn.appendChild(createIcon('icon-copy'));
 
       const removeBtn = document.createElement('button');
       removeBtn.className = 'history-item-remove-btn';
       removeBtn.title = 'Remove recent item';
-      
-      const removeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      removeSvg.setAttribute('width', '14');
-      removeSvg.setAttribute('height', '14');
-      removeSvg.setAttribute('viewBox', '0 0 24 24');
-      removeSvg.setAttribute('fill', 'none');
-      removeSvg.setAttribute('stroke', 'currentColor');
-      removeSvg.setAttribute('stroke-width', '2');
-      const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line1.setAttribute('x1', '18');
-      line1.setAttribute('y1', '6');
-      line1.setAttribute('x2', '6');
-      line1.setAttribute('y2', '18');
-      const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line2.setAttribute('x1', '6');
-      line2.setAttribute('y1', '6');
-      line2.setAttribute('x2', '18');
-      line2.setAttribute('y2', '18');
-      removeSvg.appendChild(line1);
-      removeSvg.appendChild(line2);
-      removeBtn.appendChild(removeSvg);
-      
-      removeBtn.classList.add('history-btn-hidden');
+      removeBtn.appendChild(createIcon('icon-close'));
 
-      const arrowSpan = document.createElement('span');
-      arrowSpan.className = 'history-item-arrow';
-      const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      arrowSvg.setAttribute('width', '12');
-      arrowSvg.setAttribute('height', '12');
-      arrowSvg.setAttribute('viewBox', '0 0 24 24');
-      arrowSvg.setAttribute('fill', 'none');
-      arrowSvg.setAttribute('stroke', 'currentColor');
-      arrowSvg.setAttribute('stroke-width', '2.5');
-      const arrowPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-      arrowPoly.setAttribute('points', '9 18 15 12 9 6');
-      arrowSvg.appendChild(arrowPoly);
-      arrowSpan.appendChild(arrowSvg);
+      const arrow = document.createElement('span');
+      arrow.className = 'history-item-arrow';
+      arrow.appendChild(createIcon('icon-chevron-right', 'ui-icon ui-icon-12 ui-icon-stroke-25'));
 
       itemDiv.appendChild(swatch);
       itemDiv.appendChild(code);
       itemDiv.appendChild(copyBtn);
       itemDiv.appendChild(removeBtn);
-      itemDiv.appendChild(arrowSpan);
+      itemDiv.appendChild(arrow);
 
       copyBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -884,13 +935,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       itemDiv.addEventListener('mouseenter', () => {
-        copyBtn.classList.remove('history-btn-hidden');
-        removeBtn.classList.remove('history-btn-hidden');
+        itemDiv.classList.add('history-item--hovered');
       });
 
       itemDiv.addEventListener('mouseleave', () => {
-        copyBtn.classList.add('history-btn-hidden');
-        removeBtn.classList.add('history-btn-hidden');
+        itemDiv.classList.remove('history-item--hovered');
       });
 
       row.appendChild(itemDiv);
@@ -906,13 +955,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await chrome.storage.local.get(['history', 'saved']);
       if (data.history) state.history = data.history;
       if (data.saved)   state.saved   = data.saved;
-    } catch (e) { }
+    } catch (e) { /* Running outside extension context */ }
   }
 
   function persistToStorage() {
     try {
       chrome.storage.local.set({ history: state.history, saved: state.saved });
-    } catch (e) { }
+    } catch (e) { /* Running outside extension context */ }
   }
 
   // ============================================
@@ -924,7 +973,8 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'gradient': updateGradient(); break;
       case 'solid':    updateSolid();    break;
       case 'pattern':  updatePattern();  break;
-      case 'saved':    break;
+      case 'image':    /* preview stays */ break;
+      case 'saved':    /* preview stays */ break;
     }
   }
 
@@ -933,10 +983,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================
 
   function setPreview(styles) {
-    previewBox.style.background = '';
-    previewBox.style.backgroundImage = '';
-    previewBox.style.backgroundColor = '';
-    previewBox.style.backgroundSize = '';
+    // Clear all bg properties first
+    previewBox.style.background         = '';
+    previewBox.style.backgroundImage    = '';
+    previewBox.style.backgroundColor    = '';
+    previewBox.style.backgroundSize     = '';
     previewBox.style.backgroundPosition = '';
     applyStylesToElement(previewBox, styles);
   }
@@ -944,6 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function applyStylesToElement(el, styles) {
     Object.entries(styles).forEach(([k, v]) => {
       if (v === '' || v === undefined) return;
+      // Convert kebab-case to camelCase
       const camel = k.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       el.style[camel] = v;
     });
@@ -951,8 +1003,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateRangeTrack(input, min, max) {
     const pct = ((parseFloat(input.value) - min) / (max - min)) * 100;
-    input.style.background =
-      `linear-gradient(to right, var(--blue) 0%, var(--blue) ${pct}%, var(--border) ${pct}%)`;
+    // CSS custom property — drives the ::before pseudo fill defined in styles.css
+    input.style.setProperty('--track-fill', `${pct}%`);
   }
 
   function randomVibrantColor() {
@@ -962,6 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return hslToHex(h, s, l);
   }
 
+  // Color name approximation
   function getColorName(hex) {
     const { h, s, l } = hexToHsl(hex);
     if (s < 8) {
@@ -985,6 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return name;
   }
 
+  // Colour conversion functions
   function hexToRgb(hex) {
     return {
       r: parseInt(hex.slice(1, 3), 16),
@@ -1038,6 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
 
+  // Clipboard & toast
   function copyText(text) {
     navigator.clipboard.writeText(text).then(() => showToast('Copied ✓'));
   }
@@ -1049,18 +1104,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => toast.classList.remove('show'), 2000);
   }
-
-  // Apply CSS for elements with data-bg attribute
-  function applyDataBgStyles() {
-    document.querySelectorAll('[data-bg]').forEach(el => {
-      el.style.background = el.getAttribute('data-bg');
-    });
-  }
-
-  // Call this after rendering dynamic content
-  const observer = new MutationObserver(() => applyDataBgStyles());
-  observer.observe(document.body, { childList: true, subtree: true });
-  applyDataBgStyles();
 
   // ============================================
   // GO!

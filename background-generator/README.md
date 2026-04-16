@@ -1,5 +1,7 @@
 # 🎨 Background Generator Pro
 
+## 👨‍💻 Original by Saurabh Tiwari — upgraded to v3.0
+
 ---
 
 ### 🚀 What's New in v3.0

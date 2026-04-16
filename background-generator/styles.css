@@ -32,6 +32,29 @@ body {
   overflow-x: hidden;
 }
 
+.ui-icon {
+  display: block;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.ui-icon-13 { width: 13px; height: 13px; }
+.ui-icon-14 { width: 14px; height: 14px; }
+.ui-icon-18 { width: 18px; height: 18px; }
+.ui-icon-12 { width: 12px; height: 12px; }
+
+.ui-icon-fill {
+  stroke: none;
+  fill: currentColor;
+}
+
+.ui-icon-stroke-22 { stroke-width: 2.2; }
+.ui-icon-stroke-25 { stroke-width: 2.5; }
+
 /* ============================================
    HEADER
    ============================================ */
@@ -212,6 +235,14 @@ header {
   color: var(--text-sub);
 }
 
+.field-label-block { display: block; }
+.field-label-gap-8 { margin-bottom: 8px; }
+.field-label-gap-10 { margin-bottom: 10px; }
+.field-row-last { margin-bottom: 0; }
+.harmony-row-last { margin-bottom: 0; }
+.icon-hidden { visibility: hidden; }
+.btn-gap-top-8 { margin-top: 8px; }
+
 /* Segmented control */
 .seg-control {
   display: flex;
@@ -287,7 +318,6 @@ header {
   appearance: none;
   height: 4px;
   border-radius: 2px;
-  background: linear-gradient(to right, var(--blue) 0%, var(--blue) 37.5%, var(--border) 37.5%);
   outline: none;
   cursor: pointer;
 }
@@ -1022,64 +1052,275 @@ header {
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* ============================================
+   IMAGE TAB
+   ============================================ */
 
-
-/* For gradient angle control visibility */
-.hidden {
-  display: none !important;
+.select-input {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-width: 150px;
 }
 
-/* For history button visibility (CSP compliant) */
-.history-btn-hidden {
+.select-input:focus {
+  border-color: var(--blue);
+}
+
+.image-loader-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.image-loader-wrap.hidden {
+  display: none;
+}
+
+.image-loader-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Replaces .style.display toggling in popup.js */
+.hidden { display: none !important; }
+
+/* Hide native <select> — dropdown.js shows custom UI instead */
+.bg-select-hidden { display: none !important; }
+
+/* Range track fill via CSS custom property --track-fill (set by updateRangeTrack) */
+.range-input {
+  background: linear-gradient(
+    to right,
+    var(--blue) 0%,
+    var(--blue) var(--track-fill, 37.5%),
+    var(--border) var(--track-fill, 37.5%)
+  );
+}
+
+/* History hover buttons — class-driven (no inline opacity/pointerEvents) */
+.history-item-copy-btn,
+.history-item-remove-btn {
   opacity: 0;
   pointer-events: none;
+  transition: opacity var(--anim), background var(--anim), color var(--anim);
 }
 
-/* For section labels that had inline styles removed */
-.section-label-preset {
-  display: block;
-  margin-bottom: 10px;
+.history-item--hovered .history-item-copy-btn,
+.history-item--hovered .history-item-remove-btn {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.shades-label {
-  display: block;
-  margin-bottom: 8px;
+/* ============================================
+   CUSTOM DROPDOWN  (dropdown.js)
+   ============================================ */
+
+.bg-dropdown {
+  position: relative;
+  display: inline-block;
+  width: 100%;
 }
 
-.harmony-label {
-  display: block;
-  margin-bottom: 10px;
+/* Trigger button */
+.bg-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-heading);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--anim), box-shadow var(--anim);
+  text-align: left;
+  gap: 8px;
 }
 
-.pattern-type-label {
-  display: block;
-  margin-bottom: 10px;
+.bg-trigger:hover {
+  border-color: var(--blue);
 }
 
-.pattern-size-row {
-  margin-bottom: 0;
+.bg-trigger:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
-.harmony-row-last {
-  margin-bottom: 0;
+.bg-open .bg-trigger {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-/* Support for data-bg attribute styling */
-[data-bg] {
-  background: attr(data-bg);
+.bg-trigger-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.preset-swatch[data-bg] {
-  background: var(--bg-value, linear-gradient(135deg, #2563EB, #7C3AED, #EC4899));
+/* Caret icon — rotates when open */
+.bg-caret {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-sub);
+  transition: transform 0.2s ease;
 }
 
-.solid-preview-swatch[data-bg],
-.shade-swatch[data-bg],
-.harmony-swatch[data-bg] {
-  background: attr(data-bg);
+.bg-open .bg-caret {
+  transform: rotate(180deg);
 }
 
-/* Hidden save button in saved tab */
-.btn-save-hidden {
-  visibility: hidden;
+/* Floating menu */
+.bg-menu {
+  position: fixed;
+  z-index: 99999;
+  background: var(--bg);
+  border: 1.5px solid var(--blue-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  /* hidden by default */
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.bg-menu.bg-vis {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Search box inside menu */
+.bg-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bg-search-icon {
+  flex-shrink: 0;
+  color: var(--text-sub);
+}
+
+.bg-search {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--text-heading);
+  outline: none;
+}
+
+.bg-search::placeholder {
+  color: var(--text-sub);
+}
+
+/* Scrollable list */
+.bg-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.bg-list::-webkit-scrollbar { width: 5px; }
+.bg-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+/* Individual item */
+.bg-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-heading);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--anim), color var(--anim);
+  gap: 8px;
+}
+
+.bg-item:hover,
+.bg-item:focus-visible {
+  background: var(--blue-light);
+  color: var(--blue);
+  outline: none;
+}
+
+.bg-item-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Checkmark — hidden unless active */
+.bg-item-check {
+  flex-shrink: 0;
+  opacity: 0;
+  color: var(--blue);
+  transition: opacity var(--anim);
+}
+
+.bg-item.bg-active .bg-item-check {
+  opacity: 1;
+}
+
+.bg-item.bg-active {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+/* No-results state */
+.bg-empty {
+  padding: 12px 10px;
+  font-size: 0.8rem;
+  color: var(--text-sub);
+  text-align: center;
 }
