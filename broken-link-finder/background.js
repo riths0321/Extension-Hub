@@ -1,356 +1,322 @@
-// Background service worker for Broken Link Finder
+// background.js — Service Worker (Manifest V3)
+// Uses plain functions (no ES module imports) for MV3 service worker compatibility.
 
-// Store for bulk scan data
-let scanCache = new Map();
+// ─── In-memory cache ───────────────────────────────────────────────────────────
+const linkCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 min
+const MAX_CACHE = 2000;
 
-// Listen for installation
-chrome.runtime.onInstalled.addListener(() => {
-    console.log('Broken Link Finder installed');
-    
-    // Set default settings
-    chrome.storage.sync.get(['settings'], (data) => {
-        if (!data.settings) {
-            chrome.storage.sync.set({
-                settings: {
-                    autoHighlight: true,
-                    showNotifications: true,
-                    checkExternalLinks: false,
-                    bulkScanMode: false,
-                    timeout: 10000
-                }
-            });
-        }
-    });
-    
-    // Create context menu items
-    chrome.contextMenus.create({
-        id: 'scanPage',
-        title: 'Scan this page for broken links',
-        contexts: ['page']
-    });
-    
-    chrome.contextMenus.create({
-        id: 'scanLink',
-        title: 'Check this link',
-        contexts: ['link']
-    });
-});
-
-// Handle context menu clicks
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-    // 👉 FIX: Ensure we always have a valid tab
-    let targetTab = tab;
-
-    if (!targetTab || typeof targetTab.id !== 'number') {
-        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        targetTab = activeTab;
-    }
-
-    if (!targetTab || typeof targetTab.id !== 'number') {
-        console.error('No valid tab found for scanning');
-        return;
-    }
-
-    if (info.menuItemId === 'scanPage') {
-        chrome.tabs.sendMessage(targetTab.id, { action: 'findAllLinks' }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.error('Failed to send message:', chrome.runtime.lastError);
-            }
-        });
-    } 
-    else if (info.menuItemId === 'scanLink') {
-        checkSingleLink(info.linkUrl).then(result => {
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'icons/icon128.png',
-                title: 'Link Check Result',
-                message: `${info.linkUrl}\nStatus: ${result.ok ? '✅ Working' : '❌ Broken'}`
-            });
-        });
-    }
-});
-
-// Add site-specific cache
-let siteCache = new Map();
-
-// Add function to clear cache for specific site
-function clearSiteCache(url) {
-    try {
-        const urlObj = new URL(url);
-        const domain = urlObj.hostname;
-        
-        // Clear all entries from this domain
-        for (const [key] of scanCache.entries()) {
-            try {
-                const cachedUrlObj = new URL(key);
-                if (cachedUrlObj.hostname === domain) {
-                    scanCache.delete(key);
-                }
-            } catch (e) {
-                // Invalid URL in cache, remove it
-                scanCache.delete(key);
-            }
-        }
-        
-        console.log(`Cleared cache for domain: ${domain}`);
-    } catch (error) {
-        console.error('Error clearing site cache:', error);
-    }
+function cacheGet(url) {
+  const entry = linkCache.get(url);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) { linkCache.delete(url); return null; }
+  return entry.result;
 }
 
-
-// Modify the message listener to clear cache
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === 'CHECK_LINK') {
-        // Check link status with proper CORS handling
-        checkLinkStatus(request.url)
-            .then(result => sendResponse(result))
-            .catch(error => sendResponse({
-                ok: false,
-                status: 0,
-                error: error.message,
-                statusText: 'Check Failed'
-            }));
-        return true;
-    }
-    
-    if (request.type === 'SHOW_NOTIFICATION') {
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: request.title || 'Broken Link Finder',
-            message: request.message,
-            priority: 2
-        });
-        sendResponse({ success: true });
-    }
-    
-    if (request.type === 'BULK_SCAN') {
-        handleBulkScan(request.url, request.depth)
-            .then(results => sendResponse(results))
-            .catch(error => sendResponse({ error: error.message }));
-        return true;
-    }
-    
-    if (request.type === 'PAGE_LOAD_SCAN') {
-        console.log('Auto-scan triggered for:', request.url);
-        sendResponse({ received: true });
-    }
-    
-    // NEW: Clear cache for specific site
-    if (request.type === 'CLEAR_SITE_CACHE') {
-        clearSiteCache(request.url);
-        sendResponse({ success: true });
-        return true;
-    }
-});
-
-
-// Check a single link status - FIXED VERSION
-async function checkLinkStatus(url) {
-    try {
-        // Skip certain URL schemes
-        if (url.startsWith('mailto:') || url.startsWith('tel:') || 
-            url.startsWith('javascript:') || url.startsWith('#') || url === '') {
-            return { ok: true, status: 'skipped', statusText: 'Skipped', url: url };
-        }
-        
-        // Check cache first
-        const cacheKey = url;
-        const cached = scanCache.get(cacheKey);
-        if (cached && (Date.now() - cached.timestamp < 300000)) { // 5 minute cache
-            return cached.result;
-        }
-        
-        // Make request with timeout - FIXED: Try HEAD first, then GET
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
-        
-        try {
-            // Try HEAD request first (faster)
-            const headResponse = await fetch(url, {
-                method: 'HEAD',
-                signal: controller.signal,
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Broken Link Finder Extension)'
-                }
-            });
-            
-            clearTimeout(timeout);
-            
-            const result = {
-                ok: headResponse.ok,
-                status: headResponse.status,
-                statusText: headResponse.statusText,
-                url: url
-            };
-            
-            // Cache the result
-            scanCache.set(cacheKey, {
-                result: result,
-                timestamp: Date.now()
-            });
-            
-            // Limit cache size
-            if (scanCache.size > 1000) {
-                const oldestKey = Array.from(scanCache.keys())[0];
-                scanCache.delete(oldestKey);
-            }
-            
-            return result;
-            
-        } catch (headError) {
-            // If HEAD fails, try GET (some servers block HEAD)
-            clearTimeout(timeout);
-            const getController = new AbortController();
-            const getTimeout = setTimeout(() => getController.abort(), 10000);
-            
-            try {
-                const getResponse = await fetch(url, {
-                    method: 'GET',
-                    signal: getController.signal,
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Broken Link Finder Extension)'
-                    }
-                });
-                
-                clearTimeout(getTimeout);
-                
-                const result = {
-                    ok: getResponse.ok,
-                    status: getResponse.status,
-                    statusText: getResponse.statusText,
-                    url: url
-                };
-                
-                // Cache the result
-                scanCache.set(cacheKey, {
-                    result: result,
-                    timestamp: Date.now()
-                });
-                
-                return result;
-                
-            } catch (getError) {
-                clearTimeout(getTimeout);
-                throw getError;
-            }
-        }
-        
-    } catch (error) {
-        console.log(`Failed to check ${url}:`, error.message);
-        
-        // Provide more specific error messages
-        let statusText = 'Network Error';
-        let status = 0;
-        
-        if (error.name === 'AbortError') {
-            statusText = 'Timeout (>10s)';
-        } else if (error.message.includes('Failed to fetch')) {
-            statusText = 'Connection Failed';
-        } else if (error.message.includes('CORS')) {
-            statusText = 'CORS Error';
-        }
-        
-        return {
-            ok: false,
-            status: status,
-            error: error.message,
-            statusText: statusText,
-            url: url
-        };
-    }
+function cacheSet(url, result) {
+  if (linkCache.size >= MAX_CACHE) {
+    linkCache.delete(linkCache.keys().next().value);
+  }
+  linkCache.set(url, { result, ts: Date.now() });
 }
 
-// Check single link (for context menu)
-async function checkSingleLink(url) {
-    return await checkLinkStatus(url);
+function cacheClearDomain(domain) {
+  for (const key of linkCache.keys()) {
+    try { if (new URL(key).hostname === domain) linkCache.delete(key); }
+    catch (_) { linkCache.delete(key); }
+  }
 }
 
-// Handle bulk website scan
-async function handleBulkScan(baseUrl, maxDepth = 2) {
-    const visited = new Set();
-    const results = [];
-    
-    async function crawl(url, depth) {
-        if (depth > maxDepth || visited.has(url)) return;
-        
-        visited.add(url);
-        
-        try {
-            // Fetch the page
-            const response = await fetch(url);
-            const html = await response.text();
-            
-            // Parse links (simplified - in real app use proper parser)
-            const links = extractLinks(html, baseUrl);
-            
-            // Check each link
-            for (const link of links) {
-                const result = await checkLinkStatus(link);
-                results.push({
-                    url: link,
-                    status: result.status,
-                    ok: result.ok,
-                    sourcePage: url
-                });
-                
-                // Recursively crawl internal links
-                if (result.ok && isInternalLink(link, baseUrl) && depth < maxDepth) {
-                    await crawl(link, depth + 1);
-                }
-            }
-            
-        } catch (error) {
-            console.error(`Failed to crawl ${url}:`, error);
-        }
-    }
-    
-    await crawl(baseUrl, 0);
-    return results;
-}
-
-// Helper functions
-function extractLinks(html, baseUrl) {
-    const links = [];
-    const regex = /href=["']([^"']+)["']/gi;
-    let match;
-    
-    while ((match = regex.exec(html)) !== null) {
-        let url = match[1];
-        
-        // Convert relative URLs to absolute
-        try {
-            if (url.startsWith('/')) {
-                url = new URL(url, baseUrl).href;
-            } else if (!url.startsWith('http')) {
-                url = new URL(url, baseUrl).href;
-            }
-            links.push(url);
-        } catch (e) {
-            // Invalid URL, skip
-        }
-    }
-    
-    return [...new Set(links)]; // Remove duplicates
-}
-
-function isInternalLink(url, baseUrl) {
-    try {
-        const urlObj = new URL(url);
-        const baseObj = new URL(baseUrl);
-        return urlObj.hostname === baseObj.hostname;
-    } catch {
-        return false;
-    }
-}
-
-// Clean up old cache entries periodically
 setInterval(() => {
-    const now = Date.now();
-    for (const [key, value] of scanCache.entries()) {
-        if (now - value.timestamp > 300000) { // 5 minutes
-            scanCache.delete(key);
-        }
+  const now = Date.now();
+  for (const [k, v] of linkCache.entries()) {
+    if (now - v.ts > CACHE_TTL) linkCache.delete(k);
+  }
+}, 60_000);
+
+// ─── Link checking ─────────────────────────────────────────────────────────────
+const TIMEOUT_MS = 10_000;
+const SLOW_MS = 3_000;
+const SKIP = ['mailto:', 'tel:', 'javascript:', 'data:', 'blob:', 'chrome:', 'chrome-extension:'];
+
+function shouldSkip(url) {
+  if (!url || url === '#') return true;
+  for (const s of SKIP) if (url.startsWith(s)) return true;
+  return false;
+}
+
+async function doFetch(url, method) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const t0 = Date.now();
+
+  try {
+    const resp = await fetch(url, { method, signal: ctrl.signal, redirect: 'manual' });
+    clearTimeout(timer);
+    const responseTime = Date.now() - t0;
+
+    // Track redirect chain
+    const redirectChain = [];
+    let finalUrl = url;
+    let finalStatus = resp.status;
+    let hops = 0;
+    let curr = resp;
+    let currUrl = url;
+
+    while (curr.status >= 300 && curr.status < 400 && hops < 8) {
+      const loc = curr.headers.get('location');
+      if (!loc) break;
+      try {
+        const nextUrl = new URL(loc, currUrl).href;
+        redirectChain.push({ from: currUrl, to: nextUrl, status: curr.status });
+        currUrl = nextUrl;
+        finalUrl = nextUrl;
+        hops++;
+        const c2 = new AbortController();
+        const t2 = setTimeout(() => c2.abort(), TIMEOUT_MS);
+        curr = await fetch(nextUrl, { method: 'HEAD', signal: c2.signal, redirect: 'manual' })
+          .catch(() => ({ status: 0, headers: new Headers() }));
+        clearTimeout(t2);
+        finalStatus = curr.status;
+      } catch (_) { break; }
     }
-}, 60000); // Run every minute
+
+    return {
+      url, finalUrl,
+      status: finalStatus,
+      ok: finalStatus >= 200 && finalStatus < 400,
+      responseTime,
+      redirectChain,
+      redirectCount: redirectChain.length,
+      tooManyRedirects: redirectChain.length > 3,
+      networkError: false,
+      timedOut: false,
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    return {
+      url, finalUrl: url,
+      status: 0, ok: false,
+      responseTime: Date.now() - t0,
+      redirectChain: [],
+      redirectCount: 0,
+      tooManyRedirects: false,
+      networkError: true,
+      timedOut: err.name === 'AbortError',
+      error: err.message,
+    };
+  }
+}
+
+async function checkLinkStatus(url) {
+  if (shouldSkip(url)) {
+    return { url, skipped: true, ok: true, status: null, responseTime: 0, redirectChain: [] };
+  }
+
+  const cached = cacheGet(url);
+  if (cached) return cached;
+
+  let result = await doFetch(url, 'HEAD');
+  // 405 Method Not Allowed → retry with GET
+  if (result.status === 405 || result.networkError) {
+    const r2 = await doFetch(url, 'GET');
+    if (!r2.networkError || result.networkError) result = r2;
+  }
+
+  cacheSet(url, result);
+  return result;
+}
+
+function classifyStatus(r) {
+  if (r.skipped) return 'skipped';
+  if (r.networkError && !r.status) return r.timedOut ? 'slow' : 'error';
+  const s = r.status;
+  if (s >= 200 && s < 300) return r.responseTime > SLOW_MS ? 'slow' : 'live';
+  if (s >= 300 && s < 400) return 'redirect';
+  if (s === 404 || s === 410) return 'broken';
+  if (s >= 400 && s < 500) return 'broken';
+  if (s >= 500) return 'server_error';
+  return 'error';
+}
+
+// ─── Scan history ──────────────────────────────────────────────────────────────
+async function saveScanHistory(domain, stats) {
+  const stored = await chrome.storage.local.get(['scanHistory']);
+  const history = stored.scanHistory || {};
+  if (!history[domain]) history[domain] = [];
+  history[domain].unshift({
+    time: Date.now(),
+    total: stats.total,
+    broken: stats.broken,
+    live: stats.live,
+    redirects: stats.redirects,
+  });
+  // Keep last 10 per domain
+  history[domain] = history[domain].slice(0, 10);
+  await chrome.storage.local.set({ scanHistory: history });
+}
+
+// ─── Install / context menus ───────────────────────────────────────────────────
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.get(['settings'], (data) => {
+    if (!data.settings) {
+      chrome.storage.sync.set({
+        settings: {
+          autoHighlight: true,
+          showNotifications: false,
+          checkExternalLinks: false,
+          darkMode: false,
+          timeout: 10000,
+          concurrency: 8,
+        },
+      });
+    }
+  });
+
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: 'scanPage', title: 'Scan page for broken links', contexts: ['page'] });
+    chrome.contextMenus.create({ id: 'scanLink', title: 'Check this link', contexts: ['link'] });
+  });
+});
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  let targetTab = tab;
+  if (!targetTab?.id) {
+    const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+    targetTab = active;
+  }
+  if (!targetTab?.id) return;
+
+  if (info.menuItemId === 'scanPage') {
+    chrome.tabs.sendMessage(targetTab.id, { action: 'findAllLinks' });
+  } else if (info.menuItemId === 'scanLink') {
+    const result = await checkLinkStatus(info.linkUrl);
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon128.png',
+      title: 'Link Check Result',
+      message: `${info.linkUrl}\nStatus: ${result.ok ? 'Working' : 'Broken'} (${result.status || 'ERR'})`,
+    });
+  }
+});
+
+// ─── Message handler ───────────────────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+  if (request.type === 'CHECK_LINK') {
+    checkLinkStatus(request.url)
+      .then((r) => sendResponse({ ...r, statusCategory: classifyStatus(r) }))
+      .catch((e) => sendResponse({ ok: false, status: 0, error: e.message }));
+    return true;
+  }
+
+  if (request.type === 'BATCH_CHECK') {
+    const links = Array.isArray(request.links) ? request.links : [];
+    const concurrency = Number.isFinite(request.concurrency) ? request.concurrency : 8;
+    batchCheck(links, concurrency, (done, total, result) => {
+      // Send progress updates back via storage (service worker can't push to popup directly)
+      chrome.storage.session?.set({ scanProgress: { done, total } }).catch(() => {});
+    })
+      .then((results) => sendResponse({ results }))
+      .catch((e) => sendResponse({ error: e.message }));
+    return true;
+  }
+
+  if (request.type === 'SAVE_SCAN_HISTORY') {
+    saveScanHistory(request.domain, request.stats)
+      .then(() => sendResponse({ ok: true }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (request.type === 'GET_SCAN_HISTORY') {
+    chrome.storage.local.get(['scanHistory'], (data) => {
+      sendResponse(data.scanHistory || {});
+    });
+    return true;
+  }
+
+  if (request.type === 'CLEAR_CACHE') {
+    if (request.domain) cacheClearDomain(request.domain);
+    else linkCache.clear();
+    sendResponse({ ok: true });
+  }
+
+  if (request.type === 'BULK_SCAN') {
+    handleBulkScan(request.baseUrl, request.maxDepth || 2)
+      .then((results) => sendResponse({ results }))
+      .catch((e) => sendResponse({ error: e.message }));
+    return true;
+  }
+
+  sendResponse({ error: 'Unknown request type' });
+  return false;
+});
+
+// ─── Batch check ───────────────────────────────────────────────────────────────
+async function batchCheck(links, concurrency, onProgress) {
+  const results = new Array(links.length);
+  let idx = 0;
+
+  async function worker() {
+    while (idx < links.length) {
+      const i = idx++;
+      const r = await checkLinkStatus(links[i].url);
+      results[i] = { ...links[i], ...r, statusCategory: classifyStatus(r) };
+      if (onProgress) onProgress(results.filter(Boolean).length, links.length, results[i]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, links.length || 1) }, worker));
+  return results;
+}
+
+// ─── Bulk crawl ────────────────────────────────────────────────────────────────
+async function handleBulkScan(baseUrl, maxDepth) {
+  const visited = new Set();
+  const pageResults = {};
+
+  async function crawl(url, depth) {
+    if (depth > maxDepth || visited.has(url)) return;
+    visited.add(url);
+
+    try {
+      const resp = await fetch(url);
+      const html = await resp.text();
+      const links = extractLinks(html, url);
+      const results = await batchCheck(links.map((u) => ({ url: u })), 6, null);
+
+      pageResults[url] = results.map((r) => ({
+        ...r,
+        statusCategory: classifyStatus(r),
+        sourcePage: url,
+      }));
+
+      for (const r of pageResults[url]) {
+        if (r.ok) {
+          try {
+            const u = new URL(r.url);
+            const b = new URL(baseUrl);
+            if (u.hostname === b.hostname) await crawl(r.url, depth + 1);
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+  }
+
+  await crawl(baseUrl, 0);
+  return pageResults;
+}
+
+function extractLinks(html, base) {
+  const links = new Set();
+  const re = /href=["']([^"']+)["']/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    try {
+      const abs = new URL(m[1], base).href;
+      if (abs.startsWith('http')) links.add(abs);
+    } catch (_) {}
+  }
+  return [...links];
+}

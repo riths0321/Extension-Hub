@@ -27,7 +27,7 @@ A professional link audit extension that scans the current page for broken links
   * Bulk scan mode — enables multi-page scanning (toggle)
 * **Scan progress bar** with percentage in the footer
 * **Status indicator** — shows "Ready to scan", "Scanning...", "Done" states
-* `siteManager.js` handles multi-page/site crawl logic
+* `background.js` handles multi-page/site crawl logic (`BULK_SCAN`)
 * Link test library in `lib/` folder
 
 ## New Features to Add (Proposed Upgrades)

@@ -1,853 +1,851 @@
-// popup.js - UPDATED with clickable URL links
+// popup.js — Broken Link Finder Pro v2
+// All DOM manipulation via createElement/textContent/appendChild. No innerHTML.
 
-// DOM Elements
-const scanBtn = document.getElementById('scanBtn');
-const highlightBtn = document.getElementById('highlightBtn');
-const clearBtn = document.getElementById('clearBtn');
-const exportCSV = document.getElementById('exportCSV');
-const exportJSON = document.getElementById('exportJSON');
-const copyAll = document.getElementById('copyAll');
-const currentUrl = document.getElementById('currentUrl');
-const resultsBody = document.getElementById('resultsBody');
-const refreshBtn = document.getElementById('refreshBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsPanel = document.getElementById('settingsPanel');
+'use strict';
 
-// Stats Elements
-const totalLinksEl = document.getElementById('totalLinks');
-const brokenLinksEl = document.getElementById('brokenLinks');
-const successRateEl = document.getElementById('successRate');
-const seoScoreEl = document.getElementById('seoScore');
-const seoTrend = document.getElementById('seoTrend');
-const brokenCount = document.getElementById('brokenCount');
-const successProgressBar = document.getElementById('successProgressBar');
-
-// Settings Elements
-const autoHighlight = document.getElementById('autoHighlight');
-const showNotifications = document.getElementById('showNotifications');
-const checkExternalLinks = document.getElementById('checkExternalLinks');
-const bulkScanMode = document.getElementById('bulkScanMode');
-
-// Progress Elements
-const statusIndicator = document.getElementById('statusIndicator');
-const statusText = document.getElementById('statusText');
-const progressSection = document.getElementById('progressSection');
-const progressFill = document.getElementById('progressFill');
-const progressText = document.getElementById('progressText');
-
-// Debug: Log any missing critical elements
-const requiredElements = {
-    scanBtn, highlightBtn, clearBtn, currentUrl, resultsBody,
-    totalLinksEl, brokenLinksEl, successRateEl, seoScoreEl
-};
-
-for (const [name, element] of Object.entries(requiredElements)) {
-    if (!element) {
-        console.error(`Missing required element: ${name}`);
-    }
-}
-
-// State
+// ─── State ─────────────────────────────────────────────────────────────────────
 let scanResults = [];
-let currentStats = {
-    total: 0,
-    broken: 0,
-    successRate: 100,
-    seoScore: 100
-};
+let activeFilter = 'all';
 let settings = {};
-let isScanning = false;
+let darkMode = false;
 
-// Initialize
-document.addEventListener('DOMContentLoaded', init);
+// ─── Selectors ─────────────────────────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
 
-// Modify the init function to clear on load
-async function init() {
-    try {
-        // Clear any previous results immediately
-        clearPreviousResults();
-        
-        // Load settings
-        const data = await chrome.storage.sync.get(['settings']);
-        settings = data.settings || {
-            autoHighlight: true,
-            showNotifications: true,
-            checkExternalLinks: false,
-            bulkScanMode: false
-        };
-        
-        // Apply settings
-        autoHighlight.checked = settings.autoHighlight;
-        showNotifications.checked = settings.showNotifications;
-        checkExternalLinks.checked = settings.checkExternalLinks;
-        bulkScanMode.checked = settings.bulkScanMode;
-        
-        // Get current tab URL
-        await updateCurrentUrl();
-        
-        // Clear any stored scan data for this session
-        chrome.storage.local.remove(['lastScan'], () => {
-            console.log('Cleared previous scan data');
-        });
-        
-        // Setup event listeners
-        setupEventListeners();
-        
-        showStatus('Ready to scan', 'ready');
-    } catch (error) {
-        console.error('Initialization error:', error);
-        showStatus('Error initializing extension', 'error');
-    }
-}
+// ─── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSettings();
+  applyTheme(darkMode);
+  await updateCurrentUrl();
+  setupEventListeners();
+  await loadHistory();
+  setStatus('Ready', 'ready');
+});
 
-// Add this new function to clear old results
-function clearPreviousResults() {
-    scanResults = [];
-    currentStats = {
-        total: 0,
-        broken: 0,
-        successRate: 100,
-        seoScore: 100
-    };
-    
-    // Update UI with empty state
-    if (totalLinksEl) totalLinksEl.textContent = '0';
-    if (brokenLinksEl) brokenLinksEl.textContent = '0';
-    if (successRateEl) successRateEl.textContent = '100%';
-    if (seoScoreEl) seoScoreEl.textContent = '100';
-    if (brokenCount) brokenCount.textContent = '0';
-    if (successProgressBar) successProgressBar.style.width = '100%';
-    if (seoTrend) {
-        seoTrend.textContent = 'Excellent';
-        seoTrend.style.color = 'var(--success)';
-    }
-    
-    // Clear results table
-    if (resultsBody) {
-        resultsBody.innerHTML = `
-            <div class="empty-state-premium">
-                <div class="empty-icon">
-                    <i class="fas fa-search"></i>
-                </div>
-                <h3>Ready to Scan</h3>
-                <p>Click "Scan Page" to analyze all links on this webpage</p>
-                <div class="empty-features">
-                    <div class="feature-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Instant Analysis</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Visual Highlighting</span>
-                    </div>
-                    <div class="featureItem">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Detailed Reports</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Clear any existing highlights on the page
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0] && tabs[0].id) {
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'clearHighlights' });
-        }
-    });
-}
+async function loadSettings() {
+  const data = await chrome.storage.sync.get(['settings', 'darkMode']);
+  settings = data.settings || {
+    checkExternalLinks: false,
+    autoHighlight: true,
+    showNotifications: false,
+  };
+  darkMode = data.darkMode || false;
 
-function setupEventListeners() {
-    // Scan button
-    if (scanBtn) {
-        scanBtn.addEventListener('click', startScan);
-    }
-    
-    // Refresh button
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            location.reload();
-        });
-    }
-    
-    // Settings button
-    if (settingsBtn && settingsPanel) {
-        settingsBtn.addEventListener('click', () => {
-            settingsPanel.classList.toggle('is-hidden');
-        });
-    }
-    
-    // Highlight button
-    if (highlightBtn) {
-        highlightBtn.addEventListener('click', async () => {
-            try {
-                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                const brokenLinks = scanResults.filter(r => !r.ok);
-                
-                if (brokenLinks.length === 0) {
-                    showStatus('No broken links to highlight', 'warning');
-                    return;
-                }
-                
-                await chrome.tabs.sendMessage(tab.id, {
-                    action: 'highlightBroken',
-                    links: brokenLinks
-                });
-                
-                showStatus(`Highlighted ${brokenLinks.length} broken links`, 'success');
-            } catch (error) {
-                console.error('Highlight error:', error);
-                showStatus('Failed to highlight links', 'error');
-            }
-        });
-    }
-    
-    // Clear highlights
-    if (clearBtn) {
-        clearBtn.addEventListener('click', async () => {
-            try {
-                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                await chrome.tabs.sendMessage(tab.id, { action: 'clearHighlights' });
-                showStatus('Highlights cleared', 'success');
-            } catch (error) {
-                console.error('Clear error:', error);
-                showStatus('Failed to clear highlights', 'error');
-            }
-        });
-    }
-    
-    // Export buttons
-    if (exportCSV) exportCSV.addEventListener('click', exportToCSV);
-    if (exportJSON) exportJSON.addEventListener('click', exportToJSON);
-    if (copyAll) copyAll.addEventListener('click', copyResultsToClipboard);
-    
-    // Settings changes
-    if (autoHighlight) autoHighlight.addEventListener('change', saveSettings);
-    if (showNotifications) showNotifications.addEventListener('change', saveSettings);
-    if (checkExternalLinks) checkExternalLinks.addEventListener('change', saveSettings);
-    if (bulkScanMode) bulkScanMode.addEventListener('change', saveSettings);
-}
-
-async function updateCurrentUrl() {
-    try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab && tab.url) {
-            const url = new URL(tab.url);
-            currentUrl.textContent = url.hostname;
-        } else {
-            currentUrl.textContent = 'Cannot access URL';
-        }
-    } catch (error) {
-        console.error('URL update error:', error);
-        currentUrl.textContent = 'Error loading URL';
-    }
-}
-
-async function startScan() {
-    if (isScanning) {
-        showStatus('Scan already in progress', 'warning');
-        return;
-    }
-
-    // Clear previous results before starting new scan
-    clearPreviousResults();
-    
-    isScanning = true;
-    showStatus('Scanning page for links...', 'scanning');
-    showProgress(0);
-    
-    try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        
-        if (!tab || !tab.id) {
-            throw new Error('No active tab found');
-        }
-
-        if (bulkScanMode.checked) {
-            await startBulkScan(tab.url);
-            hideProgress();
-            return;
-        }
-        
-        // Execute content script to find links
-        const response = await chrome.tabs.sendMessage(tab.id, { 
-            action: 'findAllLinks',
-            checkExternal: checkExternalLinks.checked
-        });
-        
-        if (!response || !response.links || response.links.length === 0) {
-            showStatus('No links found on this page', 'warning');
-            isScanning = false;
-            hideProgress();
-            return;
-        }
-        
-        showStatus(`Found ${response.links.length} links, checking status...`, 'scanning');
-        
-        // Check each link
-        scanResults = [];
-        let checkedCount = 0;
-        const totalLinks = response.links.length;
-        
-        // Process links in batches for better performance
-        const batchSize = 5;
-        for (let i = 0; i < totalLinks; i += batchSize) {
-            const batch = response.links.slice(i, Math.min(i + batchSize, totalLinks));
-            const batchPromises = batch.map(link => checkLinkStatus(link));
-            const batchResults = await Promise.all(batchPromises);
-            
-            scanResults.push(...batchResults);
-            checkedCount += batchResults.length;
-            
-            const progress = Math.round((checkedCount / totalLinks) * 100);
-            showProgress(progress);
-            
-            // Update UI incrementally
-            if (checkedCount % 10 === 0 || checkedCount === totalLinks) {
-                calculateStatistics();
-                updateResultsTable();
-            }
-        }
-        
-        // Final statistics calculation
-        calculateStatistics();
-        updateResultsTable();
-        
-        // Save only stats (not full results to avoid quota issues)
-        try {
-            await chrome.storage.sync.set({
-                lastScan: {
-                    stats: currentStats,
-                    timestamp: Date.now(),
-                    url: tab.url,
-                    brokenCount: currentStats.broken
-                }
-            });
-        } catch (storageError) {
-            console.warn('Failed to save scan stats:', storageError);
-            // Continue anyway - not critical
-        }
-        
-        // Auto-highlight if enabled
-        if (autoHighlight.checked && currentStats.broken > 0) {
-            const brokenLinks = scanResults.filter(r => !r.ok);
-            await chrome.tabs.sendMessage(tab.id, {
-                action: 'highlightBroken',
-                links: brokenLinks
-            });
-        }
-        
-        // Show notification if enabled
-        if (showNotifications.checked && currentStats.broken > 0) {
-            chrome.runtime.sendMessage({
-                type: 'SHOW_NOTIFICATION',
-                title: 'Scan Complete',
-                message: `Found ${currentStats.broken} broken link${currentStats.broken !== 1 ? 's' : ''} on this page`
-            });
-        }
-        
-        const statusMsg = currentStats.broken === 0 
-            ? 'Scan complete! No broken links found' 
-            : `Scan complete! Found ${currentStats.broken} broken link${currentStats.broken !== 1 ? 's' : ''}`;
-        
-        showStatus(statusMsg, currentStats.broken === 0 ? 'success' : 'warning');
-        
-        // Hide progress after 2 seconds
-        setTimeout(() => {
-            hideProgress();
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Scan error:', error);
-        showStatus('Error scanning page: ' + error.message, 'error');
-        hideProgress();
-    } finally {
-        isScanning = false;
-    }
-}
-
-async function startBulkScan(baseUrl) {
-    showStatus('Bulk scan running across pages...', 'scanning');
-    showProgress(15);
-
-    const response = await chrome.runtime.sendMessage({
-        type: 'BULK_SCAN',
-        url: baseUrl,
-        depth: 2
-    });
-
-    if (!response) {
-        throw new Error('No response from bulk scan');
-    }
-    if (response.error) {
-        throw new Error(response.error);
-    }
-    if (!Array.isArray(response) || response.length === 0) {
-        showStatus('Bulk scan complete: no links found', 'warning');
-        return;
-    }
-
-    showProgress(70);
-
-    scanResults = response.map((item) => {
-        const source = item.sourcePage || '';
-        let sourceLabel = source;
-        try {
-            sourceLabel = new URL(source).hostname;
-        } catch {
-            // keep source as-is when URL parsing fails
-        }
-
-        const statusCode = Number.isFinite(item.status) ? item.status : 0;
-        return {
-            url: item.url || '',
-            text: sourceLabel ? `Found on ${sourceLabel}` : 'Bulk scan result',
-            type: 'link',
-            status: statusCode,
-            ok: Boolean(item.ok),
-            error: item.ok ? null : 'Bulk scan detected failure',
-            statusText: item.ok ? 'OK' : (statusCode ? `HTTP ${statusCode}` : 'Network Error')
-        };
-    });
-
-    calculateStatistics();
-    updateResultsTable();
-    showProgress(100);
-
-    const statusMsg = currentStats.broken === 0
-        ? 'Bulk scan complete! No broken links found'
-        : `Bulk scan complete! Found ${currentStats.broken} broken link${currentStats.broken !== 1 ? 's' : ''}`;
-    showStatus(statusMsg, currentStats.broken === 0 ? 'success' : 'warning');
-}
-
-async function checkLinkStatus(link) {
-    try {
-        // Skip mailto:, tel:, javascript: links
-        if (link.url.startsWith('mailto:') || 
-            link.url.startsWith('tel:') || 
-            link.url.startsWith('javascript:') ||
-            link.url.startsWith('#')) {
-            return {
-                ...link,
-                status: 'skipped',
-                ok: true,
-                error: null
-            };
-        }
-        
-        // Use background script for CORS
-        const response = await chrome.runtime.sendMessage({
-            type: 'CHECK_LINK',
-            url: link.url
-        });
-        
-        return {
-            ...link,
-            status: response.status || 0,
-            ok: response.ok || false,
-            error: response.error || null,
-            statusText: response.statusText || 'Error'
-        };
-        
-    } catch (error) {
-        console.error('Link check error:', link.url, error);
-        return {
-            ...link,
-            status: 0,
-            ok: false,
-            error: error.message,
-            statusText: 'Network Error'
-        };
-    }
-}
-
-function calculateStatistics() {
-    const total = scanResults.length;
-    const broken = scanResults.filter(r => !r.ok && r.status !== 'skipped').length;
-    const successRate = total > 0 ? Math.round(((total - broken) / total) * 100) : 100;
-    
-    // Calculate SEO score (0-100)
-    let seoScore = 100;
-    if (broken > 0) {
-        const brokenRatio = broken / total;
-        seoScore = Math.max(0, Math.round(100 - (brokenRatio * 100)));
-        
-        if (broken > 10) seoScore = Math.max(0, seoScore - 10);
-        if (broken > 20) seoScore = Math.max(0, seoScore - 20);
-    }
-    
-    currentStats = { total, broken, successRate, seoScore };
-    updateUI();
-}
-
-function updateUI() {
-    // Update statistics (with null checks)
-    if (totalLinksEl) totalLinksEl.textContent = currentStats.total;
-    if (brokenLinksEl) brokenLinksEl.textContent = currentStats.broken;
-    if (successRateEl) successRateEl.textContent = `${currentStats.successRate}%`;
-    if (seoScoreEl) seoScoreEl.textContent = currentStats.seoScore;
-    if (brokenCount) brokenCount.textContent = currentStats.broken;
-    
-    // Update progress bar
-    if (successProgressBar) {
-        successProgressBar.style.width = `${currentStats.successRate}%`;
-    }
-    
-    // Update SEO trend text
-    if (seoTrend) {
-        if (currentStats.seoScore >= 90) {
-            seoTrend.textContent = 'Excellent';
-            seoTrend.style.color = 'var(--success)';
-        } else if (currentStats.seoScore >= 70) {
-            seoTrend.textContent = 'Good';
-            seoTrend.style.color = 'var(--info)';
-        } else if (currentStats.seoScore >= 50) {
-            seoTrend.textContent = 'Fair';
-            seoTrend.style.color = 'var(--warning)';
-        } else {
-            seoTrend.textContent = 'Poor';
-            seoTrend.style.color = 'var(--danger)';
-        }
-    }
-    
-    // Update results table
-    updateResultsTable();
-}
-
-// FIXED: updateResultsTable with clickable URL links
-function updateResultsTable() {
-    if (!resultsBody) {
-        console.error('resultsBody element not found');
-        return;
-    }
-    
-    const brokenResults = scanResults.filter(r => !r.ok && r.status !== 'skipped');
-    
-    if (brokenResults.length === 0) {
-        resultsBody.innerHTML = `
-            <div class="empty-state-premium">
-                <div class="empty-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h3>All Links Healthy!</h3>
-                <p>No broken links detected on this page. Great job!</p>
-                <div class="empty-features">
-                    <div class="feature-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>100% Success Rate</span>
-                    </div>
-                    <div class="feature-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>SEO Optimized</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        return;
-    }
-    
-    resultsBody.innerHTML = brokenResults.map(result => {
-        const statusClass = `status-${result.status}`;
-        const displayUrl = result.url.length > 60 ? result.url.substring(0, 60) + '...' : result.url;
-        const displayText = (result.text || '(no text)').length > 40 
-            ? result.text.substring(0, 40) + '...' 
-            : (result.text || '(no text)');
-        
-        return `
-            <div class="result-item broken" data-url="${escapeHtml(result.url)}">
-                <!-- FIX: Clickable URL column - entire span is clickable -->
-                <span class="col-url">
-                    <a href="#" class="url-link" data-url="${escapeHtml(result.url)}" title="Click to open: ${escapeHtml(result.url)}">
-                        <i class="fas fa-external-link-alt url-open-icon"></i>
-                        ${escapeHtml(displayUrl)}
-                    </a>
-                </span>
-                
-                <span class="col-status">
-                    <span class="status-badge ${statusClass}">
-                        ${result.status === 0 ? 'ERR' : result.status}
-                    </span>
-                </span>
-                
-                <span class="col-text" title="${escapeHtml(result.text || '')}">
-                    ${escapeHtml(displayText)}
-                </span>
-                
-                <span class="col-actions">
-                    <button class="action-icon" data-action="open" data-url="${escapeHtml(result.url)}" title="Open Link in New Tab">
-                        <i class="fas fa-external-link-alt"></i>
-                    </button>
-                    <button class="action-icon" data-action="copy" data-url="${escapeHtml(result.url)}" title="Copy URL">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                    <button class="action-icon" data-action="test" data-url="${escapeHtml(result.url)}" title="Test Link Again">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </span>
-            </div>
-        `;
-    }).join('');
-    
-    // Add event delegation for action buttons AND URL links
-    attachUrlLinkListeners();
-}
-
-// Add click listeners for result actions and URL links
-function attachUrlLinkListeners() {
-    if (!resultsBody) return;
-    
-    // Remove old listeners if exists
-    resultsBody.removeEventListener('click', handleResultsInteraction);
-    
-    // Add new delegated listener
-    resultsBody.addEventListener('click', handleResultsInteraction);
-}
-
-function handleResultsInteraction(e) {
-    const urlLink = e.target.closest('.url-link');
-    if (urlLink) {
-        e.preventDefault();
-        e.stopPropagation();
-        const url = urlLink.dataset.url;
-        if (url) {
-            chrome.tabs.create({ url: url, active: false });
-            showStatus('Opening link in new tab...', 'info');
-        }
-        return;
-    }
-
-    if (e.target.closest('.action-icon')) {
-        handleActionClick(e);
-    }
-}
-
-// FIXED: handleActionClick with more actions
-function handleActionClick(e) {
-    const button = e.target.closest('.action-icon');
-    if (!button) return;
-    
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const action = button.dataset.action;
-    const url = button.dataset.url;
-    
-    switch (action) {
-        case 'open':
-            chrome.tabs.create({ url: url, active: false });
-            showStatus('Opening link in new tab...', 'info');
-            break;
-            
-        case 'copy':
-            navigator.clipboard.writeText(url).then(() => {
-                showStatus('URL copied to clipboard!', 'success');
-            }).catch(err => {
-                console.error('Copy failed:', err);
-                showStatus('Failed to copy URL', 'error');
-            });
-            break;
-            
-        case 'test':
-            // Re-test a single broken link
-            retestLink(url, button);
-            break;
-    }
-}
-
-// NEW: Retest a single link
-async function retestLink(url, buttonElement) {
-    try {
-        // Show loading state
-        const originalHtml = buttonElement.innerHTML;
-        buttonElement.innerHTML = '<i class="fas fa-spinner fa-pulse"></i>';
-        buttonElement.disabled = true;
-        
-        const response = await chrome.runtime.sendMessage({
-            type: 'CHECK_LINK',
-            url: url
-        });
-        
-        // Update the result in scanResults
-        const resultIndex = scanResults.findIndex(r => r.url === url);
-        if (resultIndex !== -1) {
-            scanResults[resultIndex] = {
-                ...scanResults[resultIndex],
-                status: response.status || 0,
-                ok: response.ok || false,
-                error: response.error || null,
-                statusText: response.statusText || 'Error'
-            };
-        }
-        
-        // Recalculate statistics and update table
-        calculateStatistics();
-        updateResultsTable();
-        
-        showStatus(`Link test complete: ${response.ok ? 'Working' : 'Broken'}`, 
-                  response.ok ? 'success' : 'warning');
-        
-        // Restore button
-        buttonElement.innerHTML = originalHtml;
-        buttonElement.disabled = false;
-        
-    } catch (error) {
-        console.error('Retest error:', error);
-        showStatus('Failed to retest link', 'error');
-        
-        // Restore button
-        buttonElement.innerHTML = '<i class="fas fa-sync-alt"></i>';
-        buttonElement.disabled = false;
-    }
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function exportToCSV() {
-    const brokenLinks = scanResults.filter(r => !r.ok && r.status !== 'skipped');
-    
-    if (brokenLinks.length === 0) {
-        showStatus('No broken links to export', 'warning');
-        return;
-    }
-    
-    const headers = ['URL', 'Status', 'Status Text', 'Link Text', 'Type', 'Error'];
-    const rows = brokenLinks.map(r => [
-        `"${(r.url || '').replace(/"/g, '""')}"`,
-        r.status,
-        `"${(r.statusText || '').replace(/"/g, '""')}"`,
-        `"${(r.text || '').replace(/"/g, '""')}"`,
-        `"${(r.type || 'link').replace(/"/g, '""')}"`,
-        `"${(r.error || '').replace(/"/g, '""')}"`
-    ]);
-    
-    const csvContent = [headers, ...rows]
-        .map(row => row.join(','))
-        .join('\n');
-    
-    downloadFile(csvContent, 'broken-links.csv', 'text/csv');
-    showStatus('CSV exported successfully', 'success');
-}
-
-function exportToJSON() {
-    const brokenLinks = scanResults.filter(r => !r.ok && r.status !== 'skipped');
-    
-    if (brokenLinks.length === 0) {
-        showStatus('No broken links to export', 'warning');
-        return;
-    }
-    
-    const data = {
-        scanDate: new Date().toISOString(),
-        url: currentUrl.textContent,
-        stats: currentStats,
-        brokenLinks: brokenLinks
-    };
-    
-    downloadFile(JSON.stringify(data, null, 2), 'broken-links.json', 'application/json');
-    showStatus('JSON exported successfully', 'success');
-}
-
-function copyResultsToClipboard() {
-    const brokenLinks = scanResults.filter(r => !r.ok && r.status !== 'skipped');
-    
-    if (brokenLinks.length === 0) {
-        showStatus('No broken links to copy', 'warning');
-        return;
-    }
-    
-    const text = brokenLinks
-        .map(r => `${r.url} - ${r.status} ${r.statusText || ''}`)
-        .join('\n');
-    
-    navigator.clipboard.writeText(text).then(() => {
-        showStatus('Copied to clipboard', 'success');
-    }).catch(err => {
-        console.error('Copy failed:', err);
-        showStatus('Failed to copy', 'error');
-    });
-}
-
-function downloadFile(content, filename, type) {
-    try {
-        const blob = new Blob([content], { type });
-        const url = URL.createObjectURL(blob);
-        
-        chrome.downloads.download({
-            url: url,
-            filename: filename,
-            saveAs: true
-        }, (downloadId) => {
-            if (chrome.runtime.lastError) {
-                console.error('Download error:', chrome.runtime.lastError);
-                showStatus('Download failed', 'error');
-            }
-            // Clean up the blob URL after a delay
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        });
-    } catch (error) {
-        console.error('File download error:', error);
-        showStatus('Failed to create download', 'error');
-    }
-}
-
-function showStatus(message, type = 'info') {
-    if (!statusText) {
-        console.warn('statusText element not found');
-        return;
-    }
-    
-    statusText.textContent = message;
-    
-    if (!statusIndicator) return;
-    
-    const statusDot = statusIndicator.querySelector('.status-dot');
-    if (!statusDot) return;
-    
-    // Update dot color based on status
-    if (type === 'error') {
-        statusDot.style.background = 'var(--danger)';
-    } else if (type === 'success') {
-        statusDot.style.background = 'var(--success)';
-    } else if (type === 'warning') {
-        statusDot.style.background = 'var(--warning)';
-    } else if (type === 'scanning') {
-        statusDot.style.background = 'var(--info)';
-    } else {
-        statusDot.style.background = 'var(--success)';
-    }
-}
-
-function showProgress(percent) {
-    if (!progressSection || !progressFill || !progressText) return;
-    
-    progressSection.classList.remove('is-hidden');
-    progressFill.style.width = `${percent}%`;
-    progressText.textContent = `${percent}%`;
-}
-
-function hideProgress() {
-    if (!progressSection) return;
-    progressSection.classList.add('is-hidden');
+  $('settingExternal').checked = settings.checkExternalLinks;
+  $('settingAutoHighlight').checked = settings.autoHighlight;
+  $('settingNotifications').checked = settings.showNotifications;
+  updateThemeIcon(darkMode);
 }
 
 async function saveSettings() {
-    settings = {
-        autoHighlight: autoHighlight.checked,
-        showNotifications: showNotifications.checked,
-        checkExternalLinks: checkExternalLinks.checked,
-        bulkScanMode: bulkScanMode.checked
-    };
-    
-    try {
-        await chrome.storage.sync.set({ settings });
-        showStatus('Settings saved', 'success');
-    } catch (error) {
-        console.error('Settings save error:', error);
-        showStatus('Failed to save settings', 'error');
+  settings = {
+    checkExternalLinks: $('settingExternal').checked,
+    autoHighlight: $('settingAutoHighlight').checked,
+    showNotifications: $('settingNotifications').checked,
+  };
+  await chrome.storage.sync.set({ settings, darkMode });
+}
+
+async function updateCurrentUrl() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.url) {
+      const el = $('currentUrl');
+      el.textContent = '';
+      el.textContent = tab.url.length > 60 ? tab.url.slice(0, 60) + '…' : tab.url;
+      el.title = tab.url;
+
+      // Pre-fill bulk URL input
+      const bulkInput = $('bulkUrl');
+      if (bulkInput && !bulkInput.value) {
+        try { bulkInput.value = new URL(tab.url).origin; } catch (_) {}
+      }
     }
+  } catch (_) {}
+}
+
+// ─── Event listeners ───────────────────────────────────────────────────────────
+function setupEventListeners() {
+  // View tabs
+  document.querySelectorAll('.view-tab').forEach((btn) => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  // Filter tabs
+  document.querySelectorAll('.filter-tab').forEach((btn) => {
+    btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+  });
+
+  // Theme toggle
+  $('themeToggle').addEventListener('click', () => {
+    darkMode = !darkMode;
+    applyTheme(darkMode);
+    updateThemeIcon(darkMode);
+    chrome.storage.sync.set({ darkMode });
+  });
+
+  // Settings toggle
+  $('settingsToggle').addEventListener('click', () => {
+    $('settingsPanel').classList.toggle('hidden');
+  });
+
+  // Settings inputs — save on change
+  ['settingExternal', 'settingAutoHighlight', 'settingNotifications'].forEach((id) => {
+    $(id).addEventListener('change', saveSettings);
+  });
+
+  // Scan
+  $('scanBtn').addEventListener('click', startScan);
+
+  // Highlight
+  $('highlightBtn').addEventListener('click', async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const broken = scanResults.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error');
+      if (!broken.length) { setStatus('No broken links to highlight', 'warning'); return; }
+      await chrome.tabs.sendMessage(tab.id, { action: 'highlightBroken', links: broken });
+      setStatus(`Highlighted ${broken.length} broken links`, 'success');
+    } catch (e) {
+      setStatus('Highlight failed: ' + e.message, 'error');
+    }
+  });
+
+  // Clear
+  $('clearBtn').addEventListener('click', async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      await chrome.tabs.sendMessage(tab.id, { action: 'clearHighlights' });
+      setStatus('Highlights cleared', 'ready');
+    } catch (_) {}
+  });
+
+  // Export
+  $('exportCSV').addEventListener('click', () => exportData('csv'));
+  $('exportJSON').addEventListener('click', () => exportData('json'));
+
+  // Bulk scan
+  $('bulkScanBtn').addEventListener('click', startBulkScan);
+
+  // Results list — event delegation
+  $('resultsList').addEventListener('click', handleResultClick);
+}
+
+// ─── View management ───────────────────────────────────────────────────────────
+function switchView(name) {
+  document.querySelectorAll('.view-tab').forEach((t) => t.classList.toggle('active', t.dataset.view === name));
+  document.querySelectorAll('.view').forEach((v) => {
+    const id = v.id.replace('view-', '');
+    v.classList.toggle('active', id === name);
+    v.classList.toggle('hidden', id !== name);
+  });
+  if (name === 'history') loadHistory();
+}
+
+// ─── Scanning ──────────────────────────────────────────────────────────────────
+async function startScan() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) { setStatus('No active tab', 'error'); return; }
+
+    scanResults = [];
+    setStatus('Scanning…', 'scanning');
+    $('scanBtn').disabled = true;
+    showProgress(0, 1);
+    showElement($('statsGrid'));
+    showElement($('filterTabs'));
+    $('exportRow').classList.add('hidden');
+    $('highlightBtn').disabled = true;
+    $('clearBtn').disabled = true;
+
+    // Get links from content script
+    let resp;
+    try {
+      resp = await chrome.tabs.sendMessage(tab.id, {
+        action: 'findAllLinks',
+        checkExternal: settings.checkExternalLinks,
+      });
+    } catch (e) {
+      // Content script not injected yet — try injecting it
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+      resp = await chrome.tabs.sendMessage(tab.id, {
+        action: 'findAllLinks',
+        checkExternal: settings.checkExternalLinks,
+      });
+    }
+
+    const links = resp?.links || [];
+    if (links.length === 0) {
+      setStatus('No checkable links found', 'warning');
+      $('scanBtn').disabled = false;
+      hideProgress();
+      updateStats([]);
+      renderResults([]);
+      return;
+    }
+
+    setStatus(`Checking ${links.length} links…`, 'scanning');
+
+    // Batch-check via background
+    let checked = 0;
+    const BATCH = 20;
+    const allResults = [];
+
+    for (let i = 0; i < links.length; i += BATCH) {
+      const batch = links.slice(i, i + BATCH);
+      const batchResp = await chrome.runtime.sendMessage({
+        type: 'BATCH_CHECK',
+        links: batch,
+        concurrency: 8,
+      });
+
+      if (batchResp?.results) {
+        allResults.push(...batchResp.results);
+      }
+      checked = Math.min(i + BATCH, links.length);
+      showProgress(checked, links.length);
+      updateStats(allResults);
+      renderResults(allResults);
+    }
+
+    scanResults = allResults;
+    hideProgress();
+    showElement($('exportRow'));
+    $('highlightBtn').disabled = false;
+    $('clearBtn').disabled = false;
+    $('scanBtn').disabled = false;
+
+    const broken = allResults.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error').length;
+    setStatus(`Done — ${allResults.length} links, ${broken} broken`, broken > 0 ? 'error' : 'success');
+
+    // Save history
+    try {
+      const domain = new URL(tab.url).hostname;
+      await chrome.runtime.sendMessage({
+        type: 'SAVE_SCAN_HISTORY',
+        domain,
+        stats: buildStats(allResults),
+      });
+    } catch (_) {}
+
+    // Auto-highlight broken
+    if (settings.autoHighlight && broken > 0) {
+      const brokenLinks = allResults.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error');
+      await chrome.tabs.sendMessage(tab.id, { action: 'highlightBroken', links: brokenLinks });
+    }
+
+  } catch (err) {
+    setStatus('Scan failed: ' + err.message, 'error');
+    $('scanBtn').disabled = false;
+    hideProgress();
+  }
+}
+
+// ─── Stats ─────────────────────────────────────────────────────────────────────
+function buildStats(results) {
+  const total = results.length;
+  const broken = results.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error').length;
+  const redirects = results.filter((r) => r.statusCategory === 'redirect').length;
+  const live = results.filter((r) => r.statusCategory === 'live').length;
+  const successRate = total > 0 ? Math.round(((total - broken) / total) * 100) : 100;
+  return { total, broken, redirects, live, successRate };
+}
+
+function updateStats(results) {
+  const s = buildStats(results);
+  $('statTotal').textContent = s.total;
+  $('statBroken').textContent = s.broken;
+  $('statRedirects').textContent = s.redirects;
+  $('statSuccessRate').textContent = s.successRate + '%';
+}
+
+// ─── Filter ────────────────────────────────────────────────────────────────────
+function setFilter(filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach((t) => t.classList.toggle('active', t.dataset.filter === filter));
+  renderResults(scanResults);
+}
+
+function getFilteredResults(results) {
+  switch (activeFilter) {
+    case 'broken': return results.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error');
+    case 'redirect': return results.filter((r) => r.statusCategory === 'redirect');
+    case 'slow': return results.filter((r) => r.statusCategory === 'slow');
+    case 'image': return results.filter((r) => r.domType === 'image');
+    case 'external': return results.filter((r) => r.linkType === 'external');
+    default: return results;
+  }
+}
+
+// ─── Render results (CSP-safe) ─────────────────────────────────────────────────
+function renderResults(results) {
+  const list = $('resultsList');
+  const empty = $('emptyState');
+
+  if (!results.length) {
+    showElement(empty);
+    list.classList.add('hidden');
+    return;
+  }
+
+  const filtered = getFilteredResults(results);
+  empty.classList.add('hidden');
+  showElement(list);
+
+  // Clear
+  while (list.firstChild) list.removeChild(list.firstChild);
+
+  if (filtered.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'no-results-msg';
+    msg.textContent = 'No links match this filter.';
+    list.appendChild(msg);
+    return;
+  }
+
+  // Table header
+  const thead = document.createElement('div');
+  thead.className = 'results-thead';
+  ['URL', 'Status', 'Type', 'Time', ''].forEach((col) => {
+    const th = document.createElement('span');
+    th.className = 'th';
+    th.textContent = col;
+    thead.appendChild(th);
+  });
+  list.appendChild(thead);
+
+  // Rows
+  filtered.forEach((r) => {
+    list.appendChild(buildRow(r));
+  });
+}
+
+function buildRow(r) {
+  const row = document.createElement('div');
+  row.className = 'result-row';
+  row.dataset.url = r.url;
+  row.dataset.status = r.statusCategory;
+
+  // URL cell
+  const urlCell = document.createElement('div');
+  urlCell.className = 'cell cell-url';
+
+  const urlLink = document.createElement('a');
+  urlLink.className = 'url-link';
+  urlLink.href = '#';
+  urlLink.dataset.url = r.url;
+  urlLink.title = r.url;
+  urlLink.textContent = truncate(r.url, 55);
+
+  if (r.tooManyRedirects) {
+    const flag = document.createElement('span');
+    flag.className = 'flag-badge';
+    flag.textContent = '3+ hops';
+    urlCell.appendChild(flag);
+  }
+  urlCell.appendChild(urlLink);
+
+  // Status cell
+  const statusCell = document.createElement('div');
+  statusCell.className = 'cell cell-status';
+  const badge = document.createElement('span');
+  badge.className = 'status-badge status-' + r.statusCategory;
+  badge.textContent = r.status || 'ERR';
+  statusCell.appendChild(badge);
+
+  if (r.redirectCount > 0) {
+    const hops = document.createElement('span');
+    hops.className = 'hops-badge';
+    hops.textContent = r.redirectCount + ' hop' + (r.redirectCount > 1 ? 's' : '');
+    statusCell.appendChild(hops);
+  }
+
+  // Type cell
+  const typeCell = document.createElement('div');
+  typeCell.className = 'cell cell-type';
+  const typeBadge = document.createElement('span');
+  typeBadge.className = 'type-badge type-' + (r.linkType || 'internal');
+  typeBadge.textContent = r.linkType || 'internal';
+  typeCell.appendChild(typeBadge);
+
+  // Time cell
+  const timeCell = document.createElement('div');
+  timeCell.className = 'cell cell-time';
+  timeCell.textContent = r.responseTime > 0 ? formatMs(r.responseTime) : '—';
+
+  // Actions cell
+  const actCell = document.createElement('div');
+  actCell.className = 'cell cell-actions';
+
+  const openBtn = makeActionBtn('open', r.url, svgOpen());
+  const copyBtn = makeActionBtn('copy', r.url, svgCopy());
+  actCell.appendChild(openBtn);
+  actCell.appendChild(copyBtn);
+
+  // Broken link suggestion button
+  if (r.statusCategory === 'broken' || r.statusCategory === 'error') {
+    const fixBtn = makeActionBtn('suggest', r.url, svgFix());
+    fixBtn.title = 'Suggest alternatives';
+    actCell.appendChild(fixBtn);
+  }
+
+  row.appendChild(urlCell);
+  row.appendChild(statusCell);
+  row.appendChild(typeCell);
+  row.appendChild(timeCell);
+  row.appendChild(actCell);
+
+  // Expand row for redirect chain / suggestions (lazy)
+  row.addEventListener('click', (e) => {
+    if (e.target.closest('.cell-actions')) return;
+    toggleExpand(row, r);
+  });
+
+  return row;
+}
+
+function toggleExpand(row, r) {
+  const existing = row.nextElementSibling;
+  if (existing && existing.classList.contains('expand-row')) {
+    existing.remove();
+    row.classList.remove('expanded');
+    return;
+  }
+  row.classList.add('expanded');
+
+  const exp = document.createElement('div');
+  exp.className = 'expand-row';
+
+  // Full URL
+  const fullUrlWrap = document.createElement('div');
+  fullUrlWrap.className = 'expand-section';
+  const fullLabel = document.createElement('span');
+  fullLabel.className = 'expand-label';
+  fullLabel.textContent = 'Full URL';
+  const fullUrl = document.createElement('span');
+  fullUrl.className = 'expand-value';
+  fullUrl.textContent = r.url;
+  fullUrlWrap.appendChild(fullLabel);
+  fullUrlWrap.appendChild(fullUrl);
+  exp.appendChild(fullUrlWrap);
+
+  // Redirect chain
+  if (r.redirectChain && r.redirectChain.length > 0) {
+    const chainWrap = document.createElement('div');
+    chainWrap.className = 'expand-section';
+    const chainLabel = document.createElement('span');
+    chainLabel.className = 'expand-label';
+    chainLabel.textContent = 'Redirect chain';
+    chainWrap.appendChild(chainLabel);
+
+    r.redirectChain.forEach((hop, i) => {
+      const hopEl = document.createElement('div');
+      hopEl.className = 'redirect-hop';
+      const hopStatus = document.createElement('span');
+      hopStatus.className = 'hop-status';
+      hopStatus.textContent = hop.status;
+      const hopArrow = document.createTextNode(' → ');
+      const hopTo = document.createElement('span');
+      hopTo.className = 'hop-url';
+      hopTo.textContent = truncate(hop.to, 50);
+      hopEl.appendChild(hopStatus);
+      hopEl.appendChild(hopArrow);
+      hopEl.appendChild(hopTo);
+      chainWrap.appendChild(hopEl);
+    });
+    exp.appendChild(chainWrap);
+  }
+
+  // Fix suggestions for broken links
+  if (r.statusCategory === 'broken' || r.statusCategory === 'error') {
+    const suggestions = suggestAlternatives(r.url);
+    if (suggestions.length) {
+      const sugWrap = document.createElement('div');
+      sugWrap.className = 'expand-section';
+      const sugLabel = document.createElement('span');
+      sugLabel.className = 'expand-label';
+      sugLabel.textContent = 'Possible alternatives';
+      sugWrap.appendChild(sugLabel);
+
+      suggestions.forEach((s) => {
+        const sugRow = document.createElement('div');
+        sugRow.className = 'suggestion-row';
+        const reason = document.createElement('span');
+        reason.className = 'suggestion-reason';
+        reason.textContent = s.reason;
+        const link = document.createElement('a');
+        link.className = 'suggestion-link';
+        link.href = '#';
+        link.textContent = truncate(s.url, 45);
+        link.dataset.url = s.url;
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          chrome.tabs.create({ url: s.url, active: false });
+        });
+        sugRow.appendChild(reason);
+        sugRow.appendChild(link);
+        sugWrap.appendChild(sugRow);
+      });
+      exp.appendChild(sugWrap);
+    }
+  }
+
+  row.after(exp);
+}
+
+// ─── Action handlers ────────────────────────────────────────────────────────────
+function handleResultClick(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+
+  const action = btn.dataset.action;
+  const url = btn.dataset.url;
+
+  if (action === 'open') {
+    chrome.tabs.create({ url, active: false });
+  } else if (action === 'copy') {
+    copyTextToClipboard(url)
+      .then(() => setStatus('URL copied', 'success'))
+      .catch(() => setStatus('Copy failed', 'error'));
+  } else if (action === 'suggest') {
+    // Handled by row expand
+    const row = btn.closest('.result-row');
+    if (row) {
+      const r = scanResults.find((x) => x.url === url);
+      if (r) toggleExpand(row, r);
+    }
+  }
+}
+
+// ─── Bulk scan ─────────────────────────────────────────────────────────────────
+async function startBulkScan() {
+  const baseUrl = $('bulkUrl').value.trim();
+  if (!baseUrl) { setStatus('Enter a URL', 'warning'); return; }
+
+  try {
+    new URL(baseUrl);
+  } catch (_) { setStatus('Invalid URL', 'error'); return; }
+
+  const maxDepth = parseInt($('bulkDepth').value, 10);
+  $('bulkScanBtn').disabled = true;
+  showElement($('bulkProgress'));
+  $('bulkProgressLabel').textContent = 'Scanning…';
+  $('bulkProgressFill').value = 10;
+
+  const bulkResultsEl = $('bulkResults');
+  while (bulkResultsEl.firstChild) bulkResultsEl.removeChild(bulkResultsEl.firstChild);
+
+  try {
+    const resp = await chrome.runtime.sendMessage({ type: 'BULK_SCAN', baseUrl, maxDepth });
+
+    if (resp?.error) throw new Error(resp.error);
+
+    $('bulkProgressFill').value = 100;
+    $('bulkProgress').classList.add('hidden');
+    showElement(bulkResultsEl);
+
+    const pages = resp?.results || {};
+    if (!Object.keys(pages).length) {
+      const msg = document.createElement('p');
+      msg.className = 'no-results-msg';
+      msg.textContent = 'No results found.';
+      bulkResultsEl.appendChild(msg);
+    } else {
+      renderBulkResults(pages, bulkResultsEl);
+    }
+  } catch (err) {
+    setStatus('Bulk scan failed: ' + err.message, 'error');
+  } finally {
+    $('bulkScanBtn').disabled = false;
+  }
+}
+
+function renderBulkResults(pages, container) {
+  for (const [pageUrl, links] of Object.entries(pages)) {
+    const section = document.createElement('div');
+    section.className = 'bulk-page-section';
+
+    const heading = document.createElement('div');
+    heading.className = 'bulk-page-heading';
+
+    const pageTitle = document.createElement('span');
+    pageTitle.className = 'bulk-page-url';
+    pageTitle.textContent = truncate(pageUrl, 50);
+    pageTitle.title = pageUrl;
+
+    const counts = buildStats(links);
+    const countBadge = document.createElement('span');
+    countBadge.className = 'bulk-count-badge' + (counts.broken > 0 ? ' has-broken' : '');
+    countBadge.textContent = counts.broken + ' broken / ' + counts.total + ' total';
+
+    heading.appendChild(pageTitle);
+    heading.appendChild(countBadge);
+    section.appendChild(heading);
+
+    const brokenLinks = links.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error');
+    if (brokenLinks.length > 0) {
+      brokenLinks.forEach((r) => {
+        section.appendChild(buildRow(r));
+      });
+    } else {
+      const ok = document.createElement('div');
+      ok.className = 'bulk-all-ok';
+      ok.textContent = 'All links healthy';
+      section.appendChild(ok);
+    }
+
+    container.appendChild(section);
+  }
+}
+
+// ─── History ───────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const list = $('historyList');
+  while (list.firstChild) list.removeChild(list.firstChild);
+
+  const history = await chrome.runtime.sendMessage({ type: 'GET_SCAN_HISTORY' });
+  if (!history || !Object.keys(history).length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 48 48');
+    svg.setAttribute('fill', 'none');
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', '24'); c.setAttribute('cy', '24'); c.setAttribute('r', '20');
+    c.setAttribute('stroke', 'currentColor'); c.setAttribute('stroke-width', '2');
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', 'M24 14v10l6 6');
+    p.setAttribute('stroke', 'currentColor'); p.setAttribute('stroke-width', '2');
+    p.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(c); svg.appendChild(p);
+    const msg = document.createElement('p');
+    msg.textContent = 'No scans recorded yet';
+    empty.appendChild(svg);
+    empty.appendChild(msg);
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const [domain, scans] of Object.entries(history)) {
+    const section = document.createElement('div');
+    section.className = 'history-domain';
+
+    const domainLabel = document.createElement('div');
+    domainLabel.className = 'history-domain-name';
+    domainLabel.textContent = domain;
+    section.appendChild(domainLabel);
+
+    scans.forEach((scan) => {
+      const entry = document.createElement('div');
+      entry.className = 'history-entry';
+
+      const time = document.createElement('span');
+      time.className = 'history-time';
+      time.textContent = formatDate(scan.time);
+
+      const stats = document.createElement('span');
+      stats.className = 'history-stats';
+      const brokenSpan = document.createElement('span');
+      brokenSpan.className = scan.broken > 0 ? 'history-broken' : 'history-ok';
+      brokenSpan.textContent = scan.broken + ' broken';
+      const totalSpan = document.createElement('span');
+      totalSpan.className = 'history-total';
+      totalSpan.textContent = ' / ' + scan.total + ' total';
+      stats.appendChild(brokenSpan);
+      stats.appendChild(totalSpan);
+
+      entry.appendChild(time);
+      entry.appendChild(stats);
+      section.appendChild(entry);
+    });
+
+    list.appendChild(section);
+  }
+}
+
+// ─── Export ────────────────────────────────────────────────────────────────────
+function exportData(format) {
+  const filterVal = $('exportFilter').value;
+  let data = scanResults;
+  if (filterVal === 'broken') data = data.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error');
+  else if (filterVal === 'redirect') data = data.filter((r) => r.statusCategory === 'redirect');
+  else if (filterVal === 'live') data = data.filter((r) => r.statusCategory === 'live');
+
+  if (!data.length) { setStatus('No data to export', 'warning'); return; }
+
+  if (format === 'csv') {
+    const headers = ['URL', 'Status', 'Category', 'Type', 'Response Time (ms)', 'Redirect Count', 'Final URL', 'Error'];
+    const rows = data.map((r) => [
+      csvEscape(r.url),
+      r.status || '',
+      r.statusCategory || '',
+      r.linkType || r.domType || '',
+      r.responseTime || '',
+      r.redirectCount || 0,
+      csvEscape(r.finalUrl || ''),
+      csvEscape(r.error || ''),
+    ]);
+    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    downloadBlob(csv, 'text/csv', 'broken-links.csv');
+  } else {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      filter: filterVal,
+      total: data.length,
+      links: data.map((r) => ({
+        url: r.url,
+        finalUrl: r.finalUrl,
+        status: r.status,
+        statusCategory: r.statusCategory,
+        linkType: r.linkType,
+        domType: r.domType,
+        responseTime: r.responseTime,
+        redirectCount: r.redirectCount,
+        redirectChain: r.redirectChain,
+        error: r.error,
+      })),
+    };
+    downloadBlob(JSON.stringify(payload, null, 2), 'application/json', 'broken-links.json');
+  }
+  setStatus('Export complete', 'success');
+}
+
+function csvEscape(val) {
+  if (!val) return '""';
+  return '"' + String(val).replace(/"/g, '""') + '"';
+}
+
+function downloadBlob(content, type, filename) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  chrome.downloads.download({ url, filename, saveAs: true }, () => {
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+}
+
+// ─── Suggestions ───────────────────────────────────────────────────────────────
+function suggestAlternatives(url) {
+  const suggestions = [];
+  try {
+    const u = new URL(url);
+    if (u.pathname !== '/') suggestions.push({ url: u.origin + '/', reason: 'Domain root' });
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts.length > 1) {
+      parts.pop();
+      suggestions.push({ url: u.origin + '/' + parts.join('/') + '/', reason: 'Parent path' });
+    }
+    if (u.protocol === 'http:') suggestions.push({ url: 'https://' + u.hostname + u.pathname, reason: 'Try HTTPS' });
+  } catch (_) {}
+  return suggestions.slice(0, 3);
+}
+
+// ─── UI helpers ────────────────────────────────────────────────────────────────
+function showProgress(done, total) {
+  const wrap = $('progressWrap');
+  wrap.classList.remove('hidden');
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  $('progressFill').value = pct;
+  $('progressLabel').textContent = done + ' / ' + total;
+}
+
+function hideProgress() {
+  $('progressWrap').classList.add('hidden');
+  $('progressFill').value = 0;
+  $('progressLabel').textContent = '0 / 0';
+}
+
+function showElement(el) {
+  if (el) el.classList.remove('hidden');
+}
+
+function setStatus(msg, type) {
+  $('statusText').textContent = msg;
+  const dot = $('statusDot');
+  dot.className = 'status-dot status-' + (type || 'ready');
+}
+
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+
+function updateThemeIcon(dark) {
+  $('themeIconDark').classList.toggle('hidden', dark);
+  $('themeIconLight').classList.toggle('hidden', !dark);
+}
+
+function truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.slice(0, max) + '…' : str;
+}
+
+function formatMs(ms) {
+  if (!ms) return '—';
+  return ms < 1000 ? ms + ' ms' : (ms / 1000).toFixed(1) + ' s';
+}
+
+function formatDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch (_) {}
+
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.className = 'hidden';
+  document.body.appendChild(ta);
+  ta.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(ta);
+  if (!ok) throw new Error('copy failed');
+}
+
+// ─── SVG icon helpers ──────────────────────────────────────────────────────────
+function makeActionBtn(action, url, svgEl) {
+  const btn = document.createElement('button');
+  btn.className = 'action-btn';
+  btn.dataset.action = action;
+  btn.dataset.url = url;
+  btn.title = action === 'open' ? 'Open in new tab' : action === 'copy' ? 'Copy URL' : 'Suggest fix';
+  btn.appendChild(svgEl);
+  return btn;
+}
+
+function svgOpen() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'currentColor');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M8.636 3.5a.5.5 0 00-.5-.5H1.5A1.5 1.5 0 000 4.5v10A1.5 1.5 0 001.5 16h10a1.5 1.5 0 001.5-1.5V7.864a.5.5 0 00-1 0V14.5a.5.5 0 01-.5.5h-10a.5.5 0 01-.5-.5v-10a.5.5 0 01.5-.5h6.636a.5.5 0 00.5-.5z');
+  const path2 = document.createElementNS(ns, 'path');
+  path2.setAttribute('d', 'M16 .5a.5.5 0 00-.5-.5h-5a.5.5 0 000 1h3.793L6.146 9.146a.5.5 0 10.708.708L15 1.707V5.5a.5.5 0 001 0v-5z');
+  svg.appendChild(path); svg.appendChild(path2);
+  return svg;
+}
+
+function svgCopy() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'currentColor');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('fill-rule', 'evenodd');
+  path.setAttribute('d', 'M4 2a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V2zm2-1a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V2a1 1 0 00-1-1H6zM2 5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-1h1v1a2 2 0 01-2 2H2a2 2 0 01-2-2V6a2 2 0 012-2h1v1H2z');
+  svg.appendChild(path);
+  return svg;
+}
+
+function svgFix() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'currentColor');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 01-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 01.872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 012.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 012.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 01.872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 01-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 01-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 110-5.858 2.929 2.929 0 010 5.858z');
+  svg.appendChild(path);
+  return svg;
 }
