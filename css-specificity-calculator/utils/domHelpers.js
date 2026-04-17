@@ -1,11 +1,6 @@
 /**
  * domHelpers.js
- * CSP-safe DOM utilities — no innerHTML usage.
- */
-
-/**
- * Create an element with optional attributes, classes, and text.
- */
+*/
 export function el(tag, { cls, text, attrs, style } = {}) {
   const node = document.createElement(tag);
   if (cls) {
@@ -18,34 +13,41 @@ export function el(tag, { cls, text, attrs, style } = {}) {
 }
 
 /**
- * Append multiple children to a parent.
+ * Append multiple children to a parent. Accepts nested arrays.
  */
 export function append(parent, ...children) {
-  children.flat().filter(Boolean).forEach(c => parent.appendChild(c));
+  children.flat(Infinity).filter(Boolean).forEach(c => parent.appendChild(c));
   return parent;
 }
 
 /**
- * Clear all children from a node.
+ * Remove all children from a node.
  */
 export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
 }
 
 /**
- * Show or hide an element via display style.
+ * Show or hide a node via display style.
  */
 export function setVisible(node, visible, displayType = 'block') {
   node.style.display = visible ? displayType : 'none';
 }
 
 /**
- * Debounce a function.
+ * Create a text node (CSP-safe alternative to textContent for inline mixing).
+ */
+export function txt(str) {
+  return document.createTextNode(str);
+}
+
+/**
+ * Debounce: returns a function that delays fn by ms after last call.
  */
 export function debounce(fn, ms) {
   let timer;
-  return (...args) => {
+  return function debounced(...args) {
     clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
+    timer = setTimeout(() => fn.apply(this, args), ms);
   };
 }

@@ -1,11 +1,11 @@
 /**
  * storageService.js
- * Thin wrapper around chrome.storage.local with async/await support.
+ * Async wrapper around chrome.storage.local.
  */
 
 const HISTORY_KEY = 'selectorHistory';
-const THEME_KEY = 'theme';
-const MAX_HISTORY = 5;
+const THEME_KEY   = 'theme';
+const MAX_HISTORY = 6;
 
 export async function getTheme() {
   return new Promise(resolve => {
@@ -28,8 +28,8 @@ export async function getHistory() {
 export async function addToHistory(selector) {
   if (!selector || !selector.trim()) return;
   const history = await getHistory();
-  const filtered = history.filter(s => s !== selector);
-  const updated = [selector, ...filtered].slice(0, MAX_HISTORY);
+  const deduped  = history.filter(s => s !== selector);
+  const updated  = [selector, ...deduped].slice(0, MAX_HISTORY);
   return new Promise(resolve => {
     chrome.storage.local.set({ [HISTORY_KEY]: updated }, resolve);
   });
