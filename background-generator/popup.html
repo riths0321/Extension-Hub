@@ -13,10 +13,8 @@
     <div class="header-inner">
       <div class="brand">
         <div class="logo-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="rgba(255,255,255,0.25)"/>
-            <path d="M12 5 Q19 12 12 19 Q5 12 12 5Z" fill="rgba(255,255,255,0.6)"/>
-            <circle cx="12" cy="12" r="3.5" fill="white"/>
+          <svg class="ui-icon ui-icon-18 ui-icon-fill" aria-hidden="true">
+            <use href="icons.svg#icon-logo"></use>
           </svg>
         </div>
         <div>
@@ -25,10 +23,8 @@
         </div>
       </div>
       <button id="btn-apply-page" title="Apply background to current webpage">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-          <polyline points="15 3 21 3 21 9"/>
-          <line x1="10" y1="14" x2="21" y2="3"/>
+        <svg class="ui-icon ui-icon-13 ui-icon-stroke-25" aria-hidden="true">
+          <use href="icons.svg#icon-open"></use>
         </svg>
         Apply to Page
       </button>
@@ -43,42 +39,38 @@
   <!-- TAB NAV -->
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="gradient">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M8 12h8M12 8v8"/>
+      <svg class="ui-icon ui-icon-13 ui-icon-stroke-22" aria-hidden="true">
+        <use href="icons.svg#icon-gradient"></use>
       </svg>
       Gradient
     </button>
     <button class="tab-btn" data-tab="solid">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <rect x="3" y="3" width="18" height="18" rx="4"/>
+      <svg class="ui-icon ui-icon-13 ui-icon-stroke-22" aria-hidden="true">
+        <use href="icons.svg#icon-square"></use>
       </svg>
       Solid
     </button>
     <button class="tab-btn" data-tab="pattern">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="5" cy="5" r="1.5" fill="currentColor"/>
-        <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
-        <circle cx="19" cy="5" r="1.5" fill="currentColor"/>
-        <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
-        <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-        <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
-        <circle cx="5" cy="19" r="1.5" fill="currentColor"/>
-        <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
-        <circle cx="19" cy="19" r="1.5" fill="currentColor"/>
+      <svg class="ui-icon ui-icon-13 ui-icon-fill" aria-hidden="true">
+        <use href="icons.svg#icon-dots"></use>
       </svg>
       Pattern
     </button>
     <button class="tab-btn" data-tab="saved">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+      <svg class="ui-icon ui-icon-13 ui-icon-stroke-22" aria-hidden="true">
+        <use href="icons.svg#icon-bookmark"></use>
       </svg>
       Saved
     </button>
+    <button class="tab-btn" data-tab="image">
+      <svg class="ui-icon ui-icon-13 ui-icon-stroke-22" aria-hidden="true">
+        <use href="icons.svg#icon-image"></use>
+      </svg>
+      Image
+    </button>
     <button class="tab-btn" data-tab="recent">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
+      <svg class="ui-icon ui-icon-13 ui-icon-stroke-22" aria-hidden="true">
+        <use href="icons.svg#icon-recent"></use>
       </svg>
       Recent
     </button>
@@ -125,9 +117,8 @@
 
       <!-- Randomize -->
       <button id="btn-randomize" class="btn-primary full-width">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
-          <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+        <svg class="ui-icon ui-icon-13 ui-icon-stroke-25" aria-hidden="true">
+          <use href="icons.svg#icon-random"></use>
         </svg>
         Randomize Gradient
       </button>
@@ -143,8 +134,8 @@
             <button class="fmt-btn" data-fmt="tailwind">Tailwind</button>
           </div>
           <button id="btn-save-gradient" class="icon-save-btn" title="Save background">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            <svg class="ui-icon ui-icon-14" aria-hidden="true">
+              <use href="icons.svg#icon-bookmark"></use>
             </svg>
           </button>
         </div>
@@ -152,9 +143,8 @@
       <div class="output-box">
         <code id="output-code">background: linear-gradient(...);</code>
         <button id="btn-copy-output" class="icon-copy-btn" title="Copy to clipboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2"/>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          <svg class="ui-icon ui-icon-14" aria-hidden="true">
+            <use href="icons.svg#icon-copy"></use>
           </svg>
         </button>
       </div>
@@ -162,7 +152,7 @@
 
     <!-- Presets -->
     <div class="section-card">
-      <label class="field-label section-label-preset">Quick Presets</label>
+      <label class="field-label field-label-block field-label-gap-10">Quick Presets</label>
       <div class="presets-grid" id="gradient-presets"></div>
     </div>
 
@@ -195,7 +185,7 @@
       </div>
 
       <!-- Shades -->
-      <label class="field-label shades-label">Shades</label>
+      <label class="field-label field-label-block field-label-gap-8">Shades</label>
       <div class="shades-row" id="shades-row"></div>
     </div>
 
@@ -209,8 +199,8 @@
             <button class="fmt-btn" data-fmt="tailwind">Tailwind</button>
           </div>
           <button id="btn-save-solid" class="icon-save-btn" title="Save background">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            <svg class="ui-icon ui-icon-14" aria-hidden="true">
+              <use href="icons.svg#icon-bookmark"></use>
             </svg>
           </button>
         </div>
@@ -218,9 +208,8 @@
       <div class="output-box">
         <code id="output-code-solid">background-color: #2563EB;</code>
         <button id="btn-copy-output-solid" class="icon-copy-btn" title="Copy to clipboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2"/>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          <svg class="ui-icon ui-icon-14" aria-hidden="true">
+            <use href="icons.svg#icon-copy"></use>
           </svg>
         </button>
       </div>
@@ -228,7 +217,7 @@
 
     <!-- Color Harmony -->
     <div class="section-card">
-      <label class="field-label harmony-label">Color Harmony</label>
+      <label class="field-label field-label-block field-label-gap-10">Color Harmony</label>
       <div class="harmony-row">
         <span class="harmony-label">Complementary</span>
         <div class="harmony-swatches" id="harmony-comp"></div>
@@ -250,7 +239,7 @@
 
     <!-- Pattern Type grid -->
     <div class="section-card">
-      <label class="field-label pattern-type-label">Pattern Type</label>
+      <label class="field-label field-label-block field-label-gap-10">Pattern Type</label>
       <div class="pattern-types-grid" id="pattern-types">
         <button class="pattern-type-btn active" data-pattern="dots">
           <div class="pattern-thumb" data-preview="dots"></div>
@@ -295,7 +284,7 @@
           <span class="inline-color-val" id="pattern-bg-val">#FFFFFF</span>
         </div>
       </div>
-      <div class="field-row pattern-size-row">
+      <div class="field-row field-row-last">
         <label class="field-label">Size <span id="pattern-size-val" class="size-badge">20px</span></label>
         <input type="range" id="pattern-size" min="8" max="60" value="20" class="range-input pattern-size-slider">
       </div>
@@ -311,8 +300,8 @@
             <button class="fmt-btn" data-fmt="tailwind">Tailwind</button>
           </div>
           <button id="btn-save-pattern" class="icon-save-btn" title="Save background">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            <svg class="ui-icon ui-icon-14" aria-hidden="true">
+              <use href="icons.svg#icon-bookmark"></use>
             </svg>
           </button>
         </div>
@@ -320,9 +309,8 @@
       <div class="output-box">
         <code id="output-code-pattern">background: radial-gradient(...);</code>
         <button id="btn-copy-output-pattern" class="icon-copy-btn" title="Copy to clipboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2"/>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          <svg class="ui-icon ui-icon-14" aria-hidden="true">
+            <use href="icons.svg#icon-copy"></use>
           </svg>
         </button>
       </div>
@@ -343,9 +331,9 @@
             <button class="fmt-btn active" data-fmt="css">CSS</button>
             <button class="fmt-btn" data-fmt="tailwind">Tailwind</button>
           </div>
-          <button id="btn-save-saved" class="icon-save-btn btn-save-hidden" title="Save background">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          <button id="btn-save-saved" class="icon-save-btn icon-hidden" title="Save background">
+            <svg class="ui-icon ui-icon-14" aria-hidden="true">
+              <use href="icons.svg#icon-bookmark"></use>
             </svg>
           </button>
         </div>
@@ -353,13 +341,90 @@
       <div class="output-box">
         <code id="output-code-saved">— select a saved item —</code>
         <button id="btn-copy-output-saved" class="icon-copy-btn" title="Copy to clipboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2"/>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          <svg class="ui-icon ui-icon-14" aria-hidden="true">
+            <use href="icons.svg#icon-copy"></use>
           </svg>
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- ===================== IMAGE TAB ===================== -->
+  <div id="tab-image" class="tab-content">
+
+    <!-- Controls card -->
+    <div class="section-card">
+      <div class="field-row">
+        <label class="field-label">Category</label>
+        <select id="image-category" class="select-input">
+          <option value="random">🎲 Random</option>
+          <option value="nature">🌿 Nature</option>
+          <option value="abstract">🎨 Abstract</option>
+          <option value="technology">💻 Tech</option>
+          <option value="minimal">⚪ Minimal</option>
+          <option value="architecture">🏛️ Architecture</option>
+          <option value="travel">✈️ Travel</option>
+        </select>
+      </div>
+
+      <button id="generate-image" class="btn-primary full-width btn-gap-top-8">
+        <svg class="ui-icon ui-icon-13 ui-icon-stroke-25" aria-hidden="true">
+          <use href="icons.svg#icon-image"></use>
+        </svg>
+        Generate Image
+      </button>
+    </div>
+
+    <!-- Image URL output -->
+    <div class="output-section">
+      <div class="output-header">
+        <span class="field-label">Image URL</span>
+        <div class="output-header-actions">
+          <button id="open-image-tab" class="icon-save-btn" title="Open image in new tab">
+            <svg class="ui-icon ui-icon-14" aria-hidden="true">
+              <use href="icons.svg#icon-open"></use>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="output-box">
+        <code id="image-url-output">Click Generate to get an image...</code>
+        <button id="btn-copy-image-url" class="icon-copy-btn" title="Copy URL">
+          <svg class="ui-icon ui-icon-14" aria-hidden="true">
+            <use href="icons.svg#icon-copy"></use>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- CSS Output for background-image -->
+    <div class="output-section">
+      <div class="output-header">
+        <span class="field-label">CSS background-image</span>
+        <div class="output-header-actions">
+          <button id="btn-save-image" class="icon-save-btn" title="Save as background">
+            <svg class="ui-icon ui-icon-14" aria-hidden="true">
+              <use href="icons.svg#icon-bookmark"></use>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="output-box">
+        <code id="output-code-image">background-image: url(...);</code>
+        <button id="btn-copy-output-image" class="icon-copy-btn" title="Copy CSS">
+          <svg class="ui-icon ui-icon-14" aria-hidden="true">
+            <use href="icons.svg#icon-copy"></use>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loader indicator -->
+    <div id="image-loader" class="image-loader-wrap hidden">
+      <div class="image-loader-spinner"></div>
+      <span>Loading image...</span>
+    </div>
+
   </div>
 
   <!-- ===================== RECENT TAB ===================== -->
@@ -368,6 +433,7 @@
   </div>
 
   <div id="toast" class="toast"></div>
+  <script src="dropdown.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
