@@ -35,13 +35,14 @@
       'modeTabBtn','modeMicBtn',
       'levelFill','levelDb',
       'startBtn','pauseBtn','stopBtn','pauseLabel','pauseIconSvg',
-      'currentTab','sourceInfo',
+      'currentTab','sourceInfo','sourceIcon',
       'markerBar','addMarkerBtn','liveMarkers',
       'waveformCard','waveformCanvas','waveformDuration',
       'playbackBtn','playIconSvg','playLabel','pbFill','pbTrack','pbTime',
       'maxDuration','exportFormat',
       'historyList','searchHistory','clearHistoryBtn','exportHistoryBtn',
-      'toastContainer'
+      'toastContainer',
+      'confirmModal','confirmMsg','confirmOk','confirmCancel'
     ];
     ids.forEach(id => { el[id] = document.getElementById(id); });
     el.timerBlock = document.querySelector('.timer-block');
@@ -58,10 +59,7 @@
     await loadHistory();
     await refreshStatus();
 
-    // Poll status in background every 2.5s (state sync)
     setInterval(refreshStatus, 2500);
-
-    // Listen for messages from background
     chrome.runtime.onMessage.addListener(handleBgMessage);
   }
 
@@ -78,14 +76,14 @@
     el.themeToggle.addEventListener('click', toggleTheme);
     el.playbackBtn.addEventListener('click', togglePlayback);
     el.pbTrack.addEventListener('click', seekPlayback);
-    el.clearHistoryBtn.addEventListener('click', clearHistory);
+    el.clearHistoryBtn.addEventListener('click', confirmClearHistory);
     el.exportHistoryBtn.addEventListener('click', exportHistory);
     el.searchHistory.addEventListener('input', loadHistory);
     el.maxDuration.addEventListener('change', saveSettings);
     el.exportFormat.addEventListener('change', saveSettings);
 
     document.addEventListener('keydown', (e) => {
-      const tag = document.activeElement?.tagName;
+      const tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'm' || e.key === 'M') addMarker();
     });
@@ -96,12 +94,13 @@
   ============================================================ */
   async function getCurrentTab() {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tab = tabs[0];
       if (tab) {
         currentTabId = tab.id;
         el.currentTab.textContent = tab.title || tab.url || 'Unknown tab';
       }
-    } catch {
+    } catch (_) {
       el.currentTab.textContent = 'Unable to detect tab';
     }
   }
@@ -113,39 +112,38 @@
     try {
       const status = await chrome.runtime.sendMessage({ action: 'status' });
       if (status) applyStatus(status);
-    } catch { /* popup may be loading */ }
+    } catch (_) { /* popup may be loading */ }
   }
 
   function applyStatus(status) {
-    const { recording, paused, startedAt, mode, level } = status;
+    const recording = status.recording;
+    const paused = status.paused;
+    const startedAt = status.startedAt;
+    const mode = status.mode;
+    const level = status.level;
+
     currentMode = mode || currentMode;
     el.modeTabBtn.classList.toggle('active', currentMode === 'tab');
     el.modeMicBtn.classList.toggle('active', currentMode === 'mic');
 
     if (recording) {
-      // Sync recording state
       el.startBtn.disabled = true;
       el.pauseBtn.disabled = false;
       el.stopBtn.disabled = false;
       el.modeTabBtn.disabled = true;
       el.modeMicBtn.disabled = true;
 
-      // Status pill
       el.statusPill.className = 'status-pill ' + (paused ? 'paused' : 'recording');
       el.statusLabel.textContent = paused ? 'Paused' : 'Live';
 
-      // Timer block class
       el.timerBlock.className = 'timer-block ' + (paused ? 'paused' : 'recording');
       el.timerSub.textContent = paused ? 'Recording paused' : 'Recording in progress...';
 
-      // Pause btn label
       el.pauseLabel.textContent = paused ? 'Resume' : 'Pause';
       setPauseIcon(paused);
 
-      // Marker bar
       el.markerBar.style.display = 'flex';
 
-      // Start/resume timer
       if (startedAt && startedAt !== recordingStartTime) {
         recordingStartTime = startedAt;
         startTimer();
@@ -157,14 +155,10 @@
         startTimer();
       }
 
-      // Level
       if (typeof level === 'number') updateLevel(level, false);
-
-      // Update source info
       updateSourceInfo(currentMode);
 
     } else {
-      // Idle
       el.startBtn.disabled = false;
       el.pauseBtn.disabled = true;
       el.stopBtn.disabled = true;
@@ -185,13 +179,37 @@
     }
   }
 
+  /* FIX: Must NOT use innerHTML — use SVG DOM API instead */
   function updateSourceInfo(mode) {
-    const isMic = (mode || currentMode) === 'mic';
-    const icon = el.sourceInfo.querySelector('svg');
+    var isMic = (mode || currentMode) === 'mic';
+    var svg = el.sourceIcon;
+    DOMHelpers.clearElement(svg);
+
     if (isMic) {
-      icon.innerHTML = '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" fill="none" stroke="currentColor" stroke-width="2"/>';
+      var p1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p1.setAttribute('d', 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z');
+      p1.setAttribute('fill', 'none');
+      p1.setAttribute('stroke', 'currentColor');
+      p1.setAttribute('stroke-width', '2');
+      var p2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p2.setAttribute('d', 'M19 10v2a7 7 0 0 1-14 0v-2');
+      p2.setAttribute('fill', 'none');
+      p2.setAttribute('stroke', 'currentColor');
+      p2.setAttribute('stroke-width', '2');
+      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '12'); line.setAttribute('y1', '19');
+      line.setAttribute('x2', '12'); line.setAttribute('y2', '22');
+      line.setAttribute('stroke', 'currentColor'); line.setAttribute('stroke-width', '2');
+      svg.appendChild(p1); svg.appendChild(p2); svg.appendChild(line);
     } else {
-      icon.innerHTML = '<rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>';
+      var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', '2'); rect.setAttribute('y', '4');
+      rect.setAttribute('width', '20'); rect.setAttribute('height', '16');
+      rect.setAttribute('rx', '2');
+      rect.setAttribute('fill', 'none');
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-width', '2');
+      svg.appendChild(rect);
     }
   }
 
@@ -204,20 +222,20 @@
     }
     el.startBtn.disabled = true;
     try {
-      const res = await chrome.runtime.sendMessage({
+      var res = await chrome.runtime.sendMessage({
         action: 'start', tabId: currentTabId, mode: currentMode
       });
-      if (res?.success) {
+      if (res && res.success) {
         liveMarkerList = [];
         DOMHelpers.clearElement(el.liveMarkers);
         el.waveformCard.style.display = 'none';
         currentBlob = null;
         stopAudio();
-        toast(`Recording started (${currentMode === 'tab' ? 'Tab' : 'Mic'})`, 'success');
+        toast('Recording started (' + (currentMode === 'tab' ? 'Tab' : 'Mic') + ')', 'success');
         await refreshStatus();
         scheduleMaxDuration();
       } else {
-        toast(res?.error || 'Failed to start', 'error');
+        toast((res && res.error) || 'Failed to start', 'error');
         el.startBtn.disabled = false;
       }
     } catch (e) {
@@ -227,15 +245,15 @@
   }
 
   async function onPauseClick() {
-    const isPaused = el.pauseLabel.textContent === 'Resume';
-    const action = isPaused ? 'resume' : 'pause';
+    var isPaused = el.pauseLabel.textContent === 'Resume';
+    var action = isPaused ? 'resume' : 'pause';
     try {
-      const res = await chrome.runtime.sendMessage({ action });
-      if (res?.success) {
+      var res = await chrome.runtime.sendMessage({ action: action });
+      if (res && res.success) {
         toast(isPaused ? 'Resumed' : 'Paused', 'info');
         await refreshStatus();
       } else {
-        toast(res?.error || 'Failed', 'error');
+        toast((res && res.error) || 'Failed', 'error');
       }
     } catch (e) { toast(e.message, 'error'); }
   }
@@ -244,13 +262,13 @@
     el.stopBtn.disabled = true;
     clearMaxDuration();
     try {
-      const res = await chrome.runtime.sendMessage({ action: 'stop' });
-      if (res?.success) {
-        toast('Recording stopped', 'info');
+      var res = await chrome.runtime.sendMessage({ action: 'stop' });
+      if (res && res.success) {
+        toast('Recording stopped — saving...', 'info');
         await refreshStatus();
         await loadHistory();
       } else {
-        toast(res?.error || 'Stop failed', 'error');
+        toast((res && res.error) || 'Stop failed', 'error');
         el.stopBtn.disabled = false;
       }
     } catch (e) {
@@ -264,19 +282,19 @@
   ============================================================ */
   async function addMarker() {
     try {
-      const res = await chrome.runtime.sendMessage({ action: 'addMarker' });
-      if (res?.success) {
-        const label = Formatters.formatDuration(res.marker.timestamp);
-        toast(`Marker @ ${label}`, 'info');
+      var res = await chrome.runtime.sendMessage({ action: 'addMarker' });
+      if (res && res.success) {
+        var label = Formatters.formatDuration(res.marker.timestamp);
+        toast('Marker @ ' + label, 'info');
       }
-    } catch { /* no-op */ }
+    } catch (_) { /* no-op */ }
   }
 
   /* ============================================================
      Mode
   ============================================================ */
   function setMode(mode) {
-    if (el.startBtn.disabled && !el.stopBtn.disabled) return; // recording
+    if (el.startBtn.disabled && !el.stopBtn.disabled) return;
     currentMode = mode;
     el.modeTabBtn.classList.toggle('active', mode === 'tab');
     el.modeMicBtn.classList.toggle('active', mode === 'mic');
@@ -286,19 +304,19 @@
   /* ============================================================
      Level Meter
   ============================================================ */
-  function updateLevel(level, throttle = true) {
+  function updateLevel(level, throttle) {
     if (throttle) {
       if (levelThrottleTimer) return;
-      levelThrottleTimer = setTimeout(() => { levelThrottleTimer = null; }, 180);
+      levelThrottleTimer = setTimeout(function() { levelThrottleTimer = null; }, 180);
     }
     lastLevel = level;
     if (level > peakLevel) peakLevel = level;
 
-    const pct = Math.round(level * 100);
+    var pct = Math.round(level * 100);
     el.levelFill.style.width = pct + '%';
     el.levelFill.className = 'level-fill' + (pct > 90 ? ' hot' : pct > 70 ? ' warn' : '');
 
-    const db = level > 0 ? Math.max(-60, Math.round(20 * Math.log10(level))) : null;
+    var db = level > 0 ? Math.max(-60, Math.round(20 * Math.log10(level))) : null;
     el.levelDb.textContent = db !== null ? db + ' dB' : '-inf';
   }
 
@@ -321,7 +339,7 @@
 
   function renderTimer() {
     if (!recordingStartTime) return;
-    const ms = Date.now() - recordingStartTime;
+    var ms = Date.now() - recordingStartTime;
     el.timer.textContent = Formatters.formatTime(ms);
   }
 
@@ -330,9 +348,9 @@
   ============================================================ */
   function scheduleMaxDuration() {
     clearMaxDuration();
-    const mins = parseInt(el.maxDuration.value) || 0;
+    var mins = parseInt(el.maxDuration.value) || 0;
     if (mins > 0) {
-      maxDurationTimer = setTimeout(() => {
+      maxDurationTimer = setTimeout(function() {
         toast('Max duration reached — stopping', 'warning');
         onStopClick();
       }, mins * 60 * 1000);
@@ -356,7 +374,7 @@
 
     try {
       await WaveformComponent.createFromBlob(el.waveformCanvas, blob);
-    } catch { /* decode may fail on some formats */ }
+    } catch (_) { /* decode may fail on some formats */ }
 
     resetPlaybackUI();
   }
@@ -364,18 +382,16 @@
   function resetPlaybackUI() {
     el.pbFill.style.width = '0%';
     el.pbTime.textContent = '0:00 / ' + Formatters.formatDuration(currentDuration);
-    setPauseIcon(false, true);
-    el.playLabel.textContent = 'Play';
     isPlaying = false;
+    setPlayIcon(false);
+    el.playLabel.textContent = 'Play';
   }
 
   function togglePlayback() {
     if (!currentBlob) return;
 
     if (!audioEl) {
-      if (audioObjectUrl) {
-        URL.revokeObjectURL(audioObjectUrl);
-      }
+      if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
       audioObjectUrl = URL.createObjectURL(currentBlob);
       audioEl = new Audio();
       audioEl.src = audioObjectUrl;
@@ -386,34 +402,34 @@
     if (audioEl.paused) {
       audioEl.play();
       isPlaying = true;
-      setPauseIcon(false, true);
+      setPlayIcon(true);
       el.playLabel.textContent = 'Pause';
     } else {
       audioEl.pause();
       isPlaying = false;
-      setPauseIcon(false, true);
+      setPlayIcon(false);
       el.playLabel.textContent = 'Play';
     }
   }
 
   function seekPlayback(e) {
     if (!audioEl || !currentDuration) return;
-    const rect = el.pbTrack.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    var rect = el.pbTrack.getBoundingClientRect();
+    var ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     audioEl.currentTime = ratio * (audioEl.duration || currentDuration);
   }
 
   function onAudioTimeUpdate() {
-    const cur = audioEl.currentTime;
-    const total = audioEl.duration || currentDuration;
-    const pct = total > 0 ? (cur / total) * 100 : 0;
+    var cur = audioEl.currentTime;
+    var total = audioEl.duration || currentDuration;
+    var pct = total > 0 ? (cur / total) * 100 : 0;
     el.pbFill.style.width = pct + '%';
     el.pbTime.textContent = Formatters.formatDuration(cur) + ' / ' + Formatters.formatDuration(total);
   }
 
   function onAudioEnded() {
     isPlaying = false;
-    setPauseIcon(false, true);
+    setPlayIcon(false);
     el.playLabel.textContent = 'Play';
     el.pbFill.style.width = '0%';
     el.pbTime.textContent = '0:00 / ' + Formatters.formatDuration(currentDuration);
@@ -432,19 +448,57 @@
     }
   }
 
+  /* FIX: setPauseIcon — replaces innerHTML with SVG DOM API */
+  function setPauseIcon(isPaused) {
+    DOMHelpers.clearElement(el.pauseIconSvg);
+    if (isPaused) {
+      var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      poly.setAttribute('points', '5 3 19 12 5 21 5 3');
+      el.pauseIconSvg.appendChild(poly);
+    } else {
+      var r1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r1.setAttribute('x', '6'); r1.setAttribute('y', '4');
+      r1.setAttribute('width', '4'); r1.setAttribute('height', '16');
+      var r2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r2.setAttribute('x', '14'); r2.setAttribute('y', '4');
+      r2.setAttribute('width', '4'); r2.setAttribute('height', '16');
+      el.pauseIconSvg.appendChild(r1);
+      el.pauseIconSvg.appendChild(r2);
+    }
+  }
+
+  /* FIX: setPlayIcon — replaces innerHTML with SVG DOM API */
+  function setPlayIcon(playing) {
+    DOMHelpers.clearElement(el.playIconSvg);
+    if (playing) {
+      var r1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r1.setAttribute('x', '6'); r1.setAttribute('y', '4');
+      r1.setAttribute('width', '4'); r1.setAttribute('height', '16');
+      var r2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r2.setAttribute('x', '14'); r2.setAttribute('y', '4');
+      r2.setAttribute('width', '4'); r2.setAttribute('height', '16');
+      el.playIconSvg.appendChild(r1);
+      el.playIconSvg.appendChild(r2);
+    } else {
+      var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      poly.setAttribute('points', '5 3 19 12 5 21 5 3');
+      el.playIconSvg.appendChild(poly);
+    }
+  }
+
   /* ============================================================
      History
   ============================================================ */
   async function loadHistory() {
     try {
-      const res = await chrome.runtime.sendMessage({ action: 'getHistory' });
-      const recordings = Array.isArray(res) ? res : [];
-      const term = (el.searchHistory.value || '').toLowerCase().trim();
-      const filtered = term
-        ? recordings.filter(r => r.filename.toLowerCase().includes(term))
+      var res = await chrome.runtime.sendMessage({ action: 'getHistory' });
+      var recordings = Array.isArray(res) ? res : [];
+      var term = (el.searchHistory.value || '').toLowerCase().trim();
+      var filtered = term
+        ? recordings.filter(function(r) { return r.filename.toLowerCase().includes(term); })
         : recordings;
       renderHistory(filtered);
-    } catch {
+    } catch (_) {
       renderHistory([]);
     }
   }
@@ -453,60 +507,60 @@
     DOMHelpers.clearElement(el.historyList);
 
     if (!recordings.length) {
-      const wrap = document.createElement('div');
+      var wrap = document.createElement('div');
       wrap.className = 'empty-state';
-
-      const p = document.createElement('p');
+      var p = document.createElement('p');
       p.textContent = 'No recordings yet';
-
-      const small = document.createElement('small');
+      var small = document.createElement('small');
       small.textContent = 'Hit Record to get started';
-
       wrap.appendChild(p);
       wrap.appendChild(small);
       el.historyList.appendChild(wrap);
       return;
     }
 
-    recordings.forEach(rec => {
-      const item = document.createElement('div');
+    recordings.forEach(function(rec) {
+      var item = document.createElement('div');
       item.className = 'history-item';
 
-      // Top row
-      const top = document.createElement('div');
+      var top = document.createElement('div');
       top.className = 'hi-top';
 
-      const fname = document.createElement('div');
+      var fname = document.createElement('div');
       fname.className = 'hi-filename';
       fname.textContent = SecurityUtils.sanitizeText(rec.filename);
 
-      const acts = document.createElement('div');
+      var acts = document.createElement('div');
       acts.className = 'hi-actions';
 
-      const playBtn = createHistoryBtn('▶', 'Open recording', false, () => playHistoryItem(rec));
-      const dlBtn   = createHistoryBtn('↓', 'Show in downloads', false, () => reDownload(rec));
-      const delBtn  = createHistoryBtn('✕', 'Delete', true, () => deleteRecording(rec.id));
+      var dlBtn  = createHistoryBtn('↓', 'Show in Finder/Explorer', false, function() { reDownload(rec); });
+      var delBtn = createHistoryBtn('✕', 'Delete', true, function() { deleteRecording(rec.id); });
 
-      acts.appendChild(playBtn);
       acts.appendChild(dlBtn);
       acts.appendChild(delBtn);
 
       top.appendChild(fname);
       top.appendChild(acts);
 
-      // Meta row
-      const meta = document.createElement('div');
+      var meta = document.createElement('div');
       meta.className = 'hi-meta';
 
-      meta.appendChild(makeMetaItem(Formatters.formatDuration(rec.duration || 0), 'clock'));
-      meta.appendChild(makeMetaItem(Formatters.formatSize(rec.size || 0), 'disk'));
-      meta.appendChild(makeMetaItem(Formatters.formatDate(rec.timestamp), 'cal'));
+      meta.appendChild(makeMetaItem(Formatters.formatDuration(rec.duration || 0)));
+      meta.appendChild(makeMetaItem(Formatters.formatSize(rec.size || 0)));
+      meta.appendChild(makeMetaItem(Formatters.formatDate(rec.timestamp)));
 
       if (rec.mode) {
-        const badge = document.createElement('span');
+        var badge = document.createElement('span');
         badge.className = 'hi-mode-badge';
         badge.textContent = rec.mode === 'mic' ? 'MIC' : 'TAB';
         meta.appendChild(badge);
+      }
+
+      if (rec.format && rec.format !== 'webm') {
+        var fmtBadge = document.createElement('span');
+        fmtBadge.className = 'hi-mode-badge';
+        fmtBadge.textContent = rec.format.toUpperCase();
+        meta.appendChild(fmtBadge);
       }
 
       item.appendChild(top);
@@ -516,45 +570,30 @@
   }
 
   function createHistoryBtn(icon, title, isDanger, onClick) {
-    const btn = document.createElement('button');
+    var btn = document.createElement('button');
     btn.className = 'hi-btn' + (isDanger ? ' danger' : '');
     btn.title = title;
     btn.textContent = icon;
-    btn.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+    btn.addEventListener('click', function(e) { e.stopPropagation(); onClick(); });
     return btn;
   }
 
-  function makeMetaItem(text, type) {
-    const span = document.createElement('span');
+  function makeMetaItem(text) {
+    var span = document.createElement('span');
     span.className = 'hi-meta-item';
     span.textContent = text;
     return span;
   }
 
-  async function playHistoryItem(rec) {
-    if (!rec?.id) {
-      toast('Cannot open this recording', 'error');
-      return;
-    }
-    try {
-      const res = await chrome.runtime.sendMessage({ action: 'openRecording', id: rec.id });
-      if (!res?.success) {
-        toast(res?.error || 'Unable to open recording', 'error');
-      }
-    } catch (e) {
-      toast(e.message, 'error');
-    }
-  }
-
   async function reDownload(rec) {
-    if (!rec?.id) {
+    if (!rec || !rec.id) {
       toast('Cannot locate this recording', 'error');
       return;
     }
     try {
-      const res = await chrome.runtime.sendMessage({ action: 'showRecording', id: rec.id });
-      if (!res?.success) {
-        toast(res?.error || 'Unable to find file in downloads', 'error');
+      var res = await chrome.runtime.sendMessage({ action: 'showRecording', id: rec.id });
+      if (!res || !res.success) {
+        toast((res && res.error) || 'File not found in downloads', 'error');
       }
     } catch (e) {
       toast(e.message, 'error');
@@ -564,44 +603,51 @@
   async function deleteRecording(id) {
     if (!id) { toast('Cannot delete: missing ID', 'error'); return; }
     try {
-      const res = await chrome.runtime.sendMessage({ action: 'deleteRecording', id });
-      if (res?.success) {
+      var res = await chrome.runtime.sendMessage({ action: 'deleteRecording', id: id });
+      if (res && res.success) {
         toast('Recording deleted', 'success');
         await loadHistory();
       }
     } catch (e) { toast(e.message, 'error'); }
   }
 
-  async function clearHistory() {
-    if (!confirm('Clear all recording history? Files are not deleted from disk.')) return;
-    try {
-      await chrome.runtime.sendMessage({ action: 'clearHistory' });
-      toast('History cleared', 'success');
-      await loadHistory();
-    } catch (e) { toast(e.message, 'error'); }
+  /* FIX: replaced confirm() with custom modal */
+  function confirmClearHistory() {
+    showConfirm(
+      'Clear all recording history? Files on disk are not deleted.',
+      async function() {
+        try {
+          await chrome.runtime.sendMessage({ action: 'clearHistory' });
+          toast('History cleared', 'success');
+          await loadHistory();
+        } catch (e) { toast(e.message, 'error'); }
+      }
+    );
   }
 
   async function exportHistory() {
     try {
-      const res = await chrome.runtime.sendMessage({ action: 'getHistory' });
-      const recordings = Array.isArray(res) ? res : [];
-      const data = {
+      var res = await chrome.runtime.sendMessage({ action: 'getHistory' });
+      var recordings = Array.isArray(res) ? res : [];
+      var data = {
         exportedAt: new Date().toISOString(),
         version: '2.0.0',
         count: recordings.length,
-        recordings: recordings.map(r => ({
-          filename: r.filename,
-          duration: r.duration,
-          size: r.size,
-          mode: r.mode,
-          format: r.format,
-          timestamp: r.timestamp
-        }))
+        recordings: recordings.map(function(r) {
+          return {
+            filename: r.filename,
+            duration: r.duration,
+            size: r.size,
+            mode: r.mode,
+            format: r.format,
+            timestamp: r.timestamp
+          };
+        })
       };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+      var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
       await chrome.downloads.download({
-        url,
+        url: url,
         filename: 'audio_recorder_export_' + Date.now() + '.json',
         saveAs: true
       });
@@ -615,56 +661,59 @@
   ============================================================ */
   async function loadSettings() {
     try {
-      const res = await chrome.runtime.sendMessage({ action: 'getSettings' });
+      var res = await chrome.runtime.sendMessage({ action: 'getSettings' });
       if (res) {
         el.maxDuration.value = res.maxDuration || 0;
         el.exportFormat.value = res.exportFormat || 'webm';
         applyTheme(res.theme || 'light');
       }
-    } catch { /* defaults fine */ }
+    } catch (_) { /* defaults fine */ }
   }
 
   async function saveSettings() {
-    const settings = {
+    var settings = {
       maxDuration: parseInt(el.maxDuration.value) || 0,
       exportFormat: el.exportFormat.value
     };
     try {
-      await chrome.runtime.sendMessage({ action: 'updateSettings', settings });
-    } catch { /* non-critical */ }
+      await chrome.runtime.sendMessage({ action: 'updateSettings', settings: settings });
+    } catch (_) { /* non-critical */ }
   }
 
   /* ============================================================
-     Theme
+     Theme — FIX: use cached el.iconMoon / el.iconSun
   ============================================================ */
   function toggleTheme() {
-    const current = el.app.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
+    var current = el.app.getAttribute('data-theme');
+    var next = current === 'dark' ? 'light' : 'dark';
     applyTheme(next);
-    chrome.runtime.sendMessage({ action: 'updateSettings', settings: { theme: next } }).catch(() => {});
+    chrome.runtime.sendMessage({ action: 'updateSettings', settings: { theme: next } }).catch(function(){});
   }
 
   function applyTheme(theme) {
     el.app.setAttribute('data-theme', theme);
-    const isDark = theme === 'dark';
-    el.app.querySelector('.icon-moon').style.display = isDark ? 'none' : '';
-    el.app.querySelector('.icon-sun').style.display = isDark ? '' : 'none';
+    var isDark = theme === 'dark';
+    el.iconMoon.style.display = isDark ? 'none' : '';
+    el.iconSun.style.display = isDark ? '' : 'none';
   }
 
   /* ============================================================
-     Pause icon helper
+     Confirm Modal (replaces confirm())
   ============================================================ */
-  function setPauseIcon(isPaused, isPlayBtn) {
-    if (isPlayBtn) {
-      // play/pause SVG in playback button
-      el.playIconSvg.innerHTML = isPlaying
-        ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
-        : '<polygon points="5 3 19 12 5 21 5 3"/>';
-      return;
+  function showConfirm(message, onOk) {
+    el.confirmMsg.textContent = message;
+    el.confirmModal.style.display = 'flex';
+
+    function cleanup() {
+      el.confirmModal.style.display = 'none';
+      el.confirmOk.removeEventListener('click', handleOk);
+      el.confirmCancel.removeEventListener('click', handleCancel);
     }
-    el.pauseIconSvg.innerHTML = isPaused
-      ? '<polygon points="5 3 19 12 5 21 5 3"/>'
-      : '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    function handleOk() { cleanup(); onOk(); }
+    function handleCancel() { cleanup(); }
+
+    el.confirmOk.addEventListener('click', handleOk);
+    el.confirmCancel.addEventListener('click', handleCancel);
   }
 
   /* ============================================================
@@ -675,27 +724,36 @@
       case 'recordingLevel':
         updateLevel(msg.level, true);
         break;
+
       case 'recordingSaved':
-        toast('Saved: ' + (msg.filename || 'recording'), 'success');
+        toast('Saved: ' + SecurityUtils.sanitizeText(msg.filename || 'recording'), 'success');
+        currentDuration = msg.duration || 0;
+        // Show waveform placeholder since blob is no longer available in popup
+        el.waveformCard.style.display = 'block';
+        el.waveformDuration.textContent = Formatters.formatDuration(currentDuration);
+        WaveformComponent.drawPlaceholder(el.waveformCanvas);
+        resetPlaybackUI();
         loadHistory();
         refreshStatus();
         break;
+
       case 'recordingError':
         toast(msg.error || 'Recording error', 'error');
         refreshStatus();
         break;
+
       case 'recordingPaused':
-        toast('Paused', 'info');
         refreshStatus();
         break;
+
       case 'recordingResumed':
-        toast('Resumed', 'info');
         refreshStatus();
         break;
+
       case 'markerAdded':
         if (msg.marker) {
-          const label = Formatters.formatDuration(msg.marker.timestamp);
-          const chip = document.createElement('span');
+          var label = Formatters.formatDuration(msg.marker.timestamp);
+          var chip = document.createElement('span');
           chip.className = 'live-marker-chip';
           chip.textContent = label;
           el.liveMarkers.appendChild(chip);
@@ -707,23 +765,24 @@
   /* ============================================================
      Toast
   ============================================================ */
-  function toast(msg, type = 'info') {
-    const t = document.createElement('div');
+  function toast(msg, type) {
+    type = type || 'info';
+    var t = document.createElement('div');
     t.className = 'toast ' + type;
 
-    const dot = document.createElement('span');
+    var dot = document.createElement('span');
     dot.className = 'toast-dot';
 
-    const txt = document.createElement('span');
-    txt.textContent = SecurityUtils.sanitizeText(msg);
+    var txt = document.createElement('span');
+    txt.textContent = SecurityUtils.sanitizeText(String(msg || ''));
 
     t.appendChild(dot);
     t.appendChild(txt);
     el.toastContainer.appendChild(t);
 
-    setTimeout(() => {
+    setTimeout(function() {
       t.classList.add('fade-out');
-      setTimeout(() => t.remove(), 220);
+      setTimeout(function() { if (t.parentNode) t.remove(); }, 220);
     }, 2800);
   }
 

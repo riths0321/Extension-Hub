@@ -9,6 +9,17 @@
 <body>
   <div class="app" id="app" data-theme="light">
 
+    <!-- Confirm Modal -->
+    <div class="confirm-modal" id="confirmModal" style="display:none">
+      <div class="confirm-box">
+        <p class="confirm-msg" id="confirmMsg"></p>
+        <div class="confirm-actions">
+          <button class="btn-confirm-cancel" id="confirmCancel">Cancel</button>
+          <button class="btn-confirm-ok" id="confirmOk">Clear</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <header class="header">
       <div class="header-brand">
@@ -27,10 +38,10 @@
           <span class="status-label" id="statusLabel">Idle</span>
         </div>
         <button class="icon-action" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
-          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
-          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+          <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
             <circle cx="12" cy="12" r="5"/>
             <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -42,7 +53,7 @@
     </header>
 
     <!-- Timer Block -->
-    <div class="timer-block">
+    <div class="timer-block" id="timerBlock">
       <div class="timer-display" id="timer">00:00:00</div>
       <div class="timer-sub" id="timerSub">Ready to record</div>
     </div>
@@ -100,7 +111,8 @@
 
     <!-- Tab/Mic Source Info -->
     <div class="source-info" id="sourceInfo">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- id="sourceIcon" is the SVG that gets updated by JS via DOM API (no innerHTML) -->
+      <svg id="sourceIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="2" y="4" width="20" height="16" rx="2"/>
       </svg>
       <span id="currentTab" class="source-name">Loading tab...</span>
@@ -156,14 +168,14 @@
       </summary>
       <div class="settings-body">
         <div class="setting-row">
-          <label class="setting-label">Max Duration</label>
+          <label class="setting-label" for="maxDuration">Max Duration</label>
           <div class="setting-control">
             <input type="number" id="maxDuration" min="0" max="360" value="0" step="5" class="setting-input">
             <span class="setting-unit">min &nbsp;(0 = unlimited)</span>
           </div>
         </div>
         <div class="setting-row">
-          <label class="setting-label">Format</label>
+          <label class="setting-label" for="exportFormat">Format</label>
           <select id="exportFormat" class="setting-select">
             <option value="webm">WebM (default)</option>
             <option value="wav">WAV</option>
