@@ -3,57 +3,228 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Audio Recorder</title>
+  <title>Audio Recorder Pro</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <main class="app">
-    <header class="app-header">
-      <h1>Audio Recorder</h1>
-      <p class="subtitle">Record active tab audio without muting playback</p>
+  <div class="app" id="app" data-theme="light">
+
+    <!-- Confirm Modal -->
+    <div class="confirm-modal" id="confirmModal" style="display:none">
+      <div class="confirm-box">
+        <p class="confirm-msg" id="confirmMsg"></p>
+        <div class="confirm-actions">
+          <button class="btn-confirm-cancel" id="confirmCancel">Cancel</button>
+          <button class="btn-confirm-ok" id="confirmOk">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+        </div>
+        <span class="brand-name">Audio Recorder</span>
+      </div>
+      <div class="header-right">
+        <div class="status-pill" id="statusPill">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-label" id="statusLabel">Idle</span>
+        </div>
+        <button class="icon-action" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+          <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <section class="status-card" aria-live="polite">
-      <div id="status" class="status status-ready">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span class="status-text">Ready</span>
+    <!-- Timer Block -->
+    <div class="timer-block" id="timerBlock">
+      <div class="timer-display" id="timer">00:00:00</div>
+      <div class="timer-sub" id="timerSub">Ready to record</div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="tab" id="modeTabBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Tab Audio
+      </button>
+      <button class="mode-btn" data-mode="mic" id="modeMicBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+        </svg>
+        Microphone
+      </button>
+    </div>
+
+    <!-- Level Meter -->
+    <div class="level-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </svg>
+      <div class="level-track">
+        <div class="level-fill" id="levelFill"></div>
       </div>
-      <div id="timer" class="timer">00:00:00</div>
-      <div class="level-wrapper" aria-label="Recording level meter">
-        <div class="level-track">
-          <div id="levelFill" class="level-fill"></div>
+      <span class="level-db" id="levelDb">-inf</span>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-row">
+      <button class="btn btn-record" id="startBtn">
+        <span class="btn-dot"></span>
+        Record
+      </button>
+      <button class="btn btn-pause" id="pauseBtn" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" id="pauseIconSvg">
+          <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+        </svg>
+        <span id="pauseLabel">Pause</span>
+      </button>
+      <button class="btn btn-stop" id="stopBtn" disabled>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="6" width="12" height="12"/>
+        </svg>
+        Stop
+      </button>
+    </div>
+
+    <!-- Tab/Mic Source Info -->
+    <div class="source-info" id="sourceInfo">
+      <!-- id="sourceIcon" is the SVG that gets updated by JS via DOM API (no innerHTML) -->
+      <svg id="sourceIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+      </svg>
+      <span id="currentTab" class="source-name">Loading tab...</span>
+    </div>
+
+    <!-- Marker Bar (visible during recording) -->
+    <div class="marker-bar" id="markerBar" style="display:none">
+      <button class="marker-btn" id="addMarkerBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        Marker
+      </button>
+      <span class="marker-hint">press M</span>
+      <div class="live-markers" id="liveMarkers"></div>
+    </div>
+
+    <!-- Waveform + Playback (post-recording) -->
+    <div class="waveform-card" id="waveformCard" style="display:none">
+      <div class="waveform-header">
+        <span class="section-label">Preview</span>
+        <span class="waveform-dur" id="waveformDuration"></span>
+      </div>
+      <canvas id="waveformCanvas" width="340" height="60"></canvas>
+      <div class="playback-row">
+        <button class="play-btn" id="playbackBtn">
+          <svg id="playIconSvg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <span id="playLabel">Play</span>
+        </button>
+        <div class="playback-track-wrap">
+          <div class="pb-track" id="pbTrack">
+            <div class="pb-fill" id="pbFill"></div>
+          </div>
+          <span class="pb-time" id="pbTime">0:00 / 0:00</span>
         </div>
-        <p class="level-label">Live audio level</p>
       </div>
-    </section>
+    </div>
 
-    <section class="tab-card">
-      <p class="card-label">Current tab</p>
-      <p id="currentTab" class="tab-name">Loading...</p>
-    </section>
-
-    <section class="actions">
-      <button id="startBtn" class="btn btn-start" type="button">Start Recording</button>
-      <button id="stopBtn" class="btn btn-stop" type="button" disabled>Stop Recording</button>
-    </section>
-
-    <section class="tips">
-      <p>Keep media playing in the active tab for best results.</p>
-      <p>Audio remains audible while recording is active.</p>
-    </section>
-
-    <section class="history-card">
-      <div class="history-header">
-        <h2>Recent Recordings</h2>
-        <button id="clearHistoryBtn" class="btn-link" type="button">Clear</button>
+    <!-- Settings -->
+    <details class="settings-panel">
+      <summary class="settings-toggle">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        </svg>
+        Settings
+        <svg class="chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </summary>
+      <div class="settings-body">
+        <div class="setting-row">
+          <label class="setting-label" for="maxDuration">Max Duration</label>
+          <div class="setting-control">
+            <input type="number" id="maxDuration" min="0" max="360" value="0" step="5" class="setting-input">
+            <span class="setting-unit">min &nbsp;(0 = unlimited)</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <label class="setting-label" for="exportFormat">Format</label>
+          <select id="exportFormat" class="setting-select">
+            <option value="webm">WebM (default)</option>
+            <option value="wav">WAV</option>
+          </select>
+        </div>
       </div>
-      <div id="historyList" class="history-list">
-        <p class="empty-history">No recordings yet</p>
-      </div>
-    </section>
-  </main>
+    </details>
 
-  <div id="notificationContainer" class="notification-container" aria-live="polite"></div>
+    <!-- History Panel -->
+    <div class="history-panel">
+      <div class="history-top">
+        <span class="section-label">Recordings</span>
+        <div class="history-controls">
+          <div class="search-wrap">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="searchHistory" class="search-input" placeholder="Search...">
+          </div>
+          <button class="ghost-btn" id="exportHistoryBtn" title="Export as JSON">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <button class="ghost-btn ghost-danger" id="clearHistoryBtn" title="Clear all">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <script src="utils/security.js"></script>
+  <script src="utils/domHelpers.js"></script>
+  <script src="utils/formatters.js"></script>
+  <script src="services/analyticsService.js"></script>
+  <script src="services/storageService.js"></script>
+  <script src="services/audioService.js"></script>
+  <script src="services/recordingService.js"></script>
+  <script src="ui/components/waveform.js"></script>
+  <script src="ui/components/markers.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,86 +1,93 @@
+// background.js — Service Worker (Manifest V3)
+
 let recordingState = {
   recording: false,
+  paused: false,
   tabId: null,
   startedAt: null,
   mimeType: null,
-  level: 0
+  level: 0,
+  mode: 'tab'
 };
+
 let hasHydratedState = false;
 
-chrome.runtime.onInstalled.addListener(async () => {
-  const data = await chrome.storage.local.get(['recordings', 'recordingState']);
-  if (!Array.isArray(data.recordings)) {
-    await chrome.storage.local.set({ recordings: [] });
+/* ── Formatters (inline — no ES module imports in SW) ─────────────────── */
+const Formatters = {
+  generateFilename(siteName, mode, format) {
+    const d = new Date();
+    const dateStr = [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, '0'),
+      String(d.getDate()).padStart(2, '0')
+    ].join('-');
+    const timeStr = [
+      String(d.getHours()).padStart(2, '0'),
+      String(d.getMinutes()).padStart(2, '0'),
+      String(d.getSeconds()).padStart(2, '0')
+    ].join('-');
+    const site = String(siteName || 'recording')
+      .replace(/[^a-z0-9]/gi, '_')
+      .substring(0, 28);
+    return `audio_${site}_${mode}_${dateStr}_${timeStr}.${format}`;
   }
+};
 
-  if (!data.recordingState) {
-    await chrome.storage.local.set({ recordingState });
+/* ── Lifecycle ─────────────────────────────────────────────────────────── */
+chrome.runtime.onInstalled.addListener(async () => {
+  try {
+    const data = await chrome.storage.local.get(['recordings', 'settings']);
+    if (!Array.isArray(data.recordings)) {
+      await chrome.storage.local.set({ recordings: [] });
+    }
+    if (!data.settings) {
+      await chrome.storage.local.set({
+        settings: { theme: 'light', maxDuration: 0, exportFormat: 'webm' }
+      });
+    }
+  } catch (_) {
+    // Ignore install-time storage errors; runtime calls handle defaults.
   }
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  hydrateState().catch((error) => {
-    console.warn('Could not hydrate recording state on startup', error);
-  });
+  hydrateState().catch(() => {});
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  switch (request.action) {
-    case 'status':
-      getStatus().then(sendResponse);
-      return true;
-
-    case 'start':
-      startRecording(request.tabId).then(sendResponse);
-      return true;
-
-    case 'stop':
-      stopRecording().then(sendResponse);
-      return true;
-
-    case 'getHistory':
-      getHistory().then(sendResponse);
-      return true;
-
-    case 'clearHistory':
-      clearHistory().then(sendResponse);
-      return true;
-
-    case 'recordingComplete':
-      saveRecordingFile(request.data, request.mimeType)
-        .then((result) => sendResponse(result))
-        .catch((error) => sendResponse({ success: false, error: error.message }));
-      return true;
-
-    case 'recordingLevel':
-      recordingState.level = normalizeLevel(request.level);
-      broadcast({ action: 'recordingLevel', level: recordingState.level });
-      sendResponse({ success: true });
-      return;
-
-    case 'recordingError':
-      handleRecordingError(request.error || 'Unknown recording error').then(() => {
-        sendResponse({ success: true });
-      });
-      return true;
-
-    default:
-      sendResponse({ success: false, error: 'Unknown action' });
-      return;
-  }
+/* ── Message Router ────────────────────────────────────────────────────── */
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  const route = async () => {
+    switch (request.action) {
+      case 'status':          return getStatus();
+      case 'start':           return startRecording(request.tabId, request.mode);
+      case 'stop':            return stopRecording();
+      case 'pause':           return pauseRecording();
+      case 'resume':          return resumeRecording();
+      case 'addMarker':       return addMarker(request.label);
+      case 'getMarkers':      return getMarkers();
+      case 'getHistory':      return getHistory();
+      case 'clearHistory':    return clearHistory();
+      case 'deleteRecording': return deleteRecording(request.id);
+      case 'openRecording':   return openRecording(request.id);
+      case 'showRecording':   return showRecording(request.id);
+      case 'getSettings':     return getSettings();
+      case 'updateSettings':  return updateSettings(request.settings);
+      case 'recordingComplete': return saveRecordingFile(request.data, request.mimeType, request.duration, request.markers, request.mode);
+      case 'recordingLevel':  return handleLevelUpdate(request.level);
+      case 'recordingError':  return handleRecordingError(request.error);
+      default: return { success: false, error: 'Unknown action: ' + request.action };
+    }
+  };
+  route().then(sendResponse).catch(e => sendResponse({ success: false, error: e.message }));
+  return true; // async
 });
 
+/* ── State helpers ─────────────────────────────────────────────────────── */
 async function hydrateState() {
-  if (hasHydratedState) {
-    return;
-  }
-
+  if (hasHydratedState) return;
   const data = await chrome.storage.local.get('recordingState');
   if (data.recordingState) {
-    recordingState = {
-      ...recordingState,
-      ...data.recordingState
-    };
+    recordingState = { ...recordingState, ...data.recordingState };
   }
   hasHydratedState = true;
 }
@@ -91,180 +98,235 @@ async function persistState() {
 
 async function getStatus() {
   await hydrateState();
-  return {
-    recording: recordingState.recording,
-    tabId: recordingState.tabId,
-    startedAt: recordingState.startedAt,
-    mimeType: recordingState.mimeType,
-    level: recordingState.level
-  };
+  return { ...recordingState };
 }
 
-async function startRecording(tabId) {
+/* ── Recording control ─────────────────────────────────────────────────── */
+async function startRecording(tabId, mode = 'tab') {
   await hydrateState();
 
   if (recordingState.recording) {
     return { success: false, error: 'Recording already in progress' };
   }
-
-  if (!tabId) {
-    return { success: false, error: 'Missing tab id' };
+  if (mode === 'tab' && !tabId) {
+    return { success: false, error: 'Missing tab ID' };
   }
 
   try {
-    const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId });
-
     await createOffscreenDocument();
+    let streamId = null;
 
-    const response = await chrome.runtime.sendMessage({
-      action: 'startRecording',
-      streamId
-    });
-
-    if (!response?.success) {
-      throw new Error(response?.error || 'Could not start offscreen recorder');
+    if (mode === 'tab') {
+      if (!chrome.tabCapture || typeof chrome.tabCapture.getMediaStreamId !== 'function') {
+        throw new Error('Tab capture API unavailable. Reload the extension and try again.');
+      }
+      streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId });
+      if (!streamId) {
+        throw new Error('Unable to capture tab audio stream');
+      }
     }
+
+    const response = await sendToOffscreen({ action: 'startRecording', tabId, mode, streamId });
+    if (!response?.success) throw new Error(response?.error || 'Offscreen start failed');
 
     recordingState = {
       recording: true,
-      tabId,
+      paused: false,
+      tabId: mode === 'tab' ? tabId : null,
       startedAt: Date.now(),
       mimeType: response.mimeType || null,
-      level: 0
+      level: 0,
+      mode
     };
 
     await persistState();
     await chrome.action.setBadgeText({ text: 'REC' });
-    await chrome.action.setBadgeBackgroundColor({ color: '#d7263d' });
-
+    await chrome.action.setBadgeBackgroundColor({ color: '#DC2626' });
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message || 'Failed to start recording' };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
 }
 
 async function stopRecording() {
   await hydrateState();
-
-  if (!recordingState.recording) {
-    return { success: false, error: 'No active recording' };
-  }
+  if (!recordingState.recording) return { success: false, error: 'No active recording' };
 
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'stopRecording' });
-    if (!response?.success) {
-      throw new Error(response?.error || 'Could not stop recorder');
-    }
+    const response = await sendToOffscreen({ action: 'stopRecording' });
+    if (!response?.success) throw new Error(response?.error || 'Offscreen stop failed');
 
-    recordingState.recording = false;
-    recordingState.tabId = null;
-    recordingState.startedAt = null;
-    recordingState.level = 0;
-
+    recordingState = {
+      recording: false, paused: false, tabId: null,
+      startedAt: null, mimeType: null, level: 0, mode: 'tab'
+    };
     await persistState();
     await chrome.action.setBadgeText({ text: '' });
-
     return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message || 'Failed to stop recording' };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
 }
 
-async function createOffscreenDocument() {
-  const contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
-  if (contexts.length > 0) {
-    return;
+async function pauseRecording() {
+  if (!recordingState.recording || recordingState.paused) {
+    return { success: false, error: 'Cannot pause' };
   }
-
-  const reasons = [chrome.offscreen.Reason.USER_MEDIA];
-  if (chrome.offscreen.Reason.AUDIO_PLAYBACK) {
-    reasons.push(chrome.offscreen.Reason.AUDIO_PLAYBACK);
+  try {
+    const response = await sendToOffscreen({ action: 'pauseRecording' });
+    if (response?.success) {
+      recordingState.paused = true;
+      await persistState();
+      broadcast({ action: 'recordingPaused' });
+      return { success: true };
+    }
+    return { success: false, error: response?.error };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
-
-  await chrome.offscreen.createDocument({
-    url: 'offscreen.html',
-    reasons,
-    justification: 'Capture active tab audio while keeping playback audible'
-  });
 }
 
-async function saveRecordingFile(base64Data, mimeType) {
-  if (!base64Data) {
-    return { success: false, error: 'Missing recording data' };
+async function resumeRecording() {
+  if (!recordingState.recording || !recordingState.paused) {
+    return { success: false, error: 'Cannot resume' };
+  }
+  try {
+    const response = await sendToOffscreen({ action: 'resumeRecording' });
+    if (response?.success) {
+      recordingState.paused = false;
+      await persistState();
+      broadcast({ action: 'recordingResumed' });
+      return { success: true };
+    }
+    return { success: false, error: response?.error };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+async function addMarker(label) {
+  if (!recordingState.recording) return { success: false, error: 'No active recording' };
+  try {
+    const response = await sendToOffscreen({ action: 'addMarker', label });
+    if (response?.success) {
+      broadcast({ action: 'markerAdded', marker: response.marker });
+      return { success: true, marker: response.marker };
+    }
+    return { success: false };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+async function getMarkers() {
+  if (!recordingState.recording) return [];
+  try {
+    const response = await sendToOffscreen({ action: 'getMarkers' });
+    return response?.markers || [];
+  } catch { return []; }
+}
+
+/* ── Level update (hot path — no storage) ─────────────────────────────── */
+function handleLevelUpdate(level) {
+  const val = Number(level);
+  recordingState.level = Number.isFinite(val) ? Math.max(0, Math.min(1, val)) : 0;
+  broadcast({ action: 'recordingLevel', level: recordingState.level });
+  return { success: true };
+}
+
+/* ── Save recording ────────────────────────────────────────────────────── */
+async function saveRecordingFile(base64Data, mimeType, duration, markers, modeOverride) {
+  if (!base64Data) return { success: false, error: 'Missing data' };
+
+  const settings = await getSettings();
+  const format = settings.exportFormat || 'webm';
+  const ext = format === 'wav' ? 'wav' : 'webm';
+  const recordingMode = modeOverride === 'mic' ? 'mic' : (modeOverride === 'tab' ? 'tab' : recordingState.mode);
+
+  const filename = await generateFilename(recordingMode, ext);
+  const dataUrl = `data:${mimeType};base64,${base64Data}`;
+  const sizeBytes = Math.floor((base64Data.replace(/=+$/, '').length * 3) / 4);
+
+  const dl = await downloadFile({ url: dataUrl, filename, saveAs: true, conflictAction: 'uniquify' });
+  if (!dl.success) {
+    broadcast({ action: 'recordingError', error: dl.error });
+    return { success: false, error: dl.error };
   }
 
-  const normalizedMime = mimeType || 'audio/webm';
-  const extension = normalizedMime.includes('mp4') ? 'mp4' : 'webm';
-  const filename = buildFilename(extension);
-  const dataUrl = `data:${normalizedMime};base64,${base64Data}`;
-  const sizeBytes = approximateBase64Bytes(base64Data);
-
-  const firstDownload = await downloadFile({
-    url: dataUrl,
-    filename,
-    saveAs: true,
-    conflictAction: 'uniquify'
-  });
-
-  let downloadResult = firstDownload;
-
-  if (!firstDownload.success) {
-    downloadResult = await downloadFile({
-      url: dataUrl,
-      filename,
-      saveAs: false,
-      conflictAction: 'uniquify'
-    });
-  }
-
-  if (!downloadResult.success) {
-    broadcast({ action: 'recordingError', error: downloadResult.error });
-    return { success: false, error: downloadResult.error };
-  }
-
-  await saveToHistory(filename, sizeBytes, normalizedMime);
-  broadcast({ action: 'recordingSaved', filename });
-
+  await saveToHistory(filename, sizeBytes, mimeType, duration, markers, recordingMode, format, dl.downloadId);
+  broadcast({ action: 'recordingSaved', filename, duration, markers });
   return { success: true, filename };
 }
 
 function downloadFile(options) {
-  return new Promise((resolve) => {
-    chrome.downloads.download(options, (downloadId) => {
+  return new Promise(resolve => {
+    chrome.downloads.download(options, downloadId => {
       if (chrome.runtime.lastError || !downloadId) {
-        resolve({
-          success: false,
-          error: chrome.runtime.lastError?.message || 'Download failed'
-        });
-        return;
+        resolve({ success: false, error: chrome.runtime.lastError?.message || 'Download failed' });
+      } else {
+        resolve({ success: true, downloadId });
       }
-
-      resolve({ success: true, downloadId });
     });
   });
 }
 
-async function saveToHistory(filename, size, mimeType) {
+async function saveToHistory(filename, size, mimeType, duration, markers, mode, format, downloadId) {
   const data = await chrome.storage.local.get('recordings');
   const recordings = Array.isArray(data.recordings) ? data.recordings : [];
-
   recordings.unshift({
+    id: String(Date.now()),
     filename,
-    size,
+    size: size || 0,
     mimeType,
+    duration: duration || 0,
+    markers: markers || [],
+    mode: mode || 'tab',
+    format: format || 'webm',
+    downloadId: Number.isInteger(downloadId) ? downloadId : null,
     timestamp: new Date().toISOString()
   });
-
-  if (recordings.length > 20) {
-    recordings.length = 20;
-  }
-
+  if (recordings.length > 50) recordings.length = 50;
   await chrome.storage.local.set({ recordings });
 }
 
+/* ── History & Settings ────────────────────────────────────────────────── */
 async function getHistory() {
   const data = await chrome.storage.local.get('recordings');
   return Array.isArray(data.recordings) ? data.recordings : [];
+}
+
+async function deleteRecording(id) {
+  if (!id) return { success: false, error: 'Missing id' };
+  const recs = await getHistory();
+  const filtered = recs.filter(r => r.id !== id);
+  await chrome.storage.local.set({ recordings: filtered });
+  return { success: true };
+}
+
+async function openRecording(id) {
+  const rec = await getRecordingById(id);
+  if (!rec) return { success: false, error: 'Recording not found' };
+
+  const downloadId = await findDownloadIdForRecording(rec);
+  if (!downloadId) {
+    return { success: false, error: 'Downloaded file not found on this device' };
+  }
+
+  await openDownload(downloadId);
+  return { success: true };
+}
+
+async function showRecording(id) {
+  const rec = await getRecordingById(id);
+  if (!rec) return { success: false, error: 'Recording not found' };
+
+  const downloadId = await findDownloadIdForRecording(rec);
+  if (!downloadId) {
+    return { success: false, error: 'Downloaded file not found on this device' };
+  }
+
+  await showDownload(downloadId);
+  return { success: true };
 }
 
 async function clearHistory() {
@@ -272,43 +334,135 @@ async function clearHistory() {
   return { success: true };
 }
 
-async function handleRecordingError(errorMessage) {
-  recordingState.recording = false;
-  recordingState.tabId = null;
-  recordingState.startedAt = null;
-  recordingState.level = 0;
+async function getSettings() {
+  const data = await chrome.storage.local.get('settings');
+  return data.settings || { theme: 'light', maxDuration: 0, exportFormat: 'webm' };
+}
 
+async function updateSettings(settings) {
+  const current = await getSettings();
+  const updated = { ...current, ...settings };
+  await chrome.storage.local.set({ settings: updated });
+  return { success: true, settings: updated };
+}
+
+/* ── Helpers ────────────────────────────────────────────────────────────── */
+async function getRecordingById(id) {
+  if (!id) return null;
+  const history = await getHistory();
+  return history.find((rec) => rec.id === id) || null;
+}
+
+function escapeRegex(text) {
+  return String(text || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function downloadsSearch(query) {
+  return new Promise((resolve) => {
+    chrome.downloads.search(query, (items) => {
+      if (chrome.runtime.lastError) {
+        resolve([]);
+      } else {
+        resolve(items || []);
+      }
+    });
+  });
+}
+
+function openDownload(downloadId) {
+  return new Promise((resolve, reject) => {
+    chrome.downloads.open(downloadId, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function showDownload(downloadId) {
+  return new Promise((resolve, reject) => {
+    chrome.downloads.show(downloadId, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+async function findDownloadIdForRecording(rec) {
+  if (Number.isInteger(rec.downloadId)) {
+    const byId = await downloadsSearch({ id: rec.downloadId, limit: 1 });
+    if (byId.length) return rec.downloadId;
+  }
+
+  const filename = String(rec.filename || '').trim();
+  if (!filename) return null;
+
+  const filenameRegex = `${escapeRegex(filename)}$`;
+  const matches = await downloadsSearch({
+    filenameRegex,
+    orderBy: ['-startTime'],
+    limit: 10
+  });
+  return matches[0]?.id || null;
+}
+
+async function generateFilename(mode, extension) {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const title = tabs[0]?.title || 'recording';
+    return Formatters.generateFilename(title, mode, extension);
+  } catch {
+    return Formatters.generateFilename('recording', mode, extension);
+  }
+}
+
+async function handleRecordingError(errorMessage) {
+  recordingState = {
+    recording: false, paused: false, tabId: null,
+    startedAt: null, mimeType: null, level: 0, mode: 'tab'
+  };
   await persistState();
   await chrome.action.setBadgeText({ text: '' });
   broadcast({ action: 'recordingError', error: errorMessage });
+  return { success: true };
 }
 
-function buildFilename(extension) {
-  const now = new Date();
-  const date = [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join('-');
-  const time = [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join('-');
-  return `audio_recording_${date}_${time}.${extension}`;
-}
-
-function pad(value) {
-  return String(value).padStart(2, '0');
-}
-
-function approximateBase64Bytes(base64Text) {
-  const clean = String(base64Text || '').replace(/=+$/, '');
-  return Math.floor((clean.length * 3) / 4);
-}
-
-function normalizeLevel(level) {
-  const value = Number(level);
-  if (!Number.isFinite(value)) {
-    return 0;
+async function createOffscreenDocument() {
+  try {
+    if (typeof chrome.runtime.getContexts === 'function') {
+      const contexts = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
+      if (contexts.length > 0) return;
+    }
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: [chrome.offscreen.Reason.USER_MEDIA],
+      justification: 'Capture audio from tab or microphone'
+    });
+  } catch (error) {
+    const message = String(error?.message || '');
+    if (!message.includes('Only a single offscreen document')) {
+      throw error;
+    }
   }
-  return Math.max(0, Math.min(1, value));
+}
+
+function sendToOffscreen(message) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, response => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
+    });
+  });
 }
 
 function broadcast(message) {
-  chrome.runtime.sendMessage(message).catch(() => {
-    // No popup listener connected.
-  });
+  chrome.runtime.sendMessage(message).catch(() => {});
 }
