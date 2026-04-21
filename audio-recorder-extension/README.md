@@ -77,4 +77,3 @@ A simple and reliable Chrome extension to record audio from any browser tab.
 - Saves files as WebM with Opus codec
 - Works with Manifest V3
 - No external dependencies
-

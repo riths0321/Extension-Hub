@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Audio Recorder",
-  "version": "1.1.0",
-  "description": "Record active tab audio with live status and download history",
+  "name": "Audio Recorder Pro",
+  "version": "2.0.0",
+  "description": "Professional audio recorder for tab and microphone with advanced features",
   "permissions": [
     "tabCapture",
     "storage",
@@ -11,12 +11,15 @@
     "offscreen",
     "tabs"
   ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Audio Recorder",
+    "default_title": "Audio Recorder Pro",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -29,6 +32,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'self';"
   }
 }
