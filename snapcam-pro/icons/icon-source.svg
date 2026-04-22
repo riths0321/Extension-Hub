@@ -1,0 +1,21 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="panel" x1="32" y1="24" x2="224" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="cameraBody" x1="64" y1="72" x2="192" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="64" fill="#0F172A"/>
+  <circle cx="70" cy="62" r="56" fill="#60A5FA" fill-opacity="0.22"/>
+  <rect x="36" y="36" width="184" height="184" rx="54" fill="url(#panel)"/>
+  <rect x="58" y="88" width="140" height="94" rx="26" fill="url(#cameraBody)"/>
+  <rect x="86" y="66" width="46" height="22" rx="11" fill="#BFDBFE"/>
+  <circle cx="128" cy="135" r="38" fill="#1D4ED8" fill-opacity="0.18"/>
+  <circle cx="128" cy="135" r="28" fill="white"/>
+  <circle cx="128" cy="135" r="17" fill="#2563EB"/>
+  <circle cx="128" cy="135" r="8" fill="#DBEAFE"/>
+</svg>
