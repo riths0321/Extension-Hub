@@ -1,9 +1,16 @@
-// domHelpers.js — NO innerHTML
+// utils/domHelpers.js — NO innerHTML
 var DOMHelpers = {
   clearElement(el) {
-    while (el.firstChild) el.removeChild(el.firstChild);
+    while (el && el.firstChild) el.removeChild(el.firstChild);
   },
-  show(el) { el.style.display = ''; },
-  hide(el) { el.style.display = 'none'; },
-  toggle(el, show) { el.style.display = show ? '' : 'none'; }
+  show(el) {
+    if (!el) return;
+    el.classList.remove('hidden');
+    el.style.display = '';
+  },
+  hide(el) {
+    if (!el) return;
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  }
 };
