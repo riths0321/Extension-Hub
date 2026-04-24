@@ -1,14 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Time Spent Tracker",
-  "version": "1.0",
+  "name": "Web Activity Tracker",
+  "version": "2.0.0",
   "description": "Track active browsing time per website and alert when a custom time limit is reached.",
   "permissions": ["storage", "tabs", "idle", "alarms", "notifications"],
-
   "background": {
     "service_worker": "background.js"
   },
-
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -17,13 +15,12 @@
       "128": "icons/icons128.png"
     }
   },
-
   "icons": {
     "16": "icons/icons16.png",
     "48": "icons/icons48.png",
     "128": "icons/icons128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "default-src 'none'; script-src 'self'; object-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; media-src 'none'; require-trusted-types-for 'script'; trusted-types default;"
   }
 }

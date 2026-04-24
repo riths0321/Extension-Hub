@@ -50,13 +50,13 @@
   --radius-sm:      4px;
 }
 
-html { font-size: 13px; }
+html { font-size: 14px; }
 
 body {
   font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--heading);
-  width: 460px;
+  width: 560px;
   min-height: 540px;
   max-height: 700px;
   overflow-x: hidden;
@@ -341,7 +341,7 @@ body {
 /* ── PROGRESS ───────────────────────────────────────────────── */
 .progress-panel { }
 .progress-track { height: 4px; background: var(--border); margin: 8px 12px 4px; border-radius: 2px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.3s ease; }
+.progress-fill { height: 100%; width: 0%; background: var(--primary); border-radius: 2px; transition: width 0.3s ease; }
 .progress-text { font-size: 11px; color: var(--subtext); font-weight: 500; padding: 0 12px 10px; }
 
 .stop-btn {

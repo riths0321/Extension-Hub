@@ -318,38 +318,130 @@
     const file = e.target.files[0];
     if (!file) return;
 
-    // Sanitize: only allow small-ish files
-    if (file.size > 2 * 1024 * 1024) {
-      showToast("File too large (max 2 MB)");
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("File too large (max 10 MB)");
       e.target.value = "";
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      let text = ev.target.result;
-      const safeName = Formatter.sanitizeFilename(file.name);
+    const name = file.name.toLowerCase();
+    const ext  = name.split(".").pop();
 
-      if (safeName.endsWith(".csv")) {
-        text = Formatter.parseCSV(text).join("\n");
-      } else if (safeName.endsWith(".json")) {
+    // ── XLSX / ODS → SheetJS ────────────────────────────────────────────────
+    if (ext === "xlsx" || ext === "ods") {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const wb   = XLSX.read(new Uint8Array(ev.target.result), { type: "array" });
+          const urls = [];
+          wb.SheetNames.forEach((sheetName) => {
+            const sheet = wb.Sheets[sheetName];
+            const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+            rows.forEach((row) => {
+              row.forEach((cell) => {
+                const val = String(cell || "").trim();
+                if (val.match(/^https?:\/\//i)) urls.push(val);
+              });
+            });
+          });
+          if (!urls.length) { showToast("No URLs found in file"); return; }
+          appendToInput(urls.join("\n"), name);
+        } catch (err) {
+          showToast("Could not parse file");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+
+    // ── CSV / TSV ───────────────────────────────────────────────────────────
+    } else if (ext === "csv" || ext === "tsv") {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const sep  = ext === "tsv" ? "\t" : ",";
+        const lines = ev.target.result.split(/\r?\n/);
+        const urls  = [];
+        lines.forEach((line) => {
+          line.split(sep).forEach((cell) => {
+            const val = cell.replace(/^["']|["']$/g, "").trim();
+            if (val.match(/^https?:\/\//i)) urls.push(val);
+          });
+        });
+        if (!urls.length) {
+          // fallback: treat each non-empty line as a URL candidate
+          lines.forEach((l) => { const t = l.trim(); if (t) urls.push(t); });
+        }
+        appendToInput(urls.join("\n"), name);
+      };
+      reader.readAsText(file);
+
+    // ── HTML / HTM → extract href / text URLs ──────────────────────────────
+    } else if (ext === "html" || ext === "htm") {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const parser = new DOMParser();
+        const doc    = parser.parseFromString(ev.target.result, "text/html");
+        const urls   = [];
+        // <a href="...">
+        doc.querySelectorAll("a[href]").forEach((a) => {
+          const href = a.getAttribute("href").trim();
+          if (href.match(/^https?:\/\//i)) urls.push(href);
+        });
+        // also scan text nodes with regex in case hrefs are relative
+        if (!urls.length) {
+          const text = doc.body ? doc.body.innerText || doc.body.textContent : ev.target.result;
+          const matches = text.match(/https?:\/\/[^\s"'<>]+/gi) || [];
+          urls.push(...matches);
+        }
+        if (!urls.length) { showToast("No URLs found in HTML file"); return; }
+        appendToInput([...new Set(urls)].join("\n"), name);
+      };
+      reader.readAsText(file);
+
+    // ── PDF → extract text URLs via regex ──────────────────────────────────
+    } else if (ext === "pdf") {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        // Read raw PDF bytes as latin1 string and regex-scan for URLs
+        const bytes   = new Uint8Array(ev.target.result);
+        let raw = "";
+        for (let i = 0; i < bytes.length; i++) raw += String.fromCharCode(bytes[i]);
+        // PDF stores URLs in URI actions and plain text streams
+        const matches = raw.match(/https?:\/\/[^\s"')\\<>\]]+/gi) || [];
+        const urls    = [...new Set(matches.map(u => u.replace(/[.,;:]+$/, "")))];
+        if (!urls.length) { showToast("No URLs found in PDF"); return; }
+        appendToInput(urls.join("\n"), name);
+      };
+      reader.readAsArrayBuffer(file);
+
+    // ── JSON ────────────────────────────────────────────────────────────────
+    } else if (ext === "json") {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        let text = ev.target.result;
         try {
           const parsed = JSON.parse(text);
-          if (Array.isArray(parsed)) {
-            text = parsed.join("\n");
-          } else if (parsed.urls && Array.isArray(parsed.urls)) {
-            text = parsed.urls.join("\n");
-          }
+          if (Array.isArray(parsed))                        text = parsed.join("\n");
+          else if (parsed.urls && Array.isArray(parsed.urls)) text = parsed.urls.join("\n");
         } catch { /* treat as plain text */ }
-      }
+        appendToInput(text, name);
+      };
+      reader.readAsText(file);
 
-      const cur = urlInput.value.trim();
-      urlInput.value = cur ? cur + "\n" + text : text;
-      handleInputChange();
-      showToast("Imported from " + safeName);
-    };
-    reader.readAsText(file);
+    // ── TXT / fallback ──────────────────────────────────────────────────────
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => appendToInput(ev.target.result, name);
+      reader.readAsText(file);
+    }
+
     e.target.value = "";
+  }
+
+  function appendToInput(text, filename) {
+    const cur = urlInput.value.trim();
+    urlInput.value = cur ? cur + "\n" + text.trim() : text.trim();
+    handleInputChange();
+    const count = text.trim().split(/\n/).filter(Boolean).length;
+    showToast("Imported " + count + " line" + (count !== 1 ? "s" : "") + " from " + filename);
   }
 
   // ── URL Preview Panel ──────────────────────────────────────────────────────
@@ -696,13 +788,56 @@
     await startOpening(urls, { ...settings, delay: 0 });
   }
 
+  // ── One-by-One: driven by background.js alarms ──────────────────────────
+  let oboActive = false;
+
   async function handleOneByOne() {
-    if (isRunning) return;
+    if (isRunning || oboActive) return;
     settings = readSettingsFromUI();
     const urls = prepareURLs();
     if (!urls.length) { showToast("No valid URLs to open"); return; }
-    const s = { ...settings, delay: Math.max(settings.oneByOneWait || 1, 1) };
-    await startOpening(urls, s);
+
+    const waitSecs = Math.max(1, settings.oneByOneWait || 5);
+    oboActive = true;
+    setOboUIRunning(true);
+    showProgress(0, urls.length);
+    progressLabel.textContent = "One by One…";
+
+    chrome.runtime.sendMessage({ action: "OBO_START", urls, waitSeconds: waitSecs });
+  }
+
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.action === "OBO_PROGRESS") {
+      showProgress(msg.index + 1, msg.total);
+      progressLabel.textContent = "One by One — URL " + (msg.index + 1) + " of " + msg.total;
+    } else if (msg.action === "OBO_DONE") {
+      oboActive = false;
+      setOboUIRunning(false);
+      hideProgress();
+      showToast("Done! All " + msg.total + " URLs shown.");
+    } else if (msg.action === "OBO_STOPPED") {
+      oboActive = false;
+      setOboUIRunning(false);
+      hideProgress();
+      showToast("One-by-One stopped.");
+    }
+  });
+
+  chrome.runtime.sendMessage({ action: "OBO_STATUS" }, (res) => {
+    if (chrome.runtime.lastError) return;
+    const obo = res && res.obo;
+    if (obo && obo.running) {
+      oboActive = true;
+      setOboUIRunning(true);
+      showProgress(obo.index + 1, obo.urls.length);
+      progressLabel.textContent = "One by One — URL " + (obo.index + 1) + " of " + obo.urls.length;
+    }
+  });
+
+  function setOboUIRunning(on) {
+    $("btnOneByOne").disabled = on;
+    $("btnOpenLinks").disabled = on || isRunning;
+    $("btnStop").disabled = !on && !isRunning;
   }
 
   async function startOpening(urls, s) {

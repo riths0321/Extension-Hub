@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
 
 // ─── State ─────────────────────────────────────────────────────────────────────
 let scanResults = [];
+let bulkScanResults = {};   // keyed by page URL, value = array of link results
 let activeFilter = 'all';
 let settings = { ...DEFAULT_SETTINGS };
 let darkMode = false;
@@ -154,9 +155,15 @@ function setupEventListeners() {
     } catch (_) {}
   });
 
-  // Export
-  $('exportCSV').addEventListener('click', () => exportData('csv'));
+  // Export — Page Scan
+  $('exportCSV').addEventListener('click',  () => exportData('csv'));
   $('exportJSON').addEventListener('click', () => exportData('json'));
+  $('exportTXT').addEventListener('click',  () => exportData('txt'));
+
+  // Export — Bulk Scan
+  $('bulkExportCSV').addEventListener('click',  () => exportBulkData('csv'));
+  $('bulkExportJSON').addEventListener('click', () => exportBulkData('json'));
+  $('bulkExportTXT').addEventListener('click',  () => exportBulkData('txt'));
 
   // Bulk scan
   $('bulkScanBtn').addEventListener('click', startBulkScan);
@@ -574,6 +581,8 @@ async function startBulkScan() {
   showElement($('bulkProgress'));
   $('bulkProgressLabel').textContent = 'Scanning…';
   $('bulkProgressFill').value = 10;
+  $('bulkExportRow').classList.add('hidden');
+  bulkScanResults = {};
 
   const bulkResultsEl = $('bulkResults');
   while (bulkResultsEl.firstChild) bulkResultsEl.removeChild(bulkResultsEl.firstChild);
@@ -600,7 +609,9 @@ async function startBulkScan() {
       msg.textContent = 'No results found.';
       bulkResultsEl.appendChild(msg);
     } else {
+      bulkScanResults = pages;
       renderBulkResults(pages, bulkResultsEl);
+      showElement($('bulkExportRow'));
     }
   } catch (err) {
     setStatus('Bulk scan failed: ' + err.message, 'error');
@@ -702,11 +713,7 @@ async function loadHistory() {
     const deleteDomainBtn = document.createElement('button');
     deleteDomainBtn.className = 'history-delete-domain';
     deleteDomainBtn.title = 'Delete all history for this domain';
-    deleteDomainBtn.innerHTML = `
-      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-        <path d="M5.5 5.5A.5.5 0 016 5h4a.5.5 0 01.5.5v7a.5.5 0 01-.5.5H6a.5.5 0 01-.5-.5v-7zm2-3a.5.5 0 00-.5.5V4h3v-1a.5.5 0 00-.5-.5h-2zM4 5h8v1H4V5z"/>
-      </svg>
-    `;
+    deleteDomainBtn.appendChild(svgTrash());
     deleteDomainBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (confirm(`Delete all scan history for "${domain}"?`)) {
@@ -749,11 +756,7 @@ async function loadHistory() {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'history-delete-scan';
       deleteBtn.title = 'Delete this scan';
-      deleteBtn.innerHTML = `
-        <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-          <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/>
-        </svg>
-      `;
+      deleteBtn.appendChild(svgClose());
       deleteBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (confirm(`Delete scan from ${formatDate(scan.time)}?`)) {
@@ -808,50 +811,167 @@ async function clearAllHistory() {
 }
 
 // ─── Export ────────────────────────────────────────────────────────────────────
-function exportData(format) {
+
+/** Resolve which page-scan records to export based on the filter dropdown. */
+function getExportData() {
   const filterVal = $('exportFilter').value;
   let data = scanResults;
   if (filterVal === 'broken')   data = data.filter((r) => r.statusCategory === 'broken' || r.statusCategory === 'error');
   else if (filterVal === 'redirect') data = data.filter((r) => r.statusCategory === 'redirect');
   else if (filterVal === 'live')     data = data.filter((r) => r.statusCategory === 'live');
+  return { data, filterVal };
+}
 
+/** Page-scan export entry point. */
+function exportData(format) {
+  const { data, filterVal } = getExportData();
   if (!data.length) { setStatus('No data to export', 'warning'); return; }
 
-  if (format === 'csv') {
-    const headers = ['URL', 'Status', 'Category', 'Type', 'Response Time (ms)', 'Redirect Count', 'Final URL', 'Error'];
-    const rows = data.map((r) => [
-      csvEscape(r.url),
-      r.status || '',
-      r.statusCategory || '',
-      r.linkType || r.domType || '',
-      r.responseTime || '',
-      r.redirectCount || 0,
-      csvEscape(r.finalUrl || ''),
-      csvEscape(r.error || ''),
-    ]);
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
-    downloadBlob(csv, 'text/csv', 'broken-links.csv');
-  } else {
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      filter: filterVal,
-      total: data.length,
-      links: data.map((r) => ({
-        url: r.url,
-        finalUrl: r.finalUrl,
-        status: r.status,
-        statusCategory: r.statusCategory,
-        linkType: r.linkType,
-        domType: r.domType,
-        responseTime: r.responseTime,
-        redirectCount: r.redirectCount,
-        redirectChain: r.redirectChain,
-        error: r.error,
-      })),
-    };
-    downloadBlob(JSON.stringify(payload, null, 2), 'application/json', 'broken-links.json');
+  switch (format) {
+    case 'csv':  downloadBlob(buildCsv(data),              'text/csv',        'broken-links.csv');  break;
+    case 'json': downloadBlob(buildJson(data, filterVal),  'application/json','broken-links.json'); break;
+    case 'txt':  downloadBlob(buildTxt(data, filterVal),   'text/plain',      'broken-links.txt');  break;
   }
   setStatus('Export complete', 'success');
+}
+
+/** Bulk-scan export entry point – flattens all pages into one file. */
+function exportBulkData(format) {
+  if (!Object.keys(bulkScanResults).length) {
+    setStatus('No bulk data to export', 'warning');
+    return;
+  }
+
+  // Flatten all page results into a single array, preserving sourcePage
+  const flat = Object.entries(bulkScanResults).flatMap(([pageUrl, links]) =>
+    links.map((r) => ({ ...r, sourcePage: pageUrl }))
+  );
+
+  if (!flat.length) { setStatus('No data to export', 'warning'); return; }
+
+  switch (format) {
+    case 'csv':  downloadBlob(buildCsv(flat, true),              'text/csv',        'bulk-scan.csv');  break;
+    case 'json': downloadBlob(buildBulkJson(bulkScanResults),     'application/json','bulk-scan.json'); break;
+    case 'txt':  downloadBlob(buildBulkTxt(bulkScanResults),      'text/plain',      'bulk-scan.txt');  break;
+  }
+  setStatus('Bulk export complete', 'success');
+}
+
+// ── Format builders ────────────────────────────────────────────────────────────
+
+function buildCsv(data, includeSourcePage = false) {
+  const headers = [
+    'URL', 'Status', 'Category', 'Type',
+    'Response Time (ms)', 'Redirect Count', 'Final URL', 'Error',
+    ...(includeSourcePage ? ['Source Page'] : []),
+  ];
+  const rows = data.map((r) => [
+    csvEscape(r.url),
+    r.status || '',
+    r.statusCategory || '',
+    r.linkType || r.domType || '',
+    r.responseTime || '',
+    r.redirectCount || 0,
+    csvEscape(r.finalUrl || ''),
+    csvEscape(r.error || ''),
+    ...(includeSourcePage ? [csvEscape(r.sourcePage || '')] : []),
+  ]);
+  return [headers, ...rows].map((row) => row.join(',')).join('\n');
+}
+
+function buildJson(data, filter) {
+  return JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    filter: filter || 'all',
+    total: data.length,
+    links: data.map(linkToJsonObj),
+  }, null, 2);
+}
+
+function buildBulkJson(pages) {
+  return JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    pages: Object.fromEntries(
+      Object.entries(pages).map(([pageUrl, links]) => [
+        pageUrl,
+        { total: links.length, links: links.map(linkToJsonObj) },
+      ])
+    ),
+  }, null, 2);
+}
+
+function buildTxt(data, filter) {
+  const sep    = '─'.repeat(72);
+  const header = [
+    'BROKEN LINK FINDER PRO — EXPORT',
+    `Exported : ${new Date().toLocaleString()}`,
+    `Filter   : ${filter || 'all'}`,
+    `Total    : ${data.length} link(s)`,
+    sep,
+  ].join('\n');
+
+  const body = data.map((r, i) => {
+    const lines = [
+      `[${i + 1}] ${r.url}`,
+      `    Status   : ${r.status || 'ERR'} (${r.statusCategory || '—'})`,
+      `    Type     : ${r.linkType || r.domType || '—'}`,
+      `    Time     : ${r.responseTime ? r.responseTime + ' ms' : '—'}`,
+    ];
+    if (r.finalUrl && r.finalUrl !== r.url) lines.push(`    Final URL: ${r.finalUrl}`);
+    if (r.redirectCount > 0)               lines.push(`    Redirects: ${r.redirectCount} hop(s)`);
+    if (r.error)                           lines.push(`    Error    : ${r.error}`);
+    return lines.join('\n');
+  });
+
+  return [header, ...body].join('\n\n');
+}
+
+function buildBulkTxt(pages) {
+  const sep    = '═'.repeat(72);
+  const subSep = '─'.repeat(72);
+  const lines  = [
+    'BROKEN LINK FINDER PRO — BULK SCAN EXPORT',
+    `Exported : ${new Date().toLocaleString()}`,
+    `Pages    : ${Object.keys(pages).length}`,
+    sep,
+  ];
+
+  for (const [pageUrl, links] of Object.entries(pages)) {
+    const stats = buildStats(links);
+    lines.push(`\nPAGE: ${pageUrl}`);
+    lines.push(`Total: ${stats.total}  |  Broken: ${stats.broken}  |  Redirects: ${stats.redirects}`);
+    lines.push(subSep);
+
+    if (links.length === 0) {
+      lines.push('  (no links found)');
+    } else {
+      links.forEach((r, i) => {
+        lines.push(`  [${i + 1}] ${r.url}`);
+        lines.push(`       Status: ${r.status || 'ERR'} (${r.statusCategory || '—'})  |  Type: ${r.linkType || r.domType || '—'}  |  Time: ${r.responseTime ? r.responseTime + ' ms' : '—'}`);
+        if (r.finalUrl && r.finalUrl !== r.url) lines.push(`       Final : ${r.finalUrl}`);
+        if (r.error)                            lines.push(`       Error : ${r.error}`);
+      });
+    }
+  }
+
+  return lines.join('\n');
+}
+
+// ── Shared helpers ─────────────────────────────────────────────────────────────
+
+function linkToJsonObj(r) {
+  return {
+    url:           r.url,
+    finalUrl:      r.finalUrl,
+    status:        r.status,
+    statusCategory:r.statusCategory,
+    linkType:      r.linkType,
+    domType:       r.domType,
+    responseTime:  r.responseTime,
+    redirectCount: r.redirectCount,
+    redirectChain: r.redirectChain,
+    error:         r.error,
+  };
 }
 
 function csvEscape(val) {
@@ -992,6 +1112,32 @@ function svgFix() {
   svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'currentColor');
   const path = document.createElementNS(ns, 'path');
   path.setAttribute('d', 'M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 01-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 01.872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 012.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 012.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 01.872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 01-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 01-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 110-5.858 2.929 2.929 0 010 5.858z');
+  svg.appendChild(path);
+  return svg;
+}
+
+function svgTrash() {
+  const ns  = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('fill', 'currentColor');
+  svg.setAttribute('width', '12');
+  svg.setAttribute('height', '12');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M5.5 5.5A.5.5 0 016 5h4a.5.5 0 01.5.5v7a.5.5 0 01-.5.5H6a.5.5 0 01-.5-.5v-7zm2-3a.5.5 0 00-.5.5V4h3v-1a.5.5 0 00-.5-.5h-2zM4 5h8v1H4V5z');
+  svg.appendChild(path);
+  return svg;
+}
+
+function svgClose() {
+  const ns  = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('fill', 'currentColor');
+  svg.setAttribute('width', '12');
+  svg.setAttribute('height', '12');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', 'M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z');
   svg.appendChild(path);
   return svg;
 }

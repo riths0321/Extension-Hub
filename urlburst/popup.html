@@ -98,7 +98,7 @@
         <button id="btnFromTabs" class="qa-btn">From Tabs</button>
         <button id="btnCleanup"  class="qa-btn">Cleanup</button>
       </div>
-      <input type="file" id="fileImport" accept=".txt,.csv,.json" class="sr-only" aria-hidden="true" />
+      <input type="file" id="fileImport" accept=".txt,.csv,.tsv,.json,.xlsx,.ods,.html,.htm,.pdf" class="sr-only" aria-hidden="true" />
     </div>
 
     <!-- DUPLICATE PANEL -->
@@ -155,7 +155,7 @@
         <button id="btnStop" class="stop-btn" disabled>Stop</button>
       </div>
       <div class="progress-track">
-        <div id="progressBar" class="progress-fill" style="width:0%"></div>
+        <div id="progressBar" class="progress-fill" ></div>
       </div>
       <p id="progressText" class="progress-text">0 / 0</p>
     </div>
@@ -366,6 +366,7 @@
   <div id="toast" class="toast hidden" role="alert" aria-live="polite"></div>
 
   <!-- SCRIPTS -->
+  <script src="libs/xlsx.full.min.js"></script>
   <script src="utils/validator.js"></script>
   <script src="utils/formatter.js"></script>
   <script src="services/storageService.js"></script>
