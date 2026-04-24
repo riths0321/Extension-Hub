@@ -7,8 +7,10 @@
     "tabs",
     "tabGroups",
     "storage",
+    "windows",
     "clipboardRead",
-    "clipboardWrite"
+    "clipboardWrite",
+    "alarms"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -18,11 +20,11 @@
     "service_worker": "background.js"
   },
   "icons": {
-    "16":  "icons/icon16.png",
-    "48":  "icons/icon48.png",
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; img-src 'self' data: https:;"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';"
   }
 }
