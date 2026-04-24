@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "URLBurst",
+  "version": "1.1.0",
+  "description": "Premium bulk URL opener and manager for SEO professionals, developers, and researchers.",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "clipboardRead",
+    "clipboardWrite"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "URLBurst"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; img-src 'self' data: https:;"
+  }
+}
